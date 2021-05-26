@@ -4,6 +4,12 @@ Kula 是一个基于 .net Framework 平台的解释型脚本语言。
 ![Kula_Daiamondo](https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg31.51tietu.net%2Fpic%2F2016-120803%2F20161208032542kjea4a3vlv462716.jpg&refer=http%3A%2F%2Fimg31.51tietu.net&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1624628894&t=79f9d7388b65c5efa64aae6f37c53c7a)
 
 ## 更新日志
+### kula - ice coffin 0 (2021-5-26)
+* 较为完善的基本语法
+* 动态强类型系统
+* 足够基本使用的内置函数
+* 不完全封装的错误提示
+
 ### kula - test (2021-5-23)
 * 测试级的语法
 * 逻辑基本不能使用
