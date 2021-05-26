@@ -10,7 +10,7 @@ using kula.Core.VMObj;
 namespace kula.DataObj
 {
     delegate void KvmBuiltinFunc(Stack<object> stack);
-    class KvmFunc
+    class Func
     {
         private Type[] argTypes;
         private List<LexToken> tokenStream;
@@ -76,35 +76,51 @@ namespace kula.DataObj
                             break;
                         default:
                             {
-                                if (arg_type == typeof(KvmFunc)) { stack.Push("Func"); }
+                                if (arg_type == typeof(Func)) { stack.Push("Func"); }
                                 else { stack.Push("None"); }
                             }
                             break;
                     }
             } },
-            {"equal", (stack)=>
-                {
-                    stack.Push((stack.Pop() == stack.Pop()) ? 1f : 0f);                
+            {"equal", (stack)=> {
+                    stack.Push( object.Equals(stack.Pop(), stack.Pop() ) ? 1f : 0f);                
             } },
-            {"greater", (stack)=>
-                {
+            {"greater", (stack)=> {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
                     foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
                     stack.Push( ((float)args[0] > (float)args[1]) ? 1f : 0f);
             } },
-            {"less", (stack)=>
-                {
+            {"less", (stack)=> {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
                     foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
                     stack.Push( ((float)args[0] < (float)args[1]) ? 1f : 0f);
             } },
+            {"and", (stack) => {
+                    var args = new object[2];
+                    for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    bool flag = ((float)args[0] != 0) && ((float)args[1] != 0);
+                    stack.Push(flag ? 1f : 0f);
+            } },
+            {"or", (stack) => {
+                    var args = new object[2];
+                    for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    bool flag = ((float)args[0] != 0) || ((float)args[1] != 0);
+                    stack.Push(flag ? 1f : 0f);
+            } },
+            {"not", (stack) => {
+                    var arg = stack.Pop();
+                    if (arg.GetType() != typeof(float)) { throw new Exception("Func Runtime ERROR - wrong type"); }
+                    stack.Push((float)arg == 0f ? 1f : 0f);
+            } },
         };
         public static Dictionary<string, KvmBuiltinFunc> BuiltinFunc { get => builtinFunc; }
 
 
-        public KvmFunc(List<LexToken> tokenStream)
+        public Func(List<LexToken> tokenStream)
         {
             this.tokenStream = tokenStream;
         }

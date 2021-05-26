@@ -6,10 +6,10 @@ using kula.Util;
 
 namespace kula.Core
 {
-    class KulaParser
+    class Parser
     {
-        private static KulaParser instance = new KulaParser();
-        public static KulaParser Instance { get => instance; }
+        private static Parser instance = new Parser();
+        public static Parser Instance { get => instance; }
 
         private List<LexToken> tokenStream;
         private List<KvmNode> nodeStream;
@@ -17,19 +17,19 @@ namespace kula.Core
         private Stack<string> nameStack;
         private int pos;
 
-        private KulaParser()
+        private Parser()
         {
             nameStack = new Stack<string>();
             nodeStream = new List<KvmNode>();
         }
 
         public List<KvmNode> Out() { return nodeStream; }
-        public KulaParser Read(List<LexToken> tokenStream)
+        public Parser Read(List<LexToken> tokenStream)
         {
             this.tokenStream = tokenStream;
             return this;
         }
-        public KulaParser Show()
+        public Parser Show()
         {
             if (nodeStream == null) { Parse(); }
             Console.WriteLine("Parser ->");
@@ -43,7 +43,7 @@ namespace kula.Core
             Console.ForegroundColor = ConsoleColor.Gray;
             return this;
         }
-        public KulaParser Parse()
+        public Parser Parse()
         {
             pos = 0; int _pos = -1;
             nodeStream.Clear();
@@ -245,7 +245,7 @@ namespace kula.Core
                 }
                 // 截取Token 写入函数 待编译
                 List<LexToken> func_tokens = tokenStream.GetRange(start_pos, count_pos - start_pos + 1);
-                var func = new KvmFunc(func_tokens);
+                var func = new Func(func_tokens);
 
                 nodeStream.Add(new KvmNode(KvmNodeType.VALUE, func));
                 pos = count_pos + 1;

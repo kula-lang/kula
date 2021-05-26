@@ -6,10 +6,10 @@ using kula.Util;
 
 namespace kula.Core
 {
-    class KulaLexer
+    class Lexer
     {
-        private static KulaLexer instance = new KulaLexer();
-        public static KulaLexer Instance { get => instance; }
+        private static Lexer instance = new Lexer();
+        public static Lexer Instance { get => instance; }
         
         private string sourceCode;
         private List<LexToken> tokenStream;
@@ -35,9 +35,9 @@ namespace kula.Core
             public static bool CQuote(char c) { return c == '\"' || c == '\''; }
             public static bool CAssign(char c) { return (c == '='); }
         }
-        private KulaLexer() { sourceCode = ""; }
-        public KulaLexer Read(string code) { sourceCode = code; return this; }
-        public KulaLexer Scan()
+        private Lexer() { sourceCode = ""; }
+        public Lexer Read(string code) { sourceCode = code; return this; }
+        public Lexer Scan()
         {
             tokenStream = new List<LexToken>();
             LexTokenType? state = null;
@@ -125,7 +125,7 @@ namespace kula.Core
 
             return this;
         }
-        public KulaLexer Show()
+        public Lexer Show()
         {
             if (tokenStream == null) { Scan(); }
             Console.WriteLine("Lexer ->");

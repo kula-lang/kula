@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace kula.Core
 {
-    interface IKulaRuntime
+    interface IRuntime
     {
         void Run();
-        IKulaRuntime Father { get; }
+        IRuntime Father { get; }
         Dictionary<string, object> VarDict { get; }
     }
 }

@@ -40,9 +40,9 @@ namespace kula.Util
         {
             try
             {
-                KulaVirtualMachine.Instance.Read(
-                    KulaParser.Instance.Read(
-                        KulaLexer.Instance.Read(code).Scan().Show().Out()
+                KulaVM.Instance.Read(
+                    Parser.Instance.Read(
+                        Lexer.Instance.Read(code).Scan().Show().Out()
                     ).Parse().Show().Out()
                 ).DebugRun();
             }

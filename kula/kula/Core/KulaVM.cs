@@ -8,23 +8,23 @@ using kula.DataObj;
 
 namespace kula.Core
 {
-    class KulaVirtualMachine : IKulaRuntime
+    class KulaVM : IRuntime
     {
-        private static KulaVirtualMachine instance = new KulaVirtualMachine();
-        public static KulaVirtualMachine Instance { get => instance; }
+        private static KulaVM instance = new KulaVM();
+        public static KulaVM Instance { get => instance; }
 
-        public IKulaRuntime Father => null;
+        public IRuntime Father => null;
         public Dictionary<string, object> VarDict => varDict;
 
         private Dictionary<string, object> varDict = new Dictionary<string, object>();
         private List<KvmNode> nodeStream;
         private Stack<object> vmStack;
 
-        private KulaVirtualMachine()
+        private KulaVM()
         {
             vmStack = new Stack<object>();
         }
-        public KulaVirtualMachine Read(List<KvmNode> nodeStream)
+        public KulaVM Read(List<KvmNode> nodeStream)
         {
             this.nodeStream = nodeStream;
             return this;
@@ -67,9 +67,9 @@ namespace kula.Core
                     case KvmNodeType.FUNC:
                         {
                             string func_name = (string)node.Value;
-                            if (KvmFunc.BuiltinFunc.ContainsKey(func_name))
+                            if (Func.BuiltinFunc.ContainsKey(func_name))
                             {
-                                KvmFunc.BuiltinFunc[func_name](vmStack);
+                                Func.BuiltinFunc[func_name](vmStack);
                             }
                             else
                             {

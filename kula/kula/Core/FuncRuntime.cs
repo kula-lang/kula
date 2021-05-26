@@ -8,16 +8,16 @@ using kula.DataObj;
 
 namespace kula.Core
 {
-    class KulaFuncRuntime : IKulaRuntime
+    class FuncRuntime : IRuntime
     {
         // private Dictionary<string, Object> varDict = new Dictionary<string, Object>();
 
-        public KulaFuncRuntime()
+        public FuncRuntime()
         {
 
         }
 
-        public IKulaRuntime Father => throw new NotImplementedException();
+        public IRuntime Father => throw new NotImplementedException();
         public Dictionary<string, object> VarDict => throw new NotImplementedException();
         public void Run()
         {

@@ -39,12 +39,12 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\IKulaRuntime.cs" />
-    <Compile Include="Core\KulaFuncRuntime.cs" />
-    <Compile Include="Core\KulaLexer.cs" />
-    <Compile Include="Core\KulaParser.cs" />
-    <Compile Include="Core\KulaVirtualMachine.cs" />
-    <Compile Include="DataObj\KvmFunc.cs" />
+    <Compile Include="Core\IRuntime.cs" />
+    <Compile Include="Core\FuncRuntime.cs" />
+    <Compile Include="Core\Lexer.cs" />
+    <Compile Include="Core\Parser.cs" />
+    <Compile Include="Core\KulaVM.cs" />
+    <Compile Include="DataObj\Func.cs" />
     <Compile Include="Core\VMObj\KvmNode.cs" />
     <Compile Include="Core\VMObj\LexToken.cs" />
     <Compile Include="Program.cs" />
