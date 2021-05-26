@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using kula.Core;
+using kula.Util;
 using kula.Core.VMObj;
 
 namespace kula.DataObj
@@ -21,46 +21,50 @@ namespace kula.DataObj
             {"plus", (stack) => {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new KulaException.FuncException(); }
                     stack.Push((float)args[0] + (float)args[1]);
             } },
             {"minus", (stack) => {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new KulaException.FuncException(); }
                     stack.Push((float)args[0] - (float)args[1]);
             } },
             {"times", (stack) => {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new KulaException.FuncException(); }
                     stack.Push((float)args[0] * (float)args[1]);
             } },
             {"div", (stack) => {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new KulaException.FuncException(); }
                     stack.Push((float)args[0] / (float)args[1]);
             } },
-            {"println", (stack) => { Console.WriteLine("\t" + stack.Pop()); } },
+            {"println", (stack) => { Console.WriteLine( stack.Pop() ); } },
+            // String 内置
             {"toStr", (stack) => {
                     stack.Push(stack.Pop().ToString());
             } },
             {"cut", (stack) => {
                     var args = new object[3];
-                    for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    if (args[0].GetType() != typeof(string) || args[1].GetType() != typeof(float) || args[2].GetType() != typeof(float))
+                    for(int i = args.Length - 1; i >= 0; --i) { args[i] = stack.Pop(); }
+                    if (args[0].GetType() == typeof(string) || args[1].GetType() == typeof(float) || args[2].GetType() == typeof(float))
                     {
-                        throw new Exception("Func Runtime ERROR - wrong type");
+                        stack.Push(((string)args[0]).Substring((int)(float)args[1], (int)(float)args[2]));
                     }
-                    stack.Push(((string)args[0]).Substring((int)args[1], (int)args[2]));
+                    else
+                    {
+                        throw new KulaException.FuncException();
+                    }
             } },
             {"concat", (stack)=> {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
                     foreach (var arg in args)
                     {
-                        if (arg.GetType() != typeof(string)) { throw new Exception("Func Runtime ERROR - wrong type"); }
+                        if (arg.GetType() != typeof(string)) { throw new KulaException.FuncException(); }
                     }
                     stack.Push((string)args[0] + (string)args[1]);
             } },
@@ -82,38 +86,39 @@ namespace kula.DataObj
                             break;
                     }
             } },
+            // Bool 内置函数
             {"equal", (stack)=> {
-                    stack.Push( object.Equals(stack.Pop(), stack.Pop() ) ? 1f : 0f);                
+                    stack.Push( object.Equals(stack.Pop(), stack.Pop() ) ? 1f : 0f);
             } },
             {"greater", (stack)=> {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new KulaException.FuncException(); }
                     stack.Push( ((float)args[0] > (float)args[1]) ? 1f : 0f);
             } },
             {"less", (stack)=> {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new KulaException.FuncException(); }
                     stack.Push( ((float)args[0] < (float)args[1]) ? 1f : 0f);
             } },
             {"and", (stack) => {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new KulaException.FuncException(); }
                     bool flag = ((float)args[0] != 0) && ((float)args[1] != 0);
                     stack.Push(flag ? 1f : 0f);
             } },
             {"or", (stack) => {
                     var args = new object[2];
                     for(int i = args.Length - 1; i >= 0; --i) {args[i] = stack.Pop(); }
-                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new Exception("Func Runtime ERROR - wrong type"); }
+                    foreach (var arg in args) {if (arg.GetType() != typeof(float)) throw new KulaException.FuncException(); }
                     bool flag = ((float)args[0] != 0) || ((float)args[1] != 0);
                     stack.Push(flag ? 1f : 0f);
             } },
             {"not", (stack) => {
                     var arg = stack.Pop();
-                    if (arg.GetType() != typeof(float)) { throw new Exception("Func Runtime ERROR - wrong type"); }
+                    if (arg.GetType() != typeof(float)) { throw new KulaException.FuncException(); }
                     stack.Push((float)arg == 0f ? 1f : 0f);
             } },
         };

@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 
-using kula.Core;
 using kula.Util;
 
 namespace kula
@@ -22,10 +18,18 @@ namespace kula
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("打不开" + e.Message);
+                    Console.WriteLine(e);
                     return;
                 }
-                ConsoleUtility.DebugRunCode(code);
+
+                if (args.Length >= 2 && args[1] == "--release")
+                {
+                    ConsoleUtility.ReleaseRunCode(code);
+                }
+                else
+                {
+                    ConsoleUtility.DebugRunCode(code);
+                }
             }
             else
             {

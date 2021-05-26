@@ -7,13 +7,25 @@ Kula 是一个基于 .net Framework 平台的解释型脚本语言。
 * 逻辑基本不能使用
 * 不够完善的错误提示
 
-## 简明教程 ：开始 Kula 语言
+## 项目其他信息
+### 主要负责人
+[HanaYabuki @github.com](https://github.com/HanaYabuki)
+
+### 参与贡献代码的方式
+直接和我击剑
+
+### 开源协议
+[GPL3.0](./LICENSE)
+
+------
+
+## [简明教程 ：开始 Kula 语言](./docs/tutorial-0.md)
 Kula 是一个由 C# 编写的解释型脚本语言。
 
-### 简介
+## 简介
 Kula 是一个具有即时编译器的，解释型脚本语言。他是由 [*HanamaruYabuki*](https://hanayabuki.github.com) 个人开发的，自拟标准的**玩具语言**。它可以基于 .net Framework 4.6 (或以上) 运行在 Windows 系统的计算机上。 
 
-#### Kula 所支持的(为数不多的)特性
+### Kula 所支持的(为数不多的)特性
 * 环境易部署
 * 语法简单易学
 * 面向过程
@@ -24,11 +36,11 @@ Kula 是一个具有即时编译器的，解释型脚本语言。他是由 [*Han
 > Q2: 为什么叫 *Kula* 语言？    
 > A2: 因为 [*Hana*](https://hanayabuki.github.com) 喜欢 Kula (KOF游戏角色)，就和 “为什么Java叫Java” 是相同的道理 (🍀
 
-### 环境配置
+## 环境配置
 
 Kula 使用环境的搭建十分容易。
 
-#### 在 Windows 平台使用
+### 在 Windows 平台使用
 两种方式，如果您喜欢简洁明了的：    
 1. 在当前 Git 仓库中寻找最新的 Release
 2. 下载他
@@ -45,7 +57,7 @@ Kula 使用环境的搭建十分容易。
 
 采用这种方法可以让你提早使用尚未发布的新特性，当然，我可能Bug还没写完就推了上去，到时候咱自认倒霉就行。(🍀
 
-#### 在 Mac / Linux 平台使用
+### 在 Mac / Linux 平台使用
 并不建议您在非 Windows 环境下折腾 .net，如果您执意要折腾的话，下面给出笼统的操作步骤
 1. 安装 .net 运行时环境，例如 .net5 / .net Core
 2. 克隆当前 Git 仓库
@@ -56,20 +68,10 @@ Kula 使用环境的搭建十分容易。
 
 本方案未经过验证，仅为理论可行。
 
-### 使用
+## 使用
 作为解释型语言，Kula 支持 REPL(交互模式) 和 脚本模式 两种使用方案
 ```shell
 $ kula                      # 默认为使用DEBUG模式下的交互模式
 $ kula xxx.kula             # 单一参数启动，使用DEBUG模式下的脚本模式
 $ kula xxx.kula  --release  # 两项参数启动，使用RELEASE模式下的脚本模式
 ```
-
-## 项目其他信息
-### 主要负责人
-[HanamaruYabuki@github.com](https://github.com/HanaYabuki)
-
-### 参与贡献代码的方式
-直接和我击剑
-
-### 开源协议
-[GPL3.0](https://github.com/HanaYabuki/Kula/blob/main/LICENSE)

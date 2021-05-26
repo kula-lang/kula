@@ -49,6 +49,7 @@
     <Compile Include="Core\VMObj\LexToken.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Util\ConsoleUtility.cs" />
+    <Compile Include="Util\KulaException.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

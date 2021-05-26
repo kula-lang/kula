@@ -40,7 +40,7 @@ namespace kula.Core
                 Console.WriteLine(node);
             }
             Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.ResetColor();
             return this;
         }
         public Parser Parse()
@@ -51,11 +51,17 @@ namespace kula.Core
             while (pos < tokenStream.Count && _pos != pos)
             {
                 _pos = pos;
-                PStatement();
+                try 
+                { 
+                    PStatement(); 
+                }
+                catch (IndexOutOfRangeException) { throw new KulaException.ParserException(); }
+                catch (ArgumentOutOfRangeException ) { throw new KulaException.ParserException(); }
+                catch (Exception e) { throw e; }
             }
             if (pos != tokenStream.Count)
             {
-                Console.WriteLine("叉劈了");
+                throw new KulaException.ParserException();
             }
             return this;
         }

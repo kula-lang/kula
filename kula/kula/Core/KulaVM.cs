@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 using kula.Core.VMObj;
 using kula.DataObj;
+using kula.Util;
 
 namespace kula.Core
 {
@@ -33,76 +32,86 @@ namespace kula.Core
         {
             vmStack.Clear();
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("Output ->");
+            
             for (int i=0; i<nodeStream.Count; ++i)
             {
                 var node = nodeStream[i];
-                switch (node.Type)
+                try
                 {
-                    case KvmNodeType.VALUE:
-                    case KvmNodeType.STRING:
-                        {
-                            vmStack.Push(node.Value);
-                        }
-                        break;
-                    case KvmNodeType.VARIABLE:
-                        {
-                            varDict[(string)node.Value] = vmStack.Pop();
-                            /*
-                            if (VarDict.ContainsKey((string)node.Value))
+                    switch (node.Type)
+                    {
+                        case KvmNodeType.VALUE:
+                        case KvmNodeType.STRING:
+                            {
+                                vmStack.Push(node.Value);
+                            }
+                            break;
+                        case KvmNodeType.VARIABLE:
                             {
                                 varDict[(string)node.Value] = vmStack.Pop();
                             }
-                            else
+                            break;
+                        case KvmNodeType.NAME:
                             {
-                                throw new Exception("运行时错误：没有变量");
-                            }*/
-                        }
-                        break;
-                    case KvmNodeType.NAME:
-                        {
-                            vmStack.Push(varDict[(string)node.Value]);
-                        }
-                        break;
-                    case KvmNodeType.FUNC:
-                        {
-                            string func_name = (string)node.Value;
-                            if (Func.BuiltinFunc.ContainsKey(func_name))
-                            {
-                                Func.BuiltinFunc[func_name](vmStack);
+                                vmStack.Push(varDict[(string)node.Value]);
                             }
-                            else
+                            break;
+                        case KvmNodeType.FUNC:
                             {
-                                throw new Exception("没做呢");
+                                string func_name = (string)node.Value;
+                                if (Func.BuiltinFunc.ContainsKey(func_name))
+                                {
+                                    Func.BuiltinFunc[func_name](vmStack);
+                                }
+                                else
+                                {
+                                    throw new Exception("unknown name");
+                                }
                             }
-                        }
-                        break;
-                    case KvmNodeType.IFGOTO:
-                        {
-                            float arg = (float)vmStack.Pop();
-                            if (arg == 0)
+                            break;
+                        case KvmNodeType.IFGOTO:
+                            {
+                                float arg = (float)vmStack.Pop();
+                                if (arg == 0)
+                                {
+                                    i = (int)node.Value - 1;
+                                }
+                            }
+                            break;
+                        case KvmNodeType.GOTO:
                             {
                                 i = (int)node.Value - 1;
                             }
-                        }
-                        break;
-                    case KvmNodeType.GOTO:
-                        {
-                            i = (int)node.Value - 1;
-                        }
-                        break;
+                            break;
+                    }
                 }
+                catch (InvalidOperationException)
+                {
+                    throw new KulaException.VMUnderflowException();
+                }
+                catch (OutOfMemoryException)
+                {
+                    throw new KulaException.VMOverflowException();
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw new KulaException.UnknownNameException();
+                }
+                
             }
             Console.WriteLine();
         }
         public void DebugRun()
         {
-            Run(); Show();
+            Console.WriteLine("Output ->");
+            Run(); 
+            Show();
         }
 
         public void Show()
         {
             int cnt = 0;
+            Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine("VM ->");
             Console.ForegroundColor = ConsoleColor.White;
             while (vmStack.Count > 0)
@@ -115,7 +124,7 @@ namespace kula.Core
                 Console.WriteLine("\tVM-Stack {" + cnt++ + "} : " + tmp);
             }
             Console.WriteLine("\tEnd Of Kula Program\n");
-            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.ResetColor();
         }
     }
 }

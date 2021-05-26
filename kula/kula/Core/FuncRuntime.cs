@@ -10,7 +10,7 @@ namespace kula.Core
 {
     class FuncRuntime : IRuntime
     {
-        // private Dictionary<string, Object> varDict = new Dictionary<string, Object>();
+        private Dictionary<string, Object> varDict = new Dictionary<string, Object>();
 
         public FuncRuntime()
         {

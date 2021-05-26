@@ -13,13 +13,13 @@ namespace kula.Core
         
         private string sourceCode;
         private List<LexToken> tokenStream;
-        private HashSet<string> keywordSet = new HashSet<string>()
+        private readonly HashSet<string> keywordSet = new HashSet<string>()
         {
             "if", "while", "func", "return"
         };
-        private HashSet<string> typeSet = new HashSet<string>()
+        private readonly HashSet<string> typeSet = new HashSet<string>()
         {
-            "Any", "Num", "Str", "Func", // "Array",
+            "None", "Any", "Num", "Str", "Func", "Array",
         };
         static class Is
         {
@@ -69,7 +69,7 @@ namespace kula.Core
                     }
                     else if (Is.CAnnotation(c))
                     {
-                        while (i < sourceCode.Length && !Is.CNewLine(sourceCode[++i])) { }
+                        while (i + 1 < sourceCode.Length && !Is.CNewLine(sourceCode[++i])) { }
                     }
                 }
                 else
@@ -136,7 +136,7 @@ namespace kula.Core
                 Console.WriteLine(token);
             }
             Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.ResetColor();
             return this;
         }
         public List<LexToken> Out() { return this.tokenStream; }
