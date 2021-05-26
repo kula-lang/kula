@@ -22,7 +22,7 @@ println("hello_world");
 1. 利用REPL模式打开 Kula 主程序，在命令行内键入完整的语句
 2. 利用脚本模式，首先在 `.kula` 文件中编写完整的程序代码，再让 Kula 主程序打开之
 
-最终，如果您能看到 `hello_world` 出现在屏幕内，那么您就成功了！   
+最终，如果您能看到 `hello_world` 出现在屏幕内，那么您就成功了！     
 当然，Debug模式下，您会看见更多的内容
 ```shell
 >> println("hello_world");
