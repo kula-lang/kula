@@ -13,26 +13,28 @@ namespace kula.Core
     {
         private Dictionary<string, Object> varDict;
         private readonly Func root;
-        private readonly IRuntime father;
 
         private readonly Stack<object> envStack;
+        private readonly Stack<object> fatherStack;
 
-        public FuncRuntime(Func root, IRuntime father)
+        public FuncRuntime(Func root, Stack<object> fatherStack)
         {
             this.root = root;
-            this.father = father;
+            this.fatherStack = fatherStack;
             this.envStack = new Stack<object>();
             this.varDict = new Dictionary<string, object>();
         }
 
-        public IRuntime Father => father;
         public Dictionary<string, object> VarDict => varDict;
         public Stack<object> EnvStack => envStack;
+        public Stack<object> FatherStack => fatherStack;
+        public IRunnable Root => root;
+
         public void Run()
         {
             if (root.NodeStream.Count == 0)
             {
-                Parser.Instance.ParseLambda(root, father);
+                Parser.Instance.ParseLambda(root);
             }
             
             if (root.TokenStream.Count == 0 && root.NodeStream.Count != 0)
@@ -45,7 +47,7 @@ namespace kula.Core
                 */
                 for (int i = root.ArgNames.Count - 1; i >= 0; --i)
                 {
-                    object arg = Father.EnvStack.Pop();
+                    object arg = FatherStack.Pop();
                     if (arg.GetType() != root.ArgTypes[i])
                     {
                         throw new KulaException.FuncException();
@@ -69,33 +71,39 @@ namespace kula.Core
                             case KvmNodeType.VALUE:
                             case KvmNodeType.STRING:
                                 {
-                                    envStack.Push(node.Value);
+                                    object value = node.Value;
+                                    if (value is Func)
+                                    {
+                                        ((Func)value).FatherRuntime = this;
+                                    }
+                                    envStack.Push(value);
                                 }
                                 break;
                             case KvmNodeType.VARIABLE:
                                 {
-                                    // varDict[(string)node.Value] = envStack.Pop();
                                     IRuntime now_env = this;
                                     bool flag = false;
-                                    while (now_env.Father != null)
+                                    while (now_env != null)
                                     {
                                         if (now_env.VarDict.ContainsKey((string)node.Value))
                                         {
-                                            VarDict[(string)node.Value] = envStack.Pop();
+                                            now_env.VarDict[(string)node.Value] = envStack.Pop();
                                             flag = true;
                                             break;
                                         }
-                                        now_env = now_env.Father;
+                                        now_env = now_env.Root.FatherRuntime;
                                     }
-                                    if (!flag) { varDict[(string)node.Value] = envStack.Pop(); }
+                                    if (!flag) 
+                                    {
+                                        varDict[(string)node.Value] = envStack.Pop(); 
+                                    }
                                 }
                                 break;
                             case KvmNodeType.NAME:
                                 {
-                                    // envStack.Push(VarDict[(string)node.Value]);
                                     IRuntime now_env = this;
                                     bool flag = false;
-                                    while (now_env.Father != null)
+                                    while (now_env != null)
                                     {
                                         if (now_env.VarDict.ContainsKey((string)node.Value))
                                         {
@@ -104,7 +112,7 @@ namespace kula.Core
                                             flag = true;
                                             break;
                                         }
-                                        now_env = now_env.Father;
+                                        now_env = now_env.Root.FatherRuntime;
                                     }
                                     if (!flag) { throw new Exception("没找着变量，这可咋整"); }
                                 }
@@ -121,7 +129,7 @@ namespace kula.Core
                                         object func = varDict[func_name];
                                         if (func.GetType() == typeof(Func))
                                         {
-                                            new FuncRuntime((Func)func, this).Run();
+                                            new FuncRuntime((Func)func, envStack).Run();
                                         }
                                         else
                                         {
@@ -146,7 +154,7 @@ namespace kula.Core
                                 break;
                             case KvmNodeType.RETURN:
                                 {
-                                    Father.EnvStack.Push(envStack.Pop());
+                                    FatherStack.Push(envStack.Pop());
                                     i = root.NodeStream.Count;
                                 }
                                 break;

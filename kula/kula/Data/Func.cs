@@ -46,7 +46,6 @@ namespace kula.Data
             {"input", (stack) =>{
                 stack.Push(Console.ReadLine());
             } },
-            // String 内置
             {"toStr", (stack) => {
                 stack.Push(stack.Pop().ToString());
             } },

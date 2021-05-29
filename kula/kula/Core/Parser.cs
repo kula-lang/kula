@@ -55,7 +55,7 @@ namespace kula.Core
             return this;
         }
         
-        public Parser ParseLambda(Func func, IRuntime runtime)
+        public Parser ParseLambda(Func func)
         {
             pos = 0; int _pos = -1;
             this.aimRunnable = func;
@@ -84,7 +84,6 @@ namespace kula.Core
                     }
                     if (pos == aimRunnable.TokenStream.Count - 1 && PSymbol("}"))
                     {
-                        aimRunnable.FatherRuntime = runtime;
                         aimRunnable.TokenStream.Clear();
                         return this;
                     }

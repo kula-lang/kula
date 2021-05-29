@@ -13,8 +13,9 @@ namespace kula.Core
         public static KulaVM Instance { get => instance; }
 
         // 开放接口
-        public IRuntime Father => null;
+        public IRunnable Root => root;
         public Stack<object> EnvStack => vmStack;
+        public Stack<object> FatherStack => null;
         public Dictionary<string, object> VarDict => varDict;
 
         // 私有成员
@@ -45,18 +46,51 @@ namespace kula.Core
                     {
                         case KvmNodeType.VALUE:
                         case KvmNodeType.STRING:
+                            object value = node.Value;
+                            if (value is Func)
                             {
-                                vmStack.Push(node.Value);
+                                ((Func)value).FatherRuntime = this;
                             }
+                            vmStack.Push(value);
                             break;
                         case KvmNodeType.VARIABLE:
                             {
-                                varDict[(string)node.Value] = vmStack.Pop();
+                                // varDict[(string)node.Value] = envStack.Pop();
+                                IRuntime now_env = this;
+                                bool flag = false;
+                                while (now_env != null)
+                                {
+                                    if (now_env.VarDict.ContainsKey((string)node.Value))
+                                    {
+                                        now_env.VarDict[(string)node.Value] = vmStack.Pop();
+                                        flag = true;
+                                        break;
+                                    }
+                                    now_env = now_env.Root.FatherRuntime;
+                                }
+                                if (!flag)
+                                {
+                                    varDict[(string)node.Value] = vmStack.Pop();
+                                }
                             }
                             break;
                         case KvmNodeType.NAME:
                             {
-                                vmStack.Push(varDict[(string)node.Value]);
+                                // envStack.Push(VarDict[(string)node.Value]);
+                                IRuntime now_env = this;
+                                bool flag = false;
+                                while (now_env != null)
+                                {
+                                    if (now_env.VarDict.ContainsKey((string)node.Value))
+                                    {
+                                        object node_value = now_env.VarDict[(string)node.Value];
+                                        vmStack.Push(node_value);
+                                        flag = true;
+                                        break;
+                                    }
+                                    now_env = now_env.Root.FatherRuntime;
+                                }
+                                if (!flag) { throw new Exception("没找着变量，这可咋整"); }
                             }
                             break;
                         case KvmNodeType.FUNC:
@@ -71,7 +105,7 @@ namespace kula.Core
                                     object func = varDict[func_name];
                                     if (func.GetType() == typeof(Func))
                                     {
-                                        new FuncRuntime((Func)func, this).Run();
+                                        new FuncRuntime((Func)func, vmStack).Run();
                                     }
                                     else
                                     {
