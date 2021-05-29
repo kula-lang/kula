@@ -10,6 +10,7 @@ namespace kula.Core
     {
         void Run();
         IRuntime Father { get; }
+        Stack<object> EnvStack { get; }
         Dictionary<string, object> VarDict { get; }
     }
 }

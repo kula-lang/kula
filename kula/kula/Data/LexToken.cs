@@ -1,6 +1,6 @@
 ﻿using kula.Util;
 
-namespace kula.Core.VMObj
+namespace kula.Data
 {
     class LexToken
     {

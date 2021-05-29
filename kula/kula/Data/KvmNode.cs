@@ -1,6 +1,6 @@
 ﻿using kula.Util;
 
-namespace kula.Core.VMObj
+namespace kula.Data
 {
     class KvmNode
     {
@@ -37,5 +37,6 @@ namespace kula.Core.VMObj
         FUNC,       // 函数名，解析为函数
         IFGOTO,     // 为零时跳转
         GOTO,       // 无条件跳转
+        RETURN,     // 返回值
     }
 }

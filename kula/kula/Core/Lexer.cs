@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using kula.Core.VMObj;
+
+using kula.Data;
 using kula.Util;
 
 namespace kula.Core
@@ -17,9 +18,15 @@ namespace kula.Core
         {
             "if", "while", "func", "return"
         };
-        private readonly HashSet<string> typeSet = new HashSet<string>()
+        public static Dictionary<string, Type> TypeDict { get => typeDict; }
+        private static readonly Dictionary<string, Type> typeDict = new Dictionary<string, Type>
         {
-            "None", "Any", "Num", "Str", "Func", "Array",
+            { "None", null },
+            { "Any", null },
+            { "Num", typeof(float) },
+            { "Str", typeof(string) },
+            { "Func", typeof(Data.Func) },
+            { "Array", typeof(object[]) }
         };
         static class Is
         {
@@ -43,84 +50,92 @@ namespace kula.Core
             LexTokenType? state = null;
             StringBuilder tokenBuilder = new StringBuilder();
 
-            for (int i = 0; i < sourceCode.Length; ++i)
+            try
             {
-                if (state == null)
+                for (int i = 0; i < sourceCode.Length; ++i)
                 {
-                    char c = sourceCode[i];
-                    if (Is.CSpace(c)) { continue; }
-                    else if (Is.CQuote(c))
+                    if (state == null)
                     {
-                        state = LexTokenType.STRING;
+                        char c = sourceCode[i];
+                        if (Is.CSpace(c)) { continue; }
+                        else if (Is.CQuote(c))
+                        {
+                            state = LexTokenType.STRING;
+                        }
+                        else if (Is.CNumber(c))
+                        {
+                            tokenBuilder.Append(c);
+                            state = LexTokenType.NUMBER;
+                        }
+                        else if (Is.CName(c))
+                        {
+                            tokenBuilder.Append(c);
+                            state = LexTokenType.NAME;
+                        }
+                        else if (Is.CBracket(c) || Is.CAssign(c) || Is.CComma(c) || Is.CColon(c) || Is.CEnd(c))
+                        {
+                            tokenStream.Add(new LexToken(LexTokenType.SYMBOL, c.ToString()));
+                        }
+                        else if (Is.CAnnotation(c))
+                        {
+                            while (i + 1 < sourceCode.Length && !Is.CNewLine(sourceCode[++i])) { }
+                        }
                     }
-                    else if (Is.CNumber(c))
+                    else
                     {
-                        tokenBuilder.Append(c);
-                        state = LexTokenType.NUMBER;
-                    }
-                    else if (Is.CName(c))
-                    {
-                        tokenBuilder.Append(c);
-                        state = LexTokenType.NAME;
-                    }
-                    else if (Is.CBracket(c) || Is.CAssign(c) || Is.CComma(c) || Is.CColon(c) || Is.CEnd(c))
-                    {
-                        tokenStream.Add(new LexToken(LexTokenType.SYMBOL, c.ToString()));
-                    }
-                    else if (Is.CAnnotation(c))
-                    {
-                        while (i + 1 < sourceCode.Length && !Is.CNewLine(sourceCode[++i])) { }
+                        switch (state)
+                        {
+                            case LexTokenType.NAME:
+                                {
+                                    while (i < sourceCode.Length && Is.CName(sourceCode[i]))
+                                    {
+                                        tokenBuilder.Append(sourceCode[i++]);
+                                    }
+                                }
+                                break;
+                            case LexTokenType.NUMBER:
+                                {
+                                    while (i < sourceCode.Length && Is.CNumber(sourceCode[i]))
+                                    {
+                                        tokenBuilder.Append(sourceCode[i++]);
+                                    }
+                                }
+                                break;
+                            case LexTokenType.STRING:
+                                {
+                                    while (i < sourceCode.Length && !Is.CQuote(sourceCode[i]))
+                                    {
+                                        tokenBuilder.Append(sourceCode[i++]);
+                                    }
+                                    ++i;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                        string tokenString = tokenBuilder.ToString();
+                        if (keywordSet.Contains(tokenString))
+                        {
+                            tokenStream.Add(new LexToken(LexTokenType.KEYWORD, tokenString));
+                        }
+                        else if (typeDict.ContainsKey(tokenString))
+                        {
+                            tokenStream.Add(new LexToken(LexTokenType.TYPE, tokenString));
+                        }
+                        else
+                        {
+                            tokenStream.Add(new LexToken((LexTokenType)state, tokenString));
+                        }
+                        state = null;
+                        tokenBuilder.Clear();
+                        --i;
                     }
                 }
-                else
-                {
-                    switch (state)
-                    {
-                        case LexTokenType.NAME:
-                            {
-                                while (i < sourceCode.Length && Is.CName(sourceCode[i]))
-                                {
-                                    tokenBuilder.Append(sourceCode[i++]);
-                                }
-                            }
-                            break;
-                        case LexTokenType.NUMBER:
-                            {
-                                while (i < sourceCode.Length && Is.CNumber(sourceCode[i]))
-                                {
-                                    tokenBuilder.Append(sourceCode[i++]);
-                                }
-                            }
-                            break;
-                        case LexTokenType.STRING:
-                            {
-                                while (i < sourceCode.Length && !Is.CQuote(sourceCode[i]))
-                                {
-                                    tokenBuilder.Append(sourceCode[i++]);
-                                }
-                                ++i;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                    string tokenString = tokenBuilder.ToString();
-                    if (keywordSet.Contains(tokenString)) 
-                    { 
-                        tokenStream.Add(new LexToken(LexTokenType.KEYWORD, tokenString)); 
-                    }
-                    else if (typeSet.Contains(tokenString))
-                    {
-                        tokenStream.Add(new LexToken(LexTokenType.TYPE, tokenString));
-                    }
-                    else 
-                    { 
-                        tokenStream.Add(new LexToken((LexTokenType)state, tokenString)); 
-                    }
-                    state = null;
-                    tokenBuilder.Clear();
-                    --i;
-                }
+            }
+            catch (Exception e)
+            {
+                tokenStream.Clear();
+                throw e;
             }
 
             return this;

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-
+using kula.Core;
+using kula.Data;
 using kula.Util;
 
 namespace kula
@@ -36,6 +38,13 @@ namespace kula
                 ConsoleUtility.HelloKula();
                 ConsoleUtility.DebugREPL();
             }
+            /*
+            List<LexToken> lexTokens = Lexer.Instance.Read("foo = func(x:Num, y:Num):None { println(x);println(y); }; foo(2, 3);").Scan().Show().Out();
+            Main main = new Main(lexTokens);
+            Parser.Instance.Parse(main).Show();
+            KulaVM.Instance.Read(main).DebugRun();
+            Console.ReadKey();
+            */
         }
     }
 }

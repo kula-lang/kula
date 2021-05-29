@@ -1,31 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using kula.Core.VMObj;
-using kula.DataObj;
+using kula.Data;
 using kula.Util;
 
 namespace kula.Core
 {
     class KulaVM : IRuntime
     {
+        // 单例模式
         private static KulaVM instance = new KulaVM();
         public static KulaVM Instance { get => instance; }
 
+        // 开放接口
         public IRuntime Father => null;
+        public Stack<object> EnvStack => vmStack;
         public Dictionary<string, object> VarDict => varDict;
 
+        // 私有成员
         private Dictionary<string, object> varDict = new Dictionary<string, object>();
-        private List<KvmNode> nodeStream;
-        private Stack<object> vmStack;
+        private IRunnable root;
+        private readonly Stack<object> vmStack;
 
         private KulaVM()
         {
             vmStack = new Stack<object>();
         }
-        public KulaVM Read(List<KvmNode> nodeStream)
+        public KulaVM Read(IRunnable root)
         {
-            this.nodeStream = nodeStream;
+            this.root = root;
             return this;
         }
         public void Run()
@@ -33,9 +36,9 @@ namespace kula.Core
             vmStack.Clear();
             Console.ForegroundColor = ConsoleColor.White;
             
-            for (int i=0; i<nodeStream.Count; ++i)
+            for (int i=0; i<root.NodeStream.Count; ++i)
             {
-                var node = nodeStream[i];
+                var node = root.NodeStream[i];
                 try
                 {
                     switch (node.Type)
@@ -65,7 +68,15 @@ namespace kula.Core
                                 }
                                 else
                                 {
-                                    throw new Exception("unknown name");
+                                    object func = varDict[func_name];
+                                    if (func.GetType() == typeof(Func))
+                                    {
+                                        new FuncRuntime((Func)func, this).Run();
+                                    }
+                                    else
+                                    {
+                                        throw new KulaException.FuncException();
+                                    }
                                 }
                             }
                             break;

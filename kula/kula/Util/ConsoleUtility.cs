@@ -3,7 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 
 using kula.Core;
-using kula.Core.VMObj;
+using kula.Data;
 
 namespace kula.Util
 {
@@ -32,7 +32,7 @@ namespace kula.Util
         public static void HelloKula()
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("Kula - Ice Coffin - 0 [2021/5/26] (on .net Framework at least 4.6)");
+            Console.WriteLine("Kula - One Inch - 0 [2021/5/29] (on .net Framework at least 4.6)");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("developed by @HanaYabuki in github.com");
             Console.ResetColor();
@@ -41,11 +41,10 @@ namespace kula.Util
         {
             try
             {
-                KulaVM.Instance.Read(
-                    Parser.Instance.Read(
-                        Lexer.Instance.Read(code).Scan().Show().Out()
-                    ).Parse().Show().Out()
-                ).DebugRun();
+                List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Show().Out();
+                Main main = new Main(lexTokens);
+                Parser.Instance.Parse(main).Show();
+                KulaVM.Instance.Read(main).DebugRun();
             }
             catch (Exception e)
             {
@@ -58,18 +57,28 @@ namespace kula.Util
         {
             try
             {
-                KulaVM.Instance.Read(
-                    Parser.Instance.Read(
-                        Lexer.Instance.Read(code).Scan().Out()
-                    ).Parse().Out()
-                ).Run();
+                List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Out();
+                Main main = new Main(lexTokens);
+                Parser.Instance.Parse(main);
+                KulaVM.Instance.Read(main).DebugRun();
             }
             catch (Exception e)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
                 Console.ForegroundColor = ConsoleColor.White;
             }
+        }
+        public static bool ConsoleCommand(string code)
+        {
+            switch (code)
+            {
+                case "#gomo":
+                    HelloKula();
+                    return true;
+            }
+
+            return false;
         }
 
         public static void DebugREPL()
@@ -79,11 +88,11 @@ namespace kula.Util
             {
                 Console.Write(">> ");
                 code = Console.ReadLine();
-                if (code == "#exit")
-                {
-                    break;
-                }
-                DebugRunCode(code);
+                if (code == "#exit") 
+                    break; 
+                else 
+                    if (!ConsoleCommand(code))
+                        DebugRunCode(code);
             }
         }
     }
