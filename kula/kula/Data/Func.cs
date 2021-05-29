@@ -10,7 +10,7 @@ using kula.Core;
 namespace kula.Data
 {
     delegate void KvmBuiltinFunc(Stack<object> stack);
-    class Func : IRunnable
+    class Func  // : IRunnable
     {
         // 静态内置方法 们
         public static Dictionary<string, KvmBuiltinFunc> BuiltinFunc { get => builtinFunc; }
@@ -126,14 +126,14 @@ namespace kula.Data
         };
 
         // 接口儿
-        public IRuntime FatherRuntime { get => fatherRuntime; set => fatherRuntime = value; }
+        public FuncRuntime FatherRuntime { get => fatherRuntime; set => fatherRuntime = value; }
         public List<LexToken> TokenStream { get => tokenStream; }
         public List<KvmNode> NodeStream { get => nodeStream; }
         public List<Type> ArgTypes { get => argTypes; }
         public List<string> ArgNames { get => argNames; }
         public Type ReturnType { get => returnType; set => returnType = value; }
 
-        private IRuntime fatherRuntime;
+        private FuncRuntime fatherRuntime;
         private readonly List<LexToken> tokenStream;
         private readonly List<KvmNode> nodeStream;
         
@@ -152,7 +152,7 @@ namespace kula.Data
 
         public override string ToString()
         {
-            return "{lambda}";
+            return "{----}";
         }
     }
 }

@@ -39,16 +39,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\IRuntime.cs" />
     <Compile Include="Core\FuncRuntime.cs" />
     <Compile Include="Core\Lexer.cs" />
     <Compile Include="Core\Parser.cs" />
-    <Compile Include="Core\KulaVM.cs" />
     <Compile Include="Data\Func.cs" />
-    <Compile Include="Data\IRunnable.cs" />
+    <Compile Include="Data\FuncEnv.cs" />
     <Compile Include="Data\KvmNode.cs" />
     <Compile Include="Data\LexToken.cs" />
-    <Compile Include="Data\Main.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Util\ConsoleUtility.cs" />
     <Compile Include="Util\KulaException.cs" />

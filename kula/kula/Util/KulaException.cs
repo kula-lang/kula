@@ -12,6 +12,10 @@ namespace kula.Util
         {
             public ParserException() : base("ParserException : Syntax Error.") { }
         }
+        public class VariableException : ApplicationException
+        {
+            public VariableException() : base("VariableException : Use Variable Before Init.") { }
+        }
         public class FuncException : ApplicationException
         {
             public FuncException() : base("FuncException : Wrong arguments type.") { }

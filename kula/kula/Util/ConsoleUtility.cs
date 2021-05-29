@@ -32,7 +32,7 @@ namespace kula.Util
         public static void HelloKula()
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("Kula - One Inch - 0 [2021/5/29] (on .net Framework at least 4.6)");
+            Console.WriteLine("Kula - One Inch - 1 [2021/5/30] (on .net Framework at least 4.6)");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("developed by @HanaYabuki in github.com");
             Console.ResetColor();
@@ -42,9 +42,10 @@ namespace kula.Util
             try
             {
                 List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Show().Out();
-                Main main = new Main(lexTokens);
+                Func main = new Func(lexTokens);
+                FuncEnv mainEnv = new FuncEnv(main, null);
                 Parser.Instance.Parse(main).Show();
-                KulaVM.Instance.Read(main).DebugRun();
+                FuncRuntime.MainRuntime.Read(mainEnv).DebugRun();
             }
             catch (Exception e)
             {
@@ -58,9 +59,10 @@ namespace kula.Util
             try
             {
                 List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Out();
-                Main main = new Main(lexTokens);
+                Func main = new Func(lexTokens);
+                FuncEnv mainEnv = new FuncEnv(main, null);
                 Parser.Instance.Parse(main);
-                KulaVM.Instance.Read(main).DebugRun();
+                FuncRuntime.MainRuntime.Read(mainEnv).Run();
             }
             catch (Exception e)
             {

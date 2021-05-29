@@ -11,7 +11,7 @@ namespace kula.Core
         private static Parser instance = new Parser();
         public static Parser Instance { get => instance; }
 
-        private IRunnable aimRunnable;
+        private Func aimFunc;
 
         private readonly Stack<string> nameStack = new Stack<string>();
         private int pos;
@@ -21,7 +21,7 @@ namespace kula.Core
         public Parser Show()
         {
             Console.WriteLine("Parser ->");
-            foreach (var node in aimRunnable.NodeStream)
+            foreach (var node in aimFunc.NodeStream)
             {
                 Console.ForegroundColor = ConsoleUtility.KvmColorDict[node.Type];
                 Console.Write("\t");
@@ -31,13 +31,13 @@ namespace kula.Core
             Console.ResetColor();
             return this;
         }
-        public Parser Parse(Main main)
+        public Parser Parse(Func main)
         {
             pos = 0; int _pos = -1;
-            this.aimRunnable = main;
-            aimRunnable.NodeStream.Clear();
+            this.aimFunc = main;
+            aimFunc.NodeStream.Clear();
             nameStack.Clear();
-            while (pos < aimRunnable.TokenStream.Count && _pos != pos)
+            while (pos < aimFunc.TokenStream.Count && _pos != pos)
             {
                 _pos = pos;
                 try 
@@ -48,17 +48,18 @@ namespace kula.Core
                 catch (ArgumentOutOfRangeException ) { throw new KulaException.ParserException(); }
                 catch (Exception e) { throw e; }
             }
-            if (pos != aimRunnable.TokenStream.Count)
+            if (pos != aimFunc.TokenStream.Count)
             {
                 throw new KulaException.ParserException();
             }
+            aimFunc.TokenStream.Clear();
             return this;
         }
         
         public Parser ParseLambda(Func func)
         {
             pos = 0; int _pos = -1;
-            this.aimRunnable = func;
+            this.aimFunc = func;
 
             /*
             foreach (var token in aimRunnable.TokenStream) 
@@ -71,7 +72,7 @@ namespace kula.Core
             {
                 if (PSymbol("{"))
                 {
-                    while (pos < aimRunnable.TokenStream.Count - 1 && _pos != pos)
+                    while (pos < aimFunc.TokenStream.Count - 1 && _pos != pos)
                     {
                         _pos = pos;
                         try
@@ -82,23 +83,23 @@ namespace kula.Core
                         catch (ArgumentOutOfRangeException) { throw new KulaException.ParserException(); }
                         catch (Exception e) { throw e; }
                     }
-                    if (pos == aimRunnable.TokenStream.Count - 1 && PSymbol("}"))
+                    if (pos == aimFunc.TokenStream.Count - 1 && PSymbol("}"))
                     {
-                        aimRunnable.TokenStream.Clear();
+                        aimFunc.TokenStream.Clear();
                         return this;
                     }
                 }
             }
-            aimRunnable.NodeStream.Clear();
-            aimRunnable.TokenStream.Clear();
+            aimFunc.NodeStream.Clear();
+            aimFunc.TokenStream.Clear();
             return this;
         }
         public bool PLambdaHead()
         {
-            int _pos = pos; int _size = aimRunnable.NodeStream.Count;
+            int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
-            var token1 = aimRunnable.TokenStream[pos++];
-            var token2 = aimRunnable.TokenStream[pos++];
+            var token1 = aimFunc.TokenStream[pos++];
+            var token2 = aimFunc.TokenStream[pos++];
             if (token1.Type == LexTokenType.KEYWORD && token1.Value == "func"
                 && token2.Type == LexTokenType.SYMBOL && token2.Value == "("
                 )
@@ -106,12 +107,12 @@ namespace kula.Core
                 return true;
             }
 
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
         public bool PLambdaDeclare()
         {
-            int _pos = pos; int _size = aimRunnable.NodeStream.Count;
+            int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
             if (PLambdaHead())
             {
@@ -119,8 +120,8 @@ namespace kula.Core
                 {
                     if (PValAndType())
                     {
-                        aimRunnable.ArgTypes.Add(TypestrToType(nameStack.Pop()));
-                        aimRunnable.ArgNames.Add(nameStack.Pop());
+                        aimFunc.ArgTypes.Add(TypestrToType(nameStack.Pop()));
+                        aimFunc.ArgNames.Add(nameStack.Pop());
                         PSymbol(",");
                     }
                     else
@@ -130,25 +131,25 @@ namespace kula.Core
                 }
                 if (PSymbol(":"))
                 {
-                    var final_type = aimRunnable.TokenStream[pos++];
+                    var final_type = aimFunc.TokenStream[pos++];
                     if (final_type.Type == LexTokenType.TYPE)
                     {
                         // 记录类型
-                        aimRunnable.ReturnType = (TypestrToType(final_type.Value));
+                        aimFunc.ReturnType = (TypestrToType(final_type.Value));
                         return true;
                     }
                 }
             }
 
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
         public bool PValAndType()
         {
-            int _pos = pos; int _size = aimRunnable.NodeStream.Count;
-            var token1 = aimRunnable.TokenStream[pos++];
-            var token2 = aimRunnable.TokenStream[pos++];
-            var token3 = aimRunnable.TokenStream[pos++];
+            int _pos = pos; int _size = aimFunc.NodeStream.Count;
+            var token1 = aimFunc.TokenStream[pos++];
+            var token2 = aimFunc.TokenStream[pos++];
+            var token3 = aimFunc.TokenStream[pos++];
             if (token1.Type == LexTokenType.NAME 
                 && token2.Type == LexTokenType.SYMBOL && token2.Value == ":"
                 && token3.Type == LexTokenType.TYPE
@@ -158,7 +159,7 @@ namespace kula.Core
                 return true;
             }
 
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
         private Type TypestrToType(string str)
@@ -173,7 +174,7 @@ namespace kula.Core
                     final_type_t = typeof(string);
                     break;
                 case "Func":
-                    final_type_t = typeof(Func);
+                    final_type_t = typeof(FuncEnv);
                     break;
                 case "Any":
                     final_type_t = typeof(object);
@@ -186,79 +187,79 @@ namespace kula.Core
         }
         private bool PStatement()
         {
-            int _pos = pos; int _size = aimRunnable.NodeStream.Count;
+            int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
             if (PSymbol(";")) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PValue() && PSymbol(";")) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PLeftVar() && PSymbol("=") && PValue() && PSymbol(";"))
             {
                 string var_name = nameStack.Pop();
-                aimRunnable.NodeStream.Add(new KvmNode(KvmNodeType.VARIABLE, var_name));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VARIABLE, var_name));
                 return true;
             }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PBlockIf()) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PBlockWhile()) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PReturn() && PSymbol(";")) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             return false;
         }
         private bool PValue()
         {
-            int _pos = pos; int _size = aimRunnable.NodeStream.Count;
+            int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
             if (PConst()) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PConstString()) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PFuncBody()) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PFunc()) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PRightVar()) { return true; }
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             return false;
         }
         private bool PFuncHead()
         {
-            int _pos = pos, _size = aimRunnable.NodeStream.Count;
+            int _pos = pos, _size = aimFunc.NodeStream.Count;
             // 防止溢出
-            if (pos + 2 >= aimRunnable.TokenStream.Count) { return false; }
-            var token1 = aimRunnable.TokenStream[pos++]; var token2 = aimRunnable.TokenStream[pos++];
+            if (pos + 2 >= aimFunc.TokenStream.Count) { return false; }
+            var token1 = aimFunc.TokenStream[pos++]; var token2 = aimFunc.TokenStream[pos++];
             if (token1.Type == LexTokenType.NAME && token2.Type == LexTokenType.SYMBOL && token2.Value == "(")
             {
                 nameStack.Push(token1.Value);
                 return true;
             }
 
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
         private bool PFunc()
         {
-            int _pos = pos; int _size = aimRunnable.NodeStream.Count;
+            int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
             if (PFuncHead())
             {
                 bool flag = true;
                 while (flag)
                 {
-                    int _tmp_pos = pos; int _tmp_size = aimRunnable.NodeStream.Count;
+                    int _tmp_pos = pos; int _tmp_size = aimFunc.NodeStream.Count;
                     if (PValue())
                     {
                         if (!PSymbol(","))
@@ -269,7 +270,7 @@ namespace kula.Core
                     else
                     {
                         pos = _tmp_pos;
-                        aimRunnable.NodeStream.RemoveRange(_tmp_size, aimRunnable.NodeStream.Count - _tmp_size);
+                        aimFunc.NodeStream.RemoveRange(_tmp_size, aimFunc.NodeStream.Count - _tmp_size);
                         flag = false;
                     }
                 }
@@ -277,21 +278,21 @@ namespace kula.Core
                 if (PSymbol(")"))
                 {
                     string func_name = nameStack.Pop();
-                    aimRunnable.NodeStream.Add(new KvmNode(KvmNodeType.FUNC, func_name));
+                    aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.FUNC, func_name));
                     return true;
                 }
             }
 
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
         private bool PConst()
         {
             int _pos = pos;
-            var token = aimRunnable.TokenStream[pos++];
+            var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NUMBER)
             {
-                aimRunnable.NodeStream.Add(new KvmNode(KvmNodeType.VALUE, float.Parse(token.Value)));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VALUE, float.Parse(token.Value)));
                 return true;
             }
             pos = _pos; return false;
@@ -299,10 +300,10 @@ namespace kula.Core
         private bool PConstString()
         {
             int _pos = pos;
-            var token = aimRunnable.TokenStream[pos++];
+            var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.STRING)
             {
-                aimRunnable.NodeStream.Add(new KvmNode(KvmNodeType.STRING, token.Value));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.STRING, token.Value));
                 return true;
             }
             pos = _pos; return false;
@@ -310,7 +311,7 @@ namespace kula.Core
         private bool PSymbol(string sym)
         {
             int _pos = pos;
-            var token = aimRunnable.TokenStream[pos++];
+            var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.SYMBOL && token.Value == sym)
             {
                 return true;
@@ -320,7 +321,7 @@ namespace kula.Core
         private bool PLeftVar()
         {
             int _pos = pos;
-            var token = aimRunnable.TokenStream[pos++];
+            var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME)
             {
                 nameStack.Push(token.Value);
@@ -331,10 +332,10 @@ namespace kula.Core
         private bool PRightVar()
         {
             int _pos = pos;
-            var token = aimRunnable.TokenStream[pos++];
+            var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME)
             {
-                aimRunnable.NodeStream.Add(new KvmNode(KvmNodeType.NAME, token.Value));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.NAME, token.Value));
                 return true;
             }
             pos = _pos; return false;
@@ -342,7 +343,7 @@ namespace kula.Core
         private bool PKeyword(string kword)
         {
             int _pos = pos;
-            var token = aimRunnable.TokenStream[pos++];
+            var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.KEYWORD && token.Value == kword)
             {
                 return true;
@@ -354,7 +355,7 @@ namespace kula.Core
             int _pos = pos;
             if (PKeyword("return") && PValue())
             {
-                aimRunnable.NodeStream.Add(new KvmNode(KvmNodeType.RETURN, null));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.RETURN, null));
                 return true;
             }
             return false;
@@ -369,24 +370,24 @@ namespace kula.Core
             {
                 // 数大括号儿
                 int count_stack = 1, count_pos = pos;
-                while (aimRunnable.TokenStream[count_pos].Type != LexTokenType.SYMBOL || aimRunnable.TokenStream[count_pos].Value != "{")
+                while (aimFunc.TokenStream[count_pos].Type != LexTokenType.SYMBOL || aimFunc.TokenStream[count_pos].Value != "{")
                 {
                     ++count_pos;
                 }
                 while (count_stack > 0)
                 {
                     ++count_pos;
-                    if (aimRunnable.TokenStream[count_pos].Type == LexTokenType.SYMBOL)
+                    if (aimFunc.TokenStream[count_pos].Type == LexTokenType.SYMBOL)
                     {
-                        if (aimRunnable.TokenStream[count_pos].Value == "{") { ++count_stack; }
-                        else if (aimRunnable.TokenStream[count_pos].Value == "}") { --count_stack; }
+                        if (aimFunc.TokenStream[count_pos].Value == "{") { ++count_stack; }
+                        else if (aimFunc.TokenStream[count_pos].Value == "}") { --count_stack; }
                     }
                 }
                 // 截取Token 写入函数 待编译
-                List<LexToken> func_tokens = aimRunnable.TokenStream.GetRange(start_pos, count_pos - start_pos + 1);
+                List<LexToken> func_tokens = aimFunc.TokenStream.GetRange(start_pos, count_pos - start_pos + 1);
                 var func = new Func(func_tokens);
 
-                aimRunnable.NodeStream.Add(new KvmNode(KvmNodeType.VALUE, func));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VALUE, func));
                 pos = count_pos + 1;
                 return true;
             }
@@ -395,50 +396,50 @@ namespace kula.Core
         }
         private bool PBlockIf()
         {
-            int _pos = pos; int _size = aimRunnable.NodeStream.Count;
+            int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
             if (PKeyword("if") && PSymbol("(") && PValue() && PSymbol(")"))
             {
-                int tmpId = aimRunnable.NodeStream.Count;
-                aimRunnable.NodeStream.Add(null);
+                int tmpId = aimFunc.NodeStream.Count;
+                aimFunc.NodeStream.Add(null);
 
                 if (PSymbol("{"))
                 {
                     while (PStatement()) ;
                     if (PSymbol("}"))
                     {
-                        aimRunnable.NodeStream[tmpId] = new KvmNode(KvmNodeType.IFGOTO, aimRunnable.NodeStream.Count);
+                        aimFunc.NodeStream[tmpId] = new KvmNode(KvmNodeType.IFGOTO, aimFunc.NodeStream.Count);
                         return true;
                     }
                 }
             }
 
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
         private bool PBlockWhile()
         {
-            int _pos = 0; int _size = aimRunnable.NodeStream.Count;
+            int _pos = 0; int _size = aimFunc.NodeStream.Count;
 
-            int backPos = aimRunnable.NodeStream.Count;
+            int backPos = aimFunc.NodeStream.Count;
             if (PKeyword("while") && PSymbol("(") && PValue() && PSymbol(")"))
             {
-                int tmpId = aimRunnable.NodeStream.Count;
-                aimRunnable.NodeStream.Add(null);
+                int tmpId = aimFunc.NodeStream.Count;
+                aimFunc.NodeStream.Add(null);
 
                 if (PSymbol("{"))
                 {
                     while (PStatement()) ;
                     if (PSymbol("}"))
                     {
-                        aimRunnable.NodeStream[tmpId] = new KvmNode(KvmNodeType.IFGOTO, aimRunnable.NodeStream.Count + 1);
-                        aimRunnable.NodeStream.Add(new KvmNode(KvmNodeType.GOTO, backPos));
+                        aimFunc.NodeStream[tmpId] = new KvmNode(KvmNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
+                        aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.GOTO, backPos));
                         return true;
                     }
                 }
             }
 
-            pos = _pos; aimRunnable.NodeStream.RemoveRange(_size, aimRunnable.NodeStream.Count - _size);
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
     }
