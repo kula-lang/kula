@@ -1,4 +1,6 @@
 # 自定义函数
+函数，可以理解为对多个语句和语法块的封装。
+
 Kula 对函数的支持很特殊：只允许匿名形式的函数
 
 ## 格式
@@ -25,3 +27,23 @@ print = func(info:Str, val:Num):None {
 print("a = ", 5);
 ```
 是不是非常简单！？
+
+## 闭包！！！
+Kula 语言已经支持了正确的闭包，我们用一个简单的例子来验证！
+```
+make_counter = func():Func {
+    n = 0;
+    return func():None {
+        n = plus(n, 1);
+        println(n);
+    };
+};
+
+foo = make_counter();
+foo();
+foo();
+foo();
+foo();
+```
+闭包的思想在这里不做过多的讨论。    
+总之，Kula 可以正确的完成闭包所要做的事。
