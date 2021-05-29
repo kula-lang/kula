@@ -35,6 +35,8 @@ namespace kula.Core
             public static bool CQuote(char c) { return c == '\"' || c == '\''; }
             public static bool CAssign(char c) { return (c == '='); }
         }
+        public HashSet<string> KeyWord { get => keywordSet; }
+        public HashSet<string> Type { get => typeSet; }
         private Lexer() { sourceCode = ""; }
         public Lexer Read(string code) { sourceCode = code; return this; }
         public Lexer Scan()
