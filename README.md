@@ -1,7 +1,7 @@
 # Kula 语言
 Kula 是一个基于 .Net Framework 平台的解释型脚本语言。
 
-![Kula_Daiamondo](.\img\kula-ice-coffin.gif)
+![Kula_Daiamondo](https://github.com/HanaYabuki/Kula/blob/main/img/kula-ice-coffin.gif)
 
 ## 更新日志
 ### kula - one-inch-1 (2021-5-30)
