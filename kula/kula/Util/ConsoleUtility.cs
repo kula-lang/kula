@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
 
 using kula.Core;
@@ -43,9 +42,8 @@ namespace kula.Util
             {
                 List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Show().Out();
                 Func main = new Func(lexTokens);
-                FuncEnv mainEnv = new FuncEnv(main, null);
                 Parser.Instance.Parse(main).Show();
-                FuncRuntime.MainRuntime.Read(mainEnv).DebugRun();
+                FuncRuntime.MainRuntime.Read(main).DebugRun();
             }
             catch (Exception e)
             {
@@ -60,9 +58,8 @@ namespace kula.Util
             {
                 List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Out();
                 Func main = new Func(lexTokens);
-                FuncEnv mainEnv = new FuncEnv(main, null);
                 Parser.Instance.Parse(main);
-                FuncRuntime.MainRuntime.Read(mainEnv).Run();
+                FuncRuntime.MainRuntime.Read(main).Run();
             }
             catch (Exception e)
             {

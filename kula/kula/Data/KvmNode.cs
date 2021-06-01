@@ -21,10 +21,10 @@ namespace kula.Data
             string str_type = type.ToString(), str_value = value.ToString();
             return ""
                     + "[ "
-                    + str_type.PadRight(10)
+                    + str_type.PadRight(9)
                     + "| "
-                    + str_value.PadRight(10)
-                    + "]";
+                    + str_value.PadRight(18)
+                    + " ]";
         }
     }
 

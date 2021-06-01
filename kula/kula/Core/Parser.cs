@@ -174,7 +174,7 @@ namespace kula.Core
                     final_type_t = typeof(string);
                     break;
                 case "Func":
-                    final_type_t = typeof(FuncEnv);
+                    final_type_t = typeof(Func);
                     break;
                 case "Any":
                     final_type_t = typeof(object);
