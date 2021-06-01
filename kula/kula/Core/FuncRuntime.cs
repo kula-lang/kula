@@ -86,31 +86,32 @@ namespace kula.Core
                                 break;
                             case KvmNodeType.VARIABLE:
                                 {
-                                    /*
-                                    bool flag = false;
-                                    Queue<FuncRuntime> fr_que = new Queue<FuncRuntime>();
-                                    HashSet<FuncRuntime> fr_set = new HashSet<FuncRuntime>();
-                                    if (fr_set.Add(this))
-                                        fr_que.Enqueue(this);
-                                    if (fr_set.Add(root.Runtime))
-                                        fr_que.Enqueue(root.Runtime);
-                                    while (flag == false && fr_que.Count > 0)
-                                    {
-                                        FuncRuntime now_env = fr_que.Dequeue(); 
-                                        if (now_env != null)
+                                    /**
+                                        bool flag = false;
+                                        Queue<FuncRuntime> fr_que = new Queue<FuncRuntime>();
+                                        HashSet<FuncRuntime> fr_set = new HashSet<FuncRuntime>();
+                                        if (fr_set.Add(this))
+                                            fr_que.Enqueue(this);
+                                        if (fr_set.Add(root.Runtime))
+                                            fr_que.Enqueue(root.Runtime);
+                                        while (flag == false && fr_que.Count > 0)
                                         {
-                                            if (fr_set.Add(now_env.Root.Runtime))
-                                                fr_que.Enqueue(now_env.Root.Runtime);
-                                            if (fr_set.Add(now_env.Root.Func.FatherRuntime))
-                                                fr_que.Enqueue(now_env.Root.Func.FatherRuntime); 
-
-                                            if (now_env.VarDict.ContainsKey((string)node.Value))
+                                            FuncRuntime now_env = fr_que.Dequeue(); 
+                                            if (now_env != null)
                                             {
-                                                now_env.VarDict[(string)node.Value] = envStack.Pop();
-                                                flag = true;
+                                                if (fr_set.Add(now_env.Root.Runtime))
+                                                    fr_que.Enqueue(now_env.Root.Runtime);
+                                                if (fr_set.Add(now_env.Root.Func.FatherRuntime))
+                                                    fr_que.Enqueue(now_env.Root.Func.FatherRuntime); 
+
+                                                if (now_env.VarDict.ContainsKey((string)node.Value))
+                                                {
+                                                    now_env.VarDict[(string)node.Value] = envStack.Pop();
+                                                    flag = true;
+                                                }
                                             }
                                         }
-                                    }*/
+                                    **/
                                     bool flag = false;
                                     FuncRuntime now_env = this;
                                     while (flag == false && now_env != null)
@@ -130,7 +131,7 @@ namespace kula.Core
                                 break;
                             case KvmNodeType.NAME:
                                 {
-                                    /*
+                                    /**
                                     bool flag = false;
                                     Queue<FuncRuntime> fr_que = new Queue<FuncRuntime>();
                                     HashSet<FuncRuntime> fr_set = new HashSet<FuncRuntime>();
@@ -156,7 +157,8 @@ namespace kula.Core
                                                 flag = true;
                                             }
                                         }
-                                    }*/
+                                    }
+                                    **/
                                     bool flag = false;
                                     FuncRuntime now_env = this;
                                     while (flag == false && now_env != null)
@@ -183,10 +185,23 @@ namespace kula.Core
                                     }
                                     else
                                     {
-                                        object func_env = varDict[func_name];
-                                        if (func_env is Func)
+                                        FuncRuntime now_env = this;
+                                        object this_func = null;
+                                        while (this_func == null && now_env != null)
                                         {
-                                            new FuncRuntime((Func)func_env, envStack).Run();
+                                            if (now_env.VarDict.ContainsKey((string)node.Value))
+                                            {
+                                                this_func = now_env.VarDict[(string)node.Value];
+                                            }
+                                            now_env = now_env.Root.FatherRuntime;
+                                        }
+                                        if (this_func == null)
+                                        {
+                                            throw new KulaException.VariableException();
+                                        }
+                                        if (this_func is Func)
+                                        {
+                                            new FuncRuntime((Func)this_func, envStack).Run();
                                         }
                                         else
                                         {
@@ -225,16 +240,17 @@ namespace kula.Core
                     {
                         throw new KulaException.VMOverflowException();
                     }
+                    /*
                     catch (KeyNotFoundException)
                     {
                         throw new KulaException.UnknownNameException();
-                    }
+                    }*/
 
                 }
             }
             else
             {
-                throw new Exception("凉了");
+                throw new Exception("Unknown Runtime ERROR");
             }
         }
         public void DebugRun()

@@ -149,7 +149,7 @@ namespace kula.Data
 
         public override string ToString()
         {
-            return "{----}";
+            return "{lambda}";
         }
     }
 }
