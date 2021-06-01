@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using kula.Core;
 using kula.Data;
@@ -20,6 +21,7 @@ namespace kula.Util
         public static Dictionary<KvmNodeType, ConsoleColor> KvmColorDict = new Dictionary<KvmNodeType, ConsoleColor>()
         {
             { KvmNodeType.VALUE, ConsoleColor.Blue },
+            { KvmNodeType.LAMBDA, ConsoleColor.DarkBlue },
             { KvmNodeType.STRING, ConsoleColor.Blue },
             { KvmNodeType.VARIABLE, ConsoleColor.Cyan },
             { KvmNodeType.NAME, ConsoleColor.Cyan },
@@ -31,13 +33,17 @@ namespace kula.Util
         public static void HelloKula()
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("Kula - One Inch - 1 [2021/5/30] (on .net Framework at least 4.6)");
+            Console.WriteLine("Kula - One Inch - 2 [2021/6/1] (on .net Framework at least 4.6)");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("developed by @HanaYabuki in github.com");
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine("https://github.com/HanaYabuki/Kula");
             Console.ResetColor();
         }
         public static void DebugRunCode(string code)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             try
             {
                 List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Show().Out();
@@ -51,6 +57,8 @@ namespace kula.Util
                 Console.WriteLine(e);
                 Console.ForegroundColor = ConsoleColor.White;
             }
+            stopwatch.Stop();
+            Console.WriteLine("\tIt takes "+ stopwatch.Elapsed.Milliseconds + " ms.\n");
         }
         public static void ReleaseRunCode(string code)
         {
@@ -64,7 +72,7 @@ namespace kula.Util
             catch (Exception e)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e);
+                Console.WriteLine(e.Message);
                 Console.ForegroundColor = ConsoleColor.White;
             }
         }
@@ -87,6 +95,8 @@ namespace kula.Util
             {
                 Console.Write(">> ");
                 code = Console.ReadLine();
+                if (code == "")
+                    continue;
                 if (code == "#exit") 
                     break; 
                 else 

@@ -13,6 +13,7 @@ namespace kula.Core
 
         private readonly Dictionary<string, Object> varDict;
         private Func root;
+        private bool returned;
 
         private readonly Stack<object> envStack;
         private readonly Stack<object> fatherStack;
@@ -28,28 +29,21 @@ namespace kula.Core
         public Dictionary<string, object> VarDict => varDict;
         public Stack<object> EnvStack => envStack;
         public Stack<object> FatherStack => fatherStack;
-        public Func Root => root;
 
-        public FuncRuntime Read(Func funcEnv)
+        public FuncRuntime Read(Func func)
         {
-            root = funcEnv;
+            root = func;
             return this;
         }
         public void Run()
         {
-            if (root.NodeStream.Count == 0)
+            if (root.FatherRuntime != null && root.NodeStream.Count == 0)
             {
                 Parser.Instance.ParseLambda(root);
             }
             
             if (root.TokenStream.Count == 0 && root.NodeStream.Count != 0)
             {
-                /*
-                foreach (var node in root.NodeStream)
-                {
-                    Console.WriteLine(node);
-                }
-                */
                 for (int i = root.ArgNames.Count - 1; i >= 0; --i)
                 {
                     object arg = FatherStack.Pop();
@@ -66,7 +60,8 @@ namespace kula.Core
                 envStack.Clear();
                 Console.ForegroundColor = ConsoleColor.White;
 
-                for (int i = 0; i < root.NodeStream.Count; ++i)
+                returned = false;
+                for (int i = 0; i < root.NodeStream.Count && returned == false; ++i)
                 {
                     var node = root.NodeStream[i];
                     try
@@ -76,11 +71,13 @@ namespace kula.Core
                             case KvmNodeType.VALUE:
                             case KvmNodeType.STRING:
                                 {
+                                    envStack.Push(node.Value);
+                                }
+                                break;
+                            case KvmNodeType.LAMBDA:
+                                {
                                     object value = node.Value;
-                                    if (value is Func)
-                                    {
-                                        ((Func)value).FatherRuntime = this;
-                                    }
+                                    ((Func)value).FatherRuntime = this;
                                     envStack.Push(value);
                                 }
                                 break;
@@ -121,7 +118,7 @@ namespace kula.Core
                                             now_env.VarDict[(string)node.Value] = envStack.Pop();
                                             flag = true;
                                         }
-                                        now_env = now_env.Root.FatherRuntime;
+                                        now_env = now_env.root.FatherRuntime;
                                     }
                                     if (!flag) 
                                     {
@@ -168,7 +165,7 @@ namespace kula.Core
                                             envStack.Push(now_env.VarDict[(string)node.Value]);
                                             flag = true;
                                         }
-                                        now_env = now_env.Root.FatherRuntime;
+                                        now_env = now_env.root.FatherRuntime;
                                     }
                                     if (!flag) 
                                     { 
@@ -193,7 +190,7 @@ namespace kula.Core
                                             {
                                                 this_func = now_env.VarDict[(string)node.Value];
                                             }
-                                            now_env = now_env.Root.FatherRuntime;
+                                            now_env = now_env.root.FatherRuntime;
                                         }
                                         if (this_func == null)
                                         {
@@ -226,8 +223,13 @@ namespace kula.Core
                                 break;
                             case KvmNodeType.RETURN:
                                 {
-                                    FatherStack.Push(envStack.Pop());
-                                    i = root.NodeStream.Count;
+                                    object return_val = envStack.Pop();
+                                    if (return_val.GetType() != root.ReturnType)
+                                    {
+                                        throw new KulaException.ReturnValueException();
+                                    }
+                                    FatherStack.Push(return_val);
+                                    returned = true;
                                 }
                                 break;
                         }
@@ -240,17 +242,11 @@ namespace kula.Core
                     {
                         throw new KulaException.VMOverflowException();
                     }
-                    /*
-                    catch (KeyNotFoundException)
-                    {
-                        throw new KulaException.UnknownNameException();
-                    }*/
-
                 }
-            }
-            else
-            {
-                throw new Exception("Unknown Runtime ERROR");
+                if (returned == false && root.ReturnType != null)
+                {
+                    throw new KulaException.ReturnValueException();
+                }
             }
         }
         public void DebugRun()

@@ -32,6 +32,7 @@ namespace kula.Data
     {
         VALUE,      // 常量值
         STRING,     // 常字符串
+        LAMBDA,     // 匿名函数
         VARIABLE,   // 待接收
         NAME,       // 变量名，解析为值
         FUNC,       // 函数名，解析为函数

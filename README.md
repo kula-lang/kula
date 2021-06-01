@@ -4,10 +4,17 @@ Kula 是一个基于 .Net Framework 平台的解释型脚本语言。
 ![Kula_Daiamondo](https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fhbimg.b0.upaiyun.com%2F59af30fb8e979539fe816369c6dd37b06a3ee9a984f42-4G7yBG_fw658&refer=http%3A%2F%2Fhbimg.b0.upaiyun.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1624933443&t=32e57f6dcb44de881f052a290ea0eddc)
 
 ## 更新日志
+### kula - one-inch-2 (2021-6-1)
+* 增加了 lambda 类型的编译支持 
+* 底层寻址机制重写，运行速度显著提升
+* 删除了 FuncEnv 等冗余结构
+* 添加了 Debug 模式下的计时功能，更改 格式化细节
+* 
 ### kula - one-inch-1 (2021-5-30)
 * 第三次底层重写，合并了主流程和函数流程，代码总量降低
 * 扩展了 lambda 的存在形式，更改了函数的底层数据结构
 * 重量级特性：**正确的闭包支持**
+* ~~写的时候没注意，妈的，Lambda寻址是错的，递归根本不支持~~
 * 更改了寻址方案，性能略微降低 (未来可能会优化)
 * 依然略有混乱 (但有助于编码) 的错误信息
 

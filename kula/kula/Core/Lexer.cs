@@ -135,7 +135,7 @@ namespace kula.Core
             catch (Exception e)
             {
                 tokenStream.Clear();
-                throw e;
+                throw new KulaException.LexerException();
             }
 
             return this;

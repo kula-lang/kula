@@ -8,6 +8,10 @@ namespace kula.Util
         {
             public ParserException() : base("ParserException : Syntax Error.") { }
         }
+        public class LexerException : ApplicationException
+        {
+            public LexerException() : base("LexerException : Incomplete Code.") { }
+        }
         public class VariableException : ApplicationException
         {
             public VariableException() : base("VariableException : Use Variable Before Init.") { }
@@ -24,9 +28,9 @@ namespace kula.Util
         {
             public VMUnderflowException() : base("VMUnderflowException : Wrong usage of Func ?") { }
         }
-        public class UnknownNameException : ApplicationException
+        public class ReturnValueException : ApplicationException
         {
-            public UnknownNameException() : base("UnknownNameException : Not assigned before use") { }
+            public ReturnValueException() : base("ReturnValueException : Wrong Return Value Type.") { }
         }
     }
 }

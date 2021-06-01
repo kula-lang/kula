@@ -44,9 +44,18 @@ namespace kula.Core
                 { 
                     PStatement();
                 }
-                catch (IndexOutOfRangeException) { throw new KulaException.ParserException(); }
-                catch (ArgumentOutOfRangeException ) { throw new KulaException.ParserException(); }
-                catch (Exception e) { throw e; }
+                catch (IndexOutOfRangeException)
+                {
+                    throw new KulaException.ParserException();
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    throw new KulaException.ParserException();
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                }
             }
             if (pos != aimFunc.TokenStream.Count)
             {
@@ -55,7 +64,6 @@ namespace kula.Core
             aimFunc.TokenStream.Clear();
             return this;
         }
-        
         public Parser ParseLambda(Func func)
         {
             pos = 0; int _pos = -1;
@@ -79,9 +87,18 @@ namespace kula.Core
                         {
                             PStatement();
                         }
-                        catch (IndexOutOfRangeException) { throw new KulaException.ParserException(); }
-                        catch (ArgumentOutOfRangeException) { throw new KulaException.ParserException(); }
-                        catch (Exception e) { throw e; }
+                        catch (IndexOutOfRangeException)
+                        {
+                            throw new KulaException.ParserException();
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            throw new KulaException.ParserException();
+                        }
+                        catch (Exception e)
+                        {
+                            throw e;
+                        }
                     }
                     if (pos == aimFunc.TokenStream.Count - 1 && PSymbol("}"))
                     {
@@ -94,10 +111,15 @@ namespace kula.Core
             aimFunc.TokenStream.Clear();
             return this;
         }
+        
+        
         public bool PLambdaHead()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
-
+            /**
+            if (aimFunc.NodeStream.Count - 2 <= _pos)
+                return false;
+            */
             var token1 = aimFunc.TokenStream[pos++];
             var token2 = aimFunc.TokenStream[pos++];
             if (token1.Type == LexTokenType.KEYWORD && token1.Value == "func"
@@ -387,7 +409,7 @@ namespace kula.Core
                 List<LexToken> func_tokens = aimFunc.TokenStream.GetRange(start_pos, count_pos - start_pos + 1);
                 var func = new Func(func_tokens);
 
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VALUE, func));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.LAMBDA, func));
                 pos = count_pos + 1;
                 return true;
             }
