@@ -6,55 +6,58 @@ using kula.Core;
 
 namespace kula.Data
 {
-    delegate void KvmBuiltinFunc(Stack<object> stack);
+    delegate void KvmBuiltinFunc(object[] args, Stack<object> stack);
     class Func  // : IRunnable
     {
         // 静态内置方法 们
         public static Dictionary<string, KvmBuiltinFunc> BuiltinFunc { get => builtinFunc; }
         private static readonly Dictionary<string, KvmBuiltinFunc> builtinFunc = new Dictionary<string, KvmBuiltinFunc>()
         {
-            {"plus", (stack) => {
-                var args = ArgsCheck(stack, new Type[] { typeof(float), typeof(float) });
+            {"plus", (args, stack) => {
+                ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] + (float)args[1]);
             } },
-            {"minus", (stack) => {
-                var args = ArgsCheck(stack, new Type[] { typeof(float), typeof(float) });
+            {"minus", (args, stack) => {
+                ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] - (float)args[1]);
             } },
-            {"times", (stack) => {
-                var args = ArgsCheck(stack, new Type[] { typeof(float), typeof(float) });
+            {"times", (args, stack) => {
+                ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] * (float)args[1]);
             } },
-            {"div", (stack) => {
-                var args = ArgsCheck(stack, new Type[] { typeof(float), typeof(float) });
+            {"div", (args, stack) => {
+                ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] / (float)args[1]);
             } },
-            {"println", (stack) => {
-                Console.WriteLine( stack.Pop() );
+            {"println", (args, stack) => {
+                foreach (var arg in args)
+                {
+                    Console.WriteLine( arg );
+                }
             } },
-            {"input", (stack) =>{
+            {"input", (args, stack) =>{
                 stack.Push(Console.ReadLine());
             } },
-            {"toStr", (stack) => {
-                stack.Push(stack.Pop().ToString());
+            {"toStr", (args, stack) => {
+                stack.Push(args[0].ToString());
             } },
-            {"toNum", (stack) => {
-                var arg = stack.Pop();
+            {"toNum", (args, stack) => {
+                var arg = args[0];
                 if (arg.GetType() != typeof(string))
                     throw new KulaException.FuncException();
                 float.TryParse((string)arg, out float ans);
                 stack.Push(ans);
             } },
-            {"cut", (stack) => { 
-                var args = ArgsCheck(stack, new Type[] { typeof(string), typeof(float), typeof(float) });
+            {"cut", (args, stack) => { 
+                ArgsCheck(args, new Type[] { typeof(string), typeof(float), typeof(float) });
                 stack.Push(((string)args[0]).Substring((int)(float)args[1], (int)(float)args[2]));
             } },
-            {"concat", (stack)=> {
-                var args = ArgsCheck(stack, new Type[] { typeof(string), typeof(string) });
+            {"concat", (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(string), typeof(string) });
                 stack.Push((string)args[0] + (string)args[1]);
             } },
-            {"type", (stack)=> {
-                var arg_type = stack.Pop().GetType();
+            {"type", (args, stack)=> {
+                var arg_type = args[0].GetType();
                 switch (Type.GetTypeCode(arg_type))
                 {
                     case TypeCode.Single:
@@ -71,45 +74,42 @@ namespace kula.Data
                         break;
                 }
             } },
-            {"equal", (stack)=> {
-                stack.Push( object.Equals(stack.Pop(), stack.Pop() ) ? 1f : 0f);
+            {"equal", (args, stack)=> {
+                stack.Push( object.Equals(args[0], args[1]) ? 1f : 0f);
             } },
-            {"greater", (stack)=> {
-                var args = ArgsCheck(stack, new Type[] { typeof(float), typeof(float) });
+            {"greater", (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 stack.Push( ((float)args[0] > (float)args[1]) ? 1f : 0f);
             } },
-            {"less", (stack)=> {
-                var args = ArgsCheck(stack, new Type[] { typeof(float), typeof(float) });
+            {"less",  (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 stack.Push( ((float)args[0] < (float)args[1]) ? 1f : 0f);
             } },
-            {"and", (stack) => {
-                var args = ArgsCheck(stack, new Type[] { typeof(float), typeof(float) });
+            {"and",  (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 bool flag = ((float)args[0] != 0) && ((float)args[1] != 0);
                 stack.Push(flag ? 1f : 0f);
             } },
-            {"or", (stack) => {
-                var args = ArgsCheck(stack, new Type[] { typeof(float), typeof(float) });
+            {"or", (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 bool flag = ((float)args[0] != 0) || ((float)args[1] != 0);
                 stack.Push(flag ? 1f : 0f);
             } },
-            {"not", (stack) => {
-                var args = ArgsCheck(stack, new Type[] { typeof(float) });
+            {"not",  (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(float) });
                 stack.Push((float)args[0] == 0f ? 1f : 0f);
             } },
         };
 
-        private static object[] ArgsCheck(Stack<object> stack, Type[] types)
+        private static bool ArgsCheck(object[] args, Type[] types)
         {
-            object[] args = new object[types.Length];
-            for (int i = types.Length - 1; i >= 0; --i) 
+            bool flag = args.Length == types.Length;
+            for (int i = 0; i < args.Length && flag; i++) 
             {
-                args[i] = stack.Pop();
-                if (types[i] != args[i].GetType())
-                {
-                    throw new KulaException.FuncException();
-                }
+                flag = args[i].GetType() == types[i];
             }
-            return args;
+            if (flag == false) throw new KulaException.FuncException();
+            return flag;
         }
 
         // 接口儿

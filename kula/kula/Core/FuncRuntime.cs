@@ -35,7 +35,7 @@ namespace kula.Core
             root = func;
             return this;
         }
-        public void Run()
+        public void Run(object[] arguments)
         {
             if (root.Runtime != null && root.Func.NodeStream.Count == 0)
             {
@@ -44,9 +44,9 @@ namespace kula.Core
             
             if (root.Func.TokenStream.Count == 0 && root.Func.NodeStream.Count != 0)
             {
-                for (int i = root.Func.ArgNames.Count - 1; i >= 0; --i)
+                for (int i = root.Func.ArgNames.Count - 1; i >= 0 && arguments != null; --i)
                 {
-                    object arg = FatherStack.Pop();
+                    object arg = arguments[i];
                     if (arg.GetType() != root.Func.ArgTypes[i])
                     {
                         throw new KulaException.FuncException();
@@ -110,6 +110,7 @@ namespace kula.Core
                                     **/
                                     bool flag = false;
                                     FuncRuntime now_env = this;
+                                    
                                     while (flag == false && now_env != null)
                                     {
                                         if (now_env.VarDict.ContainsKey((string)node.Value))
@@ -156,7 +157,14 @@ namespace kula.Core
                                     }
                                     **/
                                     bool flag = false;
-                                    FuncRuntime now_env = this;
+                                    FuncRuntime now_env = this; 
+                                    
+                                    if (Func.BuiltinFunc.ContainsKey((string)node.Value))
+                                    {
+                                        flag = true;
+                                        envStack.Push(Func.BuiltinFunc[(string)node.Value]);
+                                    }
+
                                     while (flag == false && now_env != null)
                                     {
                                         if (now_env.VarDict.ContainsKey((string)node.Value))
@@ -174,6 +182,26 @@ namespace kula.Core
                                 break;
                             case KvmNodeType.FUNC:
                                 {
+                                    // 按 参数个数 获取 参数值
+                                    object[] args = new object[(int)node.Value];
+                                    for (int k = args.Length - 1; k >= 0; --k)
+                                    {
+                                        args[k] = envStack.Pop();
+                                    }
+                                    object func = envStack.Pop();
+                                    if (func is KvmBuiltinFunc builtin_func)
+                                    {
+                                        builtin_func(args, envStack);
+                                    }
+                                    else if (func is FuncEnv func_env)
+                                    {
+                                        new FuncRuntime(func_env, envStack).Run(args);
+                                    }
+                                    else 
+                                    {
+                                        throw new KulaException.FuncException();
+                                    }
+                                    /**
                                     string func_name = (string)node.Value;
                                     if (Func.BuiltinFunc.ContainsKey(func_name))
                                     {
@@ -203,7 +231,7 @@ namespace kula.Core
                                         {
                                             throw new KulaException.FuncException();
                                         }
-                                    }
+                                    }*/
                                 }
                                 break;
                             case KvmNodeType.IFGOTO:
@@ -251,7 +279,7 @@ namespace kula.Core
         public void DebugRun()
         {
             Console.WriteLine("Output ->");
-            Run();
+            Run(null);
             Show();
         }
         public void Show()

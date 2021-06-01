@@ -69,7 +69,7 @@ namespace kula.Util
                 Func main = new Func(lexTokens);
                 FuncEnv mainEnv = new FuncEnv(main, null);
                 Parser.Instance.Parse(main);
-                FuncRuntime.MainRuntime.Read(mainEnv).Run();
+                FuncRuntime.MainRuntime.Read(mainEnv).Run(null);
             }
             catch (Exception e)
             {

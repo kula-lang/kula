@@ -238,6 +238,12 @@ namespace kula.Core
         }
         private bool PValue()
         {
+            int count = 0;
+            while (PNode()) { count++; }
+            return count > 0;
+        }
+        private bool PNode()
+        {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
             if (PConst()) { return true; }
@@ -249,7 +255,7 @@ namespace kula.Core
             if (PFuncBody()) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
-            if (PFunc()) { return true; }
+            if (PFuncBars()) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PRightVar()) { return true; }
@@ -257,33 +263,20 @@ namespace kula.Core
 
             return false;
         }
-        private bool PFuncHead()
-        {
-            int _pos = pos, _size = aimFunc.NodeStream.Count;
-            // 防止溢出
-            if (pos + 2 >= aimFunc.TokenStream.Count) { return false; }
-            var token1 = aimFunc.TokenStream[pos++]; var token2 = aimFunc.TokenStream[pos++];
-            if (token1.Type == LexTokenType.NAME && token2.Type == LexTokenType.SYMBOL && token2.Value == "(")
-            {
-                nameStack.Push(token1.Value);
-                return true;
-            }
-
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
-            return false;
-        }
-        private bool PFunc()
+        private bool PFuncBars()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
-            if (PFuncHead())
+            if (PSymbol("("))
             {
+                int count = 0;
                 bool flag = true;
                 while (flag)
                 {
                     int _tmp_pos = pos; int _tmp_size = aimFunc.NodeStream.Count;
                     if (PValue())
                     {
+                        ++count;
                         if (!PSymbol(","))
                         {
                             flag = false;
@@ -299,8 +292,7 @@ namespace kula.Core
 
                 if (PSymbol(")"))
                 {
-                    string func_name = nameStack.Pop();
-                    aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.FUNC, func_name));
+                    aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.FUNC, count));
                     return true;
                 }
             }
