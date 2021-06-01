@@ -64,7 +64,7 @@ namespace kula.Data
                         stack.Push("Str");
                         break;
                     default:
-                        if(arg_type == typeof(Func))
+                        if(arg_type == typeof(FuncEnv))
                             stack.Push("Func");
                         else
                             stack.Push("None");
@@ -113,14 +113,12 @@ namespace kula.Data
         }
 
         // 接口儿
-        public FuncRuntime FatherRuntime { get => fatherRuntime; set => fatherRuntime = value; }
         public List<LexToken> TokenStream { get => tokenStream; }
         public List<KvmNode> NodeStream { get => nodeStream; }
         public List<Type> ArgTypes { get => argTypes; }
         public List<string> ArgNames { get => argNames; }
         public Type ReturnType { get => returnType; set => returnType = value; }
 
-        private FuncRuntime fatherRuntime;
         private readonly List<LexToken> tokenStream;
         private readonly List<KvmNode> nodeStream;
         

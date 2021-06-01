@@ -12,13 +12,13 @@ namespace kula.Core
         public static FuncRuntime MainRuntime { get => mainRuntime; }
 
         private readonly Dictionary<string, Object> varDict;
-        private Func root;
+        private FuncEnv root;
         private bool returned;
 
         private readonly Stack<object> envStack;
         private readonly Stack<object> fatherStack;
 
-        public FuncRuntime(Func root, Stack<object> fatherStack)
+        public FuncRuntime(FuncEnv root, Stack<object> fatherStack)
         {
             this.root = root;
             this.fatherStack = fatherStack;
@@ -30,30 +30,30 @@ namespace kula.Core
         public Stack<object> EnvStack => envStack;
         public Stack<object> FatherStack => fatherStack;
 
-        public FuncRuntime Read(Func func)
+        public FuncRuntime Read(FuncEnv func)
         {
             root = func;
             return this;
         }
         public void Run()
         {
-            if (root.FatherRuntime != null && root.NodeStream.Count == 0)
+            if (root.Runtime != null && root.Func.NodeStream.Count == 0)
             {
-                Parser.Instance.ParseLambda(root);
+                Parser.Instance.ParseLambda(root.Func);
             }
             
-            if (root.TokenStream.Count == 0 && root.NodeStream.Count != 0)
+            if (root.Func.TokenStream.Count == 0 && root.Func.NodeStream.Count != 0)
             {
-                for (int i = root.ArgNames.Count - 1; i >= 0; --i)
+                for (int i = root.Func.ArgNames.Count - 1; i >= 0; --i)
                 {
                     object arg = FatherStack.Pop();
-                    if (arg.GetType() != root.ArgTypes[i])
+                    if (arg.GetType() != root.Func.ArgTypes[i])
                     {
                         throw new KulaException.FuncException();
                     }
                     else
                     {
-                        varDict.Add(root.ArgNames[i], arg);
+                        varDict.Add(root.Func.ArgNames[i], arg);
                     }
                 }
 
@@ -61,9 +61,9 @@ namespace kula.Core
                 Console.ForegroundColor = ConsoleColor.White;
 
                 returned = false;
-                for (int i = 0; i < root.NodeStream.Count && returned == false; ++i)
+                for (int i = 0; i < root.Func.NodeStream.Count && returned == false; ++i)
                 {
-                    var node = root.NodeStream[i];
+                    var node = root.Func.NodeStream[i];
                     try
                     {
                         switch (node.Type)
@@ -77,8 +77,7 @@ namespace kula.Core
                             case KvmNodeType.LAMBDA:
                                 {
                                     object value = node.Value;
-                                    ((Func)value).FatherRuntime = this;
-                                    envStack.Push(value);
+                                    envStack.Push(new FuncEnv((Func)value, this));
                                 }
                                 break;
                             case KvmNodeType.VARIABLE:
@@ -118,7 +117,7 @@ namespace kula.Core
                                             now_env.VarDict[(string)node.Value] = envStack.Pop();
                                             flag = true;
                                         }
-                                        now_env = now_env.root.FatherRuntime;
+                                        now_env = now_env.root.Runtime;
                                     }
                                     if (!flag) 
                                     {
@@ -165,7 +164,7 @@ namespace kula.Core
                                             envStack.Push(now_env.VarDict[(string)node.Value]);
                                             flag = true;
                                         }
-                                        now_env = now_env.root.FatherRuntime;
+                                        now_env = now_env.root.Runtime;
                                     }
                                     if (!flag) 
                                     { 
@@ -190,15 +189,15 @@ namespace kula.Core
                                             {
                                                 this_func = now_env.VarDict[(string)node.Value];
                                             }
-                                            now_env = now_env.root.FatherRuntime;
+                                            now_env = now_env.root.Runtime;
                                         }
                                         if (this_func == null)
                                         {
                                             throw new KulaException.VariableException();
                                         }
-                                        if (this_func is Func)
+                                        if (this_func is FuncEnv)
                                         {
-                                            new FuncRuntime((Func)this_func, envStack).Run();
+                                            new FuncRuntime((FuncEnv)this_func, envStack).Run();
                                         }
                                         else
                                         {
@@ -224,7 +223,7 @@ namespace kula.Core
                             case KvmNodeType.RETURN:
                                 {
                                     object return_val = envStack.Pop();
-                                    if (return_val.GetType() != root.ReturnType)
+                                    if (root.Func.ReturnType != typeof(object) && return_val.GetType() != root.Func.ReturnType)
                                     {
                                         throw new KulaException.ReturnValueException();
                                     }
@@ -243,7 +242,7 @@ namespace kula.Core
                         throw new KulaException.VMOverflowException();
                     }
                 }
-                if (returned == false && root.ReturnType != null)
+                if (returned == false && root.Func.ReturnType != null)
                 {
                     throw new KulaException.ReturnValueException();
                 }

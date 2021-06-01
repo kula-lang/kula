@@ -43,6 +43,7 @@
     <Compile Include="Core\Lexer.cs" />
     <Compile Include="Core\Parser.cs" />
     <Compile Include="Data\Func.cs" />
+    <Compile Include="Data\FuncEnv.cs" />
     <Compile Include="Data\KvmNode.cs" />
     <Compile Include="Data\LexToken.cs" />
     <Compile Include="Program.cs" />
