@@ -62,7 +62,7 @@ namespace kula.Data
                 ArgsCheck(args, new Type[] { typeof(string) });
                 stack.Push((float)((string)args[0]).Length);
             } },
-            {"cut", (args, stack) => { 
+            {"cut", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(string), typeof(float), typeof(float) });
                 stack.Push(((string)args[0]).Substring((int)(float)args[1], (int)(float)args[2]));
             } },
@@ -116,11 +116,11 @@ namespace kula.Data
                 stack.Push((float)args[0] == 0f ? 1f : 0f);
             } },
         };
-        
+
         private static bool ArgsCheck(object[] args, Type[] types)
         {
             bool flag = args.Length == types.Length;
-            for (int i = 0; i < args.Length && flag; i++) 
+            for (int i = 0; i < args.Length && flag; i++)
             {
                 flag = args[i].GetType() == types[i];
             }
@@ -137,7 +137,7 @@ namespace kula.Data
 
         private readonly List<LexToken> tokenStream;
         private readonly List<KvmNode> nodeStream;
-        
+
         private readonly List<Type> argTypes;
         private readonly List<string> argNames;
         private Type returnType;

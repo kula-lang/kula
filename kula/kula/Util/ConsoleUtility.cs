@@ -33,7 +33,7 @@ namespace kula.Util
         public static void HelloKula()
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("Kula - One Inch - 2 [2021/6/1] (on .net Framework at least 4.6)");
+            Console.WriteLine("Kula - Slider Shoot - 0 [2021/6/2] (on .net Framework at least 4.6)");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("developed by @HanaYabuki in github.com");
             Console.ForegroundColor = ConsoleColor.Blue;

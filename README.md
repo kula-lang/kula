@@ -3,10 +3,22 @@ Kula 是一个基于 .Net Framework 平台的解释型脚本语言。
 
 ![Kula_Daiamondo](https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fhbimg.b0.upaiyun.com%2F59af30fb8e979539fe816369c6dd37b06a3ee9a984f42-4G7yBG_fw658&refer=http%3A%2F%2Fhbimg.b0.upaiyun.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1624933443&t=32e57f6dcb44de881f052a290ea0eddc)
 
+Kula 语言诞生于 2021 年，并且正在高速的发展之中。    
+所以，Kula 语言会在不久的未来支持越来越多的现代编程语言特性。
+
+现有的语言特性有：
+1. 强类型 动态类型
+2. 面向过程范式
+3. 函数式编程
+
+## 伴生项目
+[Kula - Diana : Kula 语言的 VSCode 插件](https://github.com/HanaYabuki/Kula-Diana)
+
 ## 更新日志
-### kula - slider-shoot (2021-6-2)
-* 重新设计了函数的语法解析方式，**实现了函数柯里化**
+### kula - slider-shoot-0 (2021-6-2)
+* 重新设计了函数的语法解析方式 (parser)，**实现了函数柯里化**
 * 重写了字节码的解析
+* 增加了少量内置函数
 
 ### kula - one-inch-2 (2021-6-1)
 * 增加了 lambda 类型的词法分析支持
@@ -14,7 +26,7 @@ Kula 是一个基于 .Net Framework 平台的解释型脚本语言。
 * 添加了 Debug 模式下的计时功能，更改 格式化细节
 * 增加了 返回值类型检查 (本来就该有的，一直忘了加
 
-### kula - one-inch-1 (2021-5-30)
+### kula - one-inch-1 (2021-5-30) (bug)
 * 第三次底层重写，合并了主流程和函数流程，代码总量降低
 * 扩展了 lambda 的存在形式，更改了函数的底层数据结构
 * 重量级特性：**正确的闭包支持**
@@ -22,13 +34,13 @@ Kula 是一个基于 .Net Framework 平台的解释型脚本语言。
 * 更改了寻址方案，性能略微降低 (未来可能会优化)
 * 依然略有混乱 (但有助于编码) 的错误信息
 
-### kula - one-inch-0 (2021-5-29)
+### kula - one-inch-0 (2021-5-29) (bug)
 * 更多的内置函数 (输入处理，字符串解析)
 * 部分底层重写，分离主流程和函数流程
 * 重量级特性：**初步支持lambda演算**，**lambda懒加载** (我可是一开始就做了懒加载呢吼吼吼~！)
 * 更加诡异的报错信息
 * ~~*由于当前底层为引用类型，在闭包的使用中可能会出现一些诡异的现象，暂时不要过分相信Kula的闭包*~~ (one-inch-1 已修复)
-* *暂未完全支持函数柯里化，未来的版本会对Parser进行一些调整来支持柯里化*
+* *暂未支持函数柯里化，未来的版本会对Parser进行一些调整来支持柯里化*
 
 ### kula - ice-coffin-0 (2021-5-26)
 * 较为完善的基本语法
@@ -43,7 +55,7 @@ Kula 是一个基于 .Net Framework 平台的解释型脚本语言。
 
 ## 项目其他信息
 ### 主要负责人
-[HanaYabuki @github.com](https://github.com/HanaYabuki)
+[会唱歌的花枝丸 - HanaYabuki on @github.com](https://github.com/HanaYabuki)
 
 ### 参与贡献代码的方式
 直接和我击剑
