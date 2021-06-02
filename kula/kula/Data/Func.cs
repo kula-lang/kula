@@ -29,6 +29,14 @@ namespace kula.Data
                 ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] / (float)args[1]);
             } },
+
+            // IO
+            {"print", (args, stack) => {
+                foreach (var arg in args)
+                {
+                    Console.Write( arg );
+                }
+            } },
             {"println", (args, stack) => {
                 foreach (var arg in args)
                 {
@@ -38,6 +46,8 @@ namespace kula.Data
             {"input", (args, stack) =>{
                 stack.Push(Console.ReadLine());
             } },
+            
+            // String
             {"toStr", (args, stack) => {
                 stack.Push(args[0].ToString());
             } },
@@ -47,6 +57,10 @@ namespace kula.Data
                     throw new KulaException.FuncException();
                 float.TryParse((string)arg, out float ans);
                 stack.Push(ans);
+            } },
+            {"len", (args, stack) => {
+                ArgsCheck(args, new Type[] { typeof(string) });
+                stack.Push((float)((string)args[0]).Length);
             } },
             {"cut", (args, stack) => { 
                 ArgsCheck(args, new Type[] { typeof(string), typeof(float), typeof(float) });
@@ -74,6 +88,8 @@ namespace kula.Data
                         break;
                 }
             } },
+
+            // Bool
             {"equal", (args, stack)=> {
                 stack.Push( object.Equals(args[0], args[1]) ? 1f : 0f);
             } },
@@ -100,7 +116,7 @@ namespace kula.Data
                 stack.Push((float)args[0] == 0f ? 1f : 0f);
             } },
         };
-
+        
         private static bool ArgsCheck(object[] args, Type[] types)
         {
             bool flag = args.Length == types.Length;

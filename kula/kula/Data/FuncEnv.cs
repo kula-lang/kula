@@ -17,7 +17,7 @@ namespace kula.Data
 
         public override string ToString()
         {
-            return "{lambda-env}";
+            return "{func-env}";
         }
     }
 }
