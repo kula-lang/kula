@@ -4,8 +4,8 @@ namespace kula.Data
 {
     class FuncEnv
     {
-        private Func func;
-        private FuncRuntime fatherRuntime;
+        private readonly Func func;
+        private readonly FuncRuntime fatherRuntime;
 
         public Func Func { get => func; }
         public FuncRuntime Runtime { get => fatherRuntime; }

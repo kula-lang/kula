@@ -8,13 +8,24 @@ namespace kula.Core
 {
     class Parser
     {
-        private static Parser instance = new Parser();
+        private static readonly Parser instance = new Parser();
         public static Parser Instance { get => instance; }
 
         private Func aimFunc;
 
         private readonly Stack<string> nameStack = new Stack<string>();
         private int pos;
+
+        private static readonly Dictionary<string, Type> typeDict = new Dictionary<string, Type>
+        {
+            { "None", null },
+            { "Any", typeof(object) },
+            { "Num", typeof(float) },
+            { "Str", typeof(string) },
+            { "Func", typeof(Data.FuncEnv) },
+            { "Array", typeof(kula.Data.Array) },
+            { "Map", typeof(kula.Data.Map) },
+        };
 
         private Parser() { }
 
@@ -31,6 +42,7 @@ namespace kula.Core
             Console.ResetColor();
             return this;
         }
+        // 入口
         public Parser Parse(Func main)
         {
             pos = 0; int _pos = -1;
@@ -68,6 +80,7 @@ namespace kula.Core
         {
             pos = 0; int _pos = -1;
             this.aimFunc = func;
+            this.aimFunc.Compiled = true;
 
             /*
             foreach (var token in aimRunnable.TokenStream) 
@@ -112,8 +125,8 @@ namespace kula.Core
             return this;
         }
         
-        
-        public bool PLambdaHead()
+        // 
+        private bool PLambdaHead()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
             /**
@@ -132,7 +145,7 @@ namespace kula.Core
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
-        public bool PLambdaDeclare()
+        private bool PLambdaDeclare()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
@@ -166,7 +179,7 @@ namespace kula.Core
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
-        public bool PValAndType()
+        private bool PValAndType()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
             var token1 = aimFunc.TokenStream[pos++];
@@ -186,26 +199,7 @@ namespace kula.Core
         }
         private Type TypestrToType(string str)
         {
-            Type final_type_t;
-            switch (str)
-            {
-                case "Num":
-                    final_type_t = typeof(float);
-                    break;
-                case "Str":
-                    final_type_t = typeof(string);
-                    break;
-                case "Func":
-                    final_type_t = typeof(FuncEnv);
-                    break;
-                case "Any":
-                    final_type_t = typeof(object);
-                    break;
-                default:
-                    final_type_t = null;
-                    break;
-            }
-            return final_type_t;
+            return typeDict[str];
         }
         private bool PStatement()
         {
@@ -252,18 +246,24 @@ namespace kula.Core
             if (PConstString()) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
-            if (PFuncBody()) { return true; }
+            if (PLambdaBody()) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
-            if (PFuncBars()) { return true; }
+            if (PFuncBras()) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             if (PRightVar()) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
+            if (PRightIndex()) { return true; }
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+
+            if (PRightKey()) { return true; }
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+
             return false;
         }
-        private bool PFuncBars()
+        private bool PFuncBras()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
@@ -346,14 +346,40 @@ namespace kula.Core
         private bool PRightVar()
         {
             int _pos = pos;
+            // 单一变量做右值
             var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME)
             {
                 aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.NAME, token.Value));
                 return true;
             }
-            pos = _pos; return false;
+            pos = _pos;
+
+            return false;
         }
+        private bool PRightIndex()
+        {
+            int _pos = pos, _size = aimFunc.NodeStream.Count;
+            if (PSymbol("[") && PValue() && PSymbol("]"))
+            {
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VECTERKEY, '['));
+                return true;
+            }
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            return false;
+        }
+        private bool PRightKey()
+        {
+            int _pos = pos, _size = aimFunc.NodeStream.Count;
+            if (PSymbol("<") && PValue() && PSymbol(">"))
+            {
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VECTERKEY, '<'));
+                return true;
+            }
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            return false;
+        }
+
         private bool PKeyword(string kword)
         {
             int _pos = pos;
@@ -366,7 +392,6 @@ namespace kula.Core
         }
         private bool PReturn()
         {
-            int _pos = pos;
             if (PKeyword("return") && PValue())
             {
                 aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.RETURN, null));
@@ -377,7 +402,7 @@ namespace kula.Core
         /**
          * foo = func (Num v1, Str v2) { ... } 
          */
-        private bool PFuncBody()
+        private bool PLambdaBody()
         {
             int _pos = pos, start_pos = _pos;
             if (PKeyword("func"))

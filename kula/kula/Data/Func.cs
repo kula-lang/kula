@@ -13,6 +13,7 @@ namespace kula.Data
         public static Dictionary<string, KvmBuiltinFunc> BuiltinFunc { get => builtinFunc; }
         private static readonly Dictionary<string, KvmBuiltinFunc> builtinFunc = new Dictionary<string, KvmBuiltinFunc>()
         {
+            // Float
             {"plus", (args, stack) => {
                 ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] + (float)args[1]);
@@ -83,6 +84,10 @@ namespace kula.Data
                     default:
                         if(arg_type == typeof(FuncEnv))
                             stack.Push("Func");
+                        else if (arg_type == typeof(Array))
+                            stack.Push("Array");
+                        else if (arg_type == typeof(Map))
+                            stack.Push("Map");
                         else
                             stack.Push("None");
                         break;
@@ -115,26 +120,49 @@ namespace kula.Data
                 ArgsCheck(args, new Type[] { typeof(float) });
                 stack.Push((float)args[0] == 0f ? 1f : 0f);
             } },
+
+            // Array
+            {"newArray", (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(float) });
+                Array tmp = new Array((int)(float)args[0]);
+                stack.Push(tmp);
+            } },
+            {"fill", (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(Array), typeof(float), typeof(object) });
+                ((Array)args[0])[(int)(float)args[1]] = args[2];
+            } },
+
+            // Map
+            {"newMap", (args, stack)=>{
+                Map tmp_map = new Map();
+                stack.Push(tmp_map);
+            } },
+            {"set", (args, stack)=> {
+                ArgsCheck(args, new Type[] { typeof(Map), typeof(string), typeof(object) });
+                ((Map)args[0])[(string)args[1]] = args[2];
+            } },
         };
 
-        private static bool ArgsCheck(object[] args, Type[] types)
+        private static void ArgsCheck(object[] args, Type[] types)
         {
             bool flag = args.Length == types.Length;
             for (int i = 0; i < args.Length && flag; i++)
             {
-                flag = args[i].GetType() == types[i];
+                flag = types[i] == typeof(object) || args[i].GetType() == types[i];
             }
             if (flag == false) throw new KulaException.FuncException();
-            return flag;
         }
 
         // 接口儿
         public List<LexToken> TokenStream { get => tokenStream; }
         public List<KvmNode> NodeStream { get => nodeStream; }
+        public bool Compiled { get => compiled; set => compiled = true; }
         public List<Type> ArgTypes { get => argTypes; }
         public List<string> ArgNames { get => argNames; }
         public Type ReturnType { get => returnType; set => returnType = value; }
 
+
+        private bool compiled;
         private readonly List<LexToken> tokenStream;
         private readonly List<KvmNode> nodeStream;
 
@@ -153,7 +181,7 @@ namespace kula.Data
 
         public override string ToString()
         {
-            return "{lambda}";
+            return "{Func" + returnType ?? ( ":" + returnType.ToString() )+ "}";
         }
     }
 }

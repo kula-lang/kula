@@ -9,7 +9,7 @@ namespace kula.Core
 {
     class Lexer
     {
-        private static Lexer instance = new Lexer();
+        private static readonly Lexer instance = new Lexer();
         public static Lexer Instance { get => instance; }
         
         private string sourceCode;
@@ -18,23 +18,19 @@ namespace kula.Core
         {
             "if", "while", "func", "return"
         };
-        public static Dictionary<string, Type> TypeDict { get => typeDict; }
-        private static readonly Dictionary<string, Type> typeDict = new Dictionary<string, Type>
+        private readonly HashSet<string> typeSet = new HashSet<string>()
         {
-            { "None", null },
-            { "Any", null },
-            { "Num", typeof(float) },
-            { "Str", typeof(string) },
-            { "Func", typeof(Data.Func) },
-            { "Array", typeof(object[]) }
+            "None", "Any", "Num", "Str", "Func", "Array",
         };
+        
         static class Is
         {
             public static bool CNumber(char c) { return (c <= '9' && c >= '0') || c == '.' || c == '+' || c == '-'; }
             public static bool CName(char c) { return (c <= 'z' && c >= 'a') || (c <= 'Z' && c >= 'A') || (c == '_') || CNumber(c); }
             public static bool CSpace(char c) { return (c == '\n' || c == '\t' || c == '\r' || c == ' '); }
             public static bool CNewLine(char c) { return c == '\n'; }
-            public static bool CBracket(char c) { return c == '(' || c == '{' || c == ')' || c == '}' || c == '[' || c == ']'; }
+            public static bool CBracket(char c) 
+                { return c == '(' || c == '{' || c == ')' || c == '}' || c == '[' || c == ']' || c == '<' || c == '>'; }
             public static bool CAnnotation(char c) { return c == '#'; }
             public static bool CComma(char c) { return c == ','; }
             public static bool CColon(char c) { return c == ':'; }
@@ -118,7 +114,7 @@ namespace kula.Core
                         {
                             tokenStream.Add(new LexToken(LexTokenType.KEYWORD, tokenString));
                         }
-                        else if (typeDict.ContainsKey(tokenString))
+                        else if (typeSet.Contains(tokenString))
                         {
                             tokenStream.Add(new LexToken(LexTokenType.TYPE, tokenString));
                         }
@@ -132,7 +128,7 @@ namespace kula.Core
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 tokenStream.Clear();
                 throw new KulaException.LexerException();

@@ -42,13 +42,16 @@
     <Compile Include="Core\FuncRuntime.cs" />
     <Compile Include="Core\Lexer.cs" />
     <Compile Include="Core\Parser.cs" />
+    <Compile Include="Data\Array.cs" />
     <Compile Include="Data\Func.cs" />
     <Compile Include="Data\FuncEnv.cs" />
     <Compile Include="Data\KvmNode.cs" />
     <Compile Include="Data\LexToken.cs" />
+    <Compile Include="Data\Map.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Util\ConsoleUtility.cs" />
     <Compile Include="Util\KulaException.cs" />
+    <Compile Include="Util\KulaVersion.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

@@ -34,10 +34,12 @@ namespace kula.Data
         STRING,     // 常字符串
         LAMBDA,     // 匿名函数
         VARIABLE,   // 待接收
-        NAME,       // 变量名，解析为值
-        FUNC,       // 函数名，解析为函数
+        NAME,       // 变量名
+        FUNC,       // 运行 Lambda
         IFGOTO,     // 为零时跳转
         GOTO,       // 无条件跳转
         RETURN,     // 返回值
+
+        VECTERKEY,  // 右值索引
     }
 }

@@ -4,8 +4,8 @@ namespace kula.Data
 {
     class LexToken
     {
-        private LexTokenType type;
-        private string value;
+        private readonly LexTokenType type;
+        private readonly string value;
 
         public string Value { get => value; }
         public LexTokenType Type { get => type; }

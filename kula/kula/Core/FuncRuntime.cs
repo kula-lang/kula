@@ -11,7 +11,7 @@ namespace kula.Core
         private static readonly FuncRuntime mainRuntime = new FuncRuntime(null, null);
         public static FuncRuntime MainRuntime { get => mainRuntime; }
 
-        private readonly Dictionary<string, Object> varDict;
+        private readonly SortedDictionary<string, Object> varDict;
         private FuncEnv root;
         private bool returned;
 
@@ -23,10 +23,10 @@ namespace kula.Core
             this.root = root;
             this.fatherStack = fatherStack;
             this.envStack = new Stack<object>();
-            this.varDict = new Dictionary<string, object>();
+            this.varDict = new SortedDictionary<string, object>();
         }
 
-        public Dictionary<string, object> VarDict => varDict;
+        public SortedDictionary<string, object> VarDict => varDict;
         public Stack<object> EnvStack => envStack;
         public Stack<object> FatherStack => fatherStack;
 
@@ -37,12 +37,12 @@ namespace kula.Core
         }
         public void Run(object[] arguments)
         {
-            if (root.Runtime != null && root.Func.NodeStream.Count == 0)
+            if (root.Runtime != null && root.Func.Compiled == false)
             {
                 Parser.Instance.ParseLambda(root.Func);
             }
             
-            if (root.Func.TokenStream.Count == 0 && root.Func.NodeStream.Count != 0)
+            if (root.Func.Compiled)
             {
                 for (int i = root.Func.ArgNames.Count - 1; i >= 0 && arguments != null; --i)
                 {
@@ -251,12 +251,41 @@ namespace kula.Core
                             case KvmNodeType.RETURN:
                                 {
                                     object return_val = envStack.Pop();
+                                    // Console.WriteLine("返回值监测：原 " + return_val.GetType() + " 应 " + root.Func.ReturnType);
                                     if (root.Func.ReturnType != typeof(object) && return_val.GetType() != root.Func.ReturnType)
                                     {
                                         throw new KulaException.ReturnValueException();
                                     }
                                     FatherStack.Push(return_val);
                                     returned = true;
+                                }
+                                break;
+                            case KvmNodeType.VECTERKEY:
+                                {
+                                    object vector_key = envStack.Pop();
+                                    object vector = envStack.Pop();
+                                    if ((char)node.Value == '[')
+                                    {
+                                        if (vector_key.GetType() != typeof(float) || vector.GetType() != typeof(Data.Array))
+                                        {
+                                            throw new KulaException.ArrayTypeException();
+                                        }
+                                        envStack.Push(
+                                            ((Data.Array)vector)
+                                                [(int)(float)vector_key]
+                                        );
+                                    }
+                                    else if ((char)node.Value == '<')
+                                    {
+                                        if (vector_key.GetType() != typeof(string) || vector.GetType() != typeof(Data.Map))
+                                        {
+                                            throw new KulaException.MapTypeException();
+                                        }
+                                        envStack.Push(
+                                            ((Data.Map)vector)
+                                                [(string)vector_key]
+                                        );
+                                    }
                                 }
                                 break;
                         }

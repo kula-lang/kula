@@ -9,7 +9,7 @@ namespace kula.Util
 {
     static class ConsoleUtility
     {
-        public static Dictionary<LexTokenType, ConsoleColor> LexColorDict = new Dictionary<LexTokenType, ConsoleColor>()
+        public static readonly Dictionary<LexTokenType, ConsoleColor> LexColorDict = new Dictionary<LexTokenType, ConsoleColor>()
         {
             { LexTokenType.KEYWORD, ConsoleColor.Red },
             { LexTokenType.TYPE, ConsoleColor.Yellow },
@@ -18,7 +18,7 @@ namespace kula.Util
             { LexTokenType.STRING, ConsoleColor.Magenta },
             { LexTokenType.SYMBOL, ConsoleColor.Green },
         };
-        public static Dictionary<KvmNodeType, ConsoleColor> KvmColorDict = new Dictionary<KvmNodeType, ConsoleColor>()
+        public static readonly Dictionary<KvmNodeType, ConsoleColor> KvmColorDict = new Dictionary<KvmNodeType, ConsoleColor>()
         {
             { KvmNodeType.VALUE, ConsoleColor.Blue },
             { KvmNodeType.LAMBDA, ConsoleColor.DarkBlue },
@@ -28,12 +28,15 @@ namespace kula.Util
             { KvmNodeType.FUNC, ConsoleColor.Magenta },
             { KvmNodeType.IFGOTO, ConsoleColor.Red },
             { KvmNodeType.GOTO, ConsoleColor.Red },
+
+            { KvmNodeType.VECTERKEY, ConsoleColor.Yellow },
         };
 
+        private static readonly KulaVersion version = new KulaVersion("Crow Bite", 0, new DateTime(2021, 6, 4));
         public static void HelloKula()
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("Kula - Slider Shoot - 0 [2021/6/2] (on .net Framework at least 4.6)");
+            Console.WriteLine(version + " (on .net Framework at least 4.6)");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("developed by @HanaYabuki in github.com");
             Console.ForegroundColor = ConsoleColor.Blue;
@@ -47,7 +50,7 @@ namespace kula.Util
             try
             {
                 List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Show().Out();
-                Func main = new Func(lexTokens);
+                Func main = new Func(lexTokens) { Compiled = true };
                 FuncEnv mainEnv = new FuncEnv(main, null);
                 Parser.Instance.Parse(main).Show();
                 FuncRuntime.MainRuntime.Read(mainEnv).DebugRun();
@@ -66,7 +69,7 @@ namespace kula.Util
             try
             {
                 List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Out();
-                Func main = new Func(lexTokens);
+                Func main = new Func(lexTokens) { Compiled = true };
                 FuncEnv mainEnv = new FuncEnv(main, null);
                 Parser.Instance.Parse(main);
                 FuncRuntime.MainRuntime.Read(mainEnv).Run(null);
@@ -98,12 +101,20 @@ namespace kula.Util
                 Console.Write(">> ");
                 code = Console.ReadLine();
                 if (code == "")
+                {
                     continue;
-                if (code == "#exit") 
-                    break; 
-                else 
+                }
+                if (code == "#exit")
+                {
+                    break;
+                }
+                else
+                {
                     if (!ConsoleCommand(code))
+                    {
                         DebugRunCode(code);
+                    }
+                }
             }
         }
     }
