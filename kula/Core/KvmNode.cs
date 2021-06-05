@@ -1,6 +1,6 @@
 ﻿using kula.Util;
 
-namespace kula.Data
+namespace kula.Core
 {
     class KvmNode
     {

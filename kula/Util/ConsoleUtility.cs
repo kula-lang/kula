@@ -58,7 +58,7 @@ namespace kula.Util
             catch (Exception e)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e);
+                Console.WriteLine(e.Message);
                 Console.ForegroundColor = ConsoleColor.White;
             }
             stopwatch.Stop();

@@ -141,6 +141,12 @@ namespace kula.Data
                 ArgsCheck(args, new Type[] { typeof(Map), typeof(string), typeof(object) });
                 ((Map)args[0])[(string)args[1]] = args[2];
             } },
+
+            // Exception
+            {"throw", (args, stack)=> {
+                ArgsCheck(args, new Type[] {typeof(string) });
+                throw new KulaException.UserException((string)args[0]);
+            } },
         };
 
         private static void ArgsCheck(object[] args, Type[] types)
@@ -181,7 +187,7 @@ namespace kula.Data
 
         public override string ToString()
         {
-            return "{Func" + returnType ?? ( ":" + returnType.ToString() )+ "}";
+            return "{ lambda }";
         }
     }
 }

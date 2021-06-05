@@ -41,7 +41,7 @@ namespace kula.Data
             for (int i = 0; i < data.Length; ++i)
             {
                 if (builder.Length != 1) { builder.Append(','); }
-                builder.Append(data[i].ToString());
+                builder.Append(data[i] ?? "-");
             }
             builder.Append(']');
             return builder.ToString();

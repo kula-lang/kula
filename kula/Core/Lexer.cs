@@ -20,7 +20,7 @@ namespace kula.Core
         };
         private readonly HashSet<string> typeSet = new HashSet<string>()
         {
-            "None", "Any", "Num", "Str", "Func", "Array",
+            "None", "Any", "Num", "Str", "Func", "Array", "Map"
         };
         
         static class Is
