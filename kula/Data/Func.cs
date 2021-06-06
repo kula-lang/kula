@@ -55,7 +55,7 @@ namespace kula.Data
             {"toNum", (args, stack) => {
                 var arg = args[0];
                 if (arg.GetType() != typeof(string))
-                    throw new KulaException.FuncException();
+                    throw new KulaException.FuncUsingException();
                 float.TryParse((string)arg, out float ans);
                 stack.Push(ans);
             } },
@@ -67,11 +67,11 @@ namespace kula.Data
                 ArgsCheck(args, new Type[] { typeof(string), typeof(float), typeof(float) });
                 stack.Push(((string)args[0]).Substring((int)(float)args[1], (int)(float)args[2]));
             } },
-            {"concat", (args, stack)=> {
+            {"concat", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(string), typeof(string) });
                 stack.Push((string)args[0] + (string)args[1]);
             } },
-            {"type", (args, stack)=> {
+            {"type", (args, stack) => {
                 var arg_type = args[0].GetType();
                 switch (Type.GetTypeCode(arg_type))
                 {
@@ -95,55 +95,66 @@ namespace kula.Data
             } },
 
             // Bool
-            {"equal", (args, stack)=> {
+            {"equal", (args, stack) => {
                 stack.Push( object.Equals(args[0], args[1]) ? 1f : 0f);
             } },
-            {"greater", (args, stack)=> {
+            {"greater", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 stack.Push( ((float)args[0] > (float)args[1]) ? 1f : 0f);
             } },
-            {"less",  (args, stack)=> {
+            {"less",  (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 stack.Push( ((float)args[0] < (float)args[1]) ? 1f : 0f);
             } },
-            {"and",  (args, stack)=> {
+            {"and",  (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 bool flag = ((float)args[0] != 0) && ((float)args[1] != 0);
                 stack.Push(flag ? 1f : 0f);
             } },
-            {"or", (args, stack)=> {
+            {"or", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 bool flag = ((float)args[0] != 0) || ((float)args[1] != 0);
                 stack.Push(flag ? 1f : 0f);
             } },
-            {"not",  (args, stack)=> {
+            {"not",  (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(float) });
                 stack.Push((float)args[0] == 0f ? 1f : 0f);
             } },
 
             // Array
-            {"newArray", (args, stack)=> {
+            {"newArray", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(float) });
                 Array tmp = new Array((int)(float)args[0]);
                 stack.Push(tmp);
             } },
-            {"fill", (args, stack)=> {
+            {"fill", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(Array), typeof(float), typeof(object) });
                 ((Array)args[0])[(int)(float)args[1]] = args[2];
             } },
 
             // Map
-            {"newMap", (args, stack)=>{
+            {"newMap", (args, stack) =>{
                 Map tmp_map = new Map();
                 stack.Push(tmp_map);
             } },
-            {"set", (args, stack)=> {
+            {"set", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(Map), typeof(string), typeof(object) });
                 ((Map)args[0])[(string)args[1]] = args[2];
             } },
 
+            // ASCII
+            {"asciiToChar", (args, stack) => {
+                ArgsCheck(args, new Type[] { typeof(float) });
+                stack.Push(((char)(int)(float)args[0]).ToString());
+            } },
+            {"charToAscii", (args, stack) => {
+                ArgsCheck(args, new Type[] { typeof(string) });
+                if (!float.TryParse((string)args[0], out float tmp)) { tmp = 0; }
+                stack.Push(tmp);
+            } },
+
             // Exception
-            {"throw", (args, stack)=> {
+            {"throw", (args, stack) => {
                 ArgsCheck(args, new Type[] {typeof(string) });
                 throw new KulaException.UserException((string)args[0]);
             } },
@@ -156,7 +167,7 @@ namespace kula.Data
             {
                 flag = types[i] == typeof(object) || args[i].GetType() == types[i];
             }
-            if (flag == false) throw new KulaException.FuncException();
+            if (flag == false) throw new KulaException.FuncUsingException();
         }
 
         // 接口儿
@@ -187,7 +198,7 @@ namespace kula.Data
 
         public override string ToString()
         {
-            return "{ lambda }";
+            return "<o_O> lambda";
         }
     }
 }

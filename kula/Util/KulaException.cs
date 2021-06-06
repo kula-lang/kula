@@ -19,9 +19,10 @@ namespace kula.Util
         {
             public VariableException() : base("VariableException : Use Variable Before Init.") { }
         }
-        public class FuncException : ApplicationException
+        public class FuncUsingException : ApplicationException
         {
-            public FuncException() : base("FuncException : Wrong Arguments type.") { }
+            public FuncUsingException() : base("FuncUsingException : Wrong Arguments type.") { }
+            public FuncUsingException(bool flag) : base("FuncUsingException : Wrong Arguments count.") { }
         }
         public class VMOverflowException : ApplicationException
         {

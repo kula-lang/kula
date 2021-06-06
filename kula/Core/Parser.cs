@@ -130,9 +130,11 @@ namespace kula.Core
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
             /**
-            if (aimFunc.NodeStream.Count - 2 <= _pos)
+            if (pos + 2 >= aimFunc.TokenStream.Count)
+            {
                 return false;
-            */
+            }
+            **/
             var token1 = aimFunc.TokenStream[pos++];
             var token2 = aimFunc.TokenStream[pos++];
             if (token1.Type == LexTokenType.KEYWORD && token1.Value == "func"
@@ -362,7 +364,7 @@ namespace kula.Core
             int _pos = pos, _size = aimFunc.NodeStream.Count;
             if (PSymbol("[") && PValue() && PSymbol("]"))
             {
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VECTERKEY, '['));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VEC_KEY, '['));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
@@ -373,7 +375,7 @@ namespace kula.Core
             int _pos = pos, _size = aimFunc.NodeStream.Count;
             if (PSymbol("<") && PValue() && PSymbol(">"))
             {
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VECTERKEY, '<'));
+                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VEC_KEY, '<'));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
@@ -440,7 +442,7 @@ namespace kula.Core
             if (PKeyword("if") && PSymbol("(") && PValue() && PSymbol(")"))
             {
                 int tmpId = aimFunc.NodeStream.Count;
-                aimFunc.NodeStream.Add(null);
+                aimFunc.NodeStream.Add(new KvmNode());
 
                 if (PSymbol("{"))
                 {
@@ -464,7 +466,7 @@ namespace kula.Core
             if (PKeyword("while") && PSymbol("(") && PValue() && PSymbol(")"))
             {
                 int tmpId = aimFunc.NodeStream.Count;
-                aimFunc.NodeStream.Add(null);
+                aimFunc.NodeStream.Add(new KvmNode());
 
                 if (PSymbol("{"))
                 {

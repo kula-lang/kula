@@ -17,7 +17,11 @@ Kula 语言诞生于 2021 年，并且正在高速的发展之中。
 [Kula - Diana : Kula 语言的 VSCode 插件](https://github.com/HanaYabuki/Kula-Diana)
 
 ## 更新日志
-### kula - crow-byte-0 (2021-6-3)
+### kula - crow-bite-1 (2021-6-6)
+* 支持转义字符串
+* LexToken 和 KvmNode 结构调整，效率提高
+
+### kula - crow-bite-0 (2021-6-3)
 * 添加了 *作为引用类型的* **数组** **字典**
 * 对应 数组和字典 增加了新的语法和内置方法
 * 生硬的异常处理，以及对应的 `throw(msg:Str):None` 异常抛出函数

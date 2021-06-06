@@ -2,7 +2,7 @@
 
 namespace kula.Core
 {
-    class LexToken
+    struct LexToken
     {
         private readonly LexTokenType type;
         private readonly string value;

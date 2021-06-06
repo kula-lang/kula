@@ -29,10 +29,10 @@ namespace kula.Util
             { KvmNodeType.IFGOTO, ConsoleColor.Red },
             { KvmNodeType.GOTO, ConsoleColor.Red },
 
-            { KvmNodeType.VECTERKEY, ConsoleColor.Yellow },
+            { KvmNodeType.VEC_KEY, ConsoleColor.Yellow },
         };
 
-        private static readonly KulaVersion version = new KulaVersion("Crow Bite", 0, new DateTime(2021, 6, 4));
+        private static readonly KulaVersion version = new KulaVersion("Crow Bite", 1, new DateTime(2021, 6, 6));
         public static void HelloKula()
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
@@ -58,11 +58,11 @@ namespace kula.Util
             catch (Exception e)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
                 Console.ForegroundColor = ConsoleColor.White;
             }
             stopwatch.Stop();
-            Console.WriteLine("\tIt takes "+ stopwatch.Elapsed.Milliseconds + " ms.\n");
+            Console.WriteLine("\tIt takes " + stopwatch.Elapsed.Milliseconds + " ms.\n");
         }
         public static void ReleaseRunCode(string code)
         {

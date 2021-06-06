@@ -2,7 +2,7 @@
 
 namespace kula.Core
 {
-    class KvmNode
+    struct KvmNode
     {
         KvmNodeType type;
         object value;
@@ -40,6 +40,6 @@ namespace kula.Core
         GOTO,       // 无条件跳转
         RETURN,     // 返回值
 
-        VECTERKEY,  // 右值索引
+        VEC_KEY,  // 右值索引
     }
 }
