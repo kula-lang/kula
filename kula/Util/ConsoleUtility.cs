@@ -9,40 +9,7 @@ namespace kula.Util
 {
     static class ConsoleUtility
     {
-        public static readonly Dictionary<LexTokenType, ConsoleColor> LexColorDict = new Dictionary<LexTokenType, ConsoleColor>()
-        {
-            { LexTokenType.KEYWORD, ConsoleColor.Red },
-            { LexTokenType.TYPE, ConsoleColor.Yellow },
-            { LexTokenType.NAME, ConsoleColor.Cyan },
-            { LexTokenType.NUMBER, ConsoleColor.Blue },
-            { LexTokenType.STRING, ConsoleColor.Magenta },
-            { LexTokenType.SYMBOL, ConsoleColor.Green },
-        };
-        public static readonly Dictionary<KvmNodeType, ConsoleColor> KvmColorDict = new Dictionary<KvmNodeType, ConsoleColor>()
-        {
-            { KvmNodeType.VALUE, ConsoleColor.Blue },
-            { KvmNodeType.LAMBDA, ConsoleColor.DarkBlue },
-            { KvmNodeType.STRING, ConsoleColor.Blue },
-            { KvmNodeType.VARIABLE, ConsoleColor.Cyan },
-            { KvmNodeType.NAME, ConsoleColor.Cyan },
-            { KvmNodeType.FUNC, ConsoleColor.Magenta },
-            { KvmNodeType.IFGOTO, ConsoleColor.Red },
-            { KvmNodeType.GOTO, ConsoleColor.Red },
-
-            { KvmNodeType.VEC_KEY, ConsoleColor.Yellow },
-        };
-
-        private static readonly KulaVersion version = new KulaVersion("Crow Bite", 1, new DateTime(2021, 6, 6));
-        public static void HelloKula()
-        {
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine(version + " (on .net Framework at least 4.6)");
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("developed by @HanaYabuki in github.com");
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("https://github.com/HanaYabuki/Kula");
-            Console.ResetColor();
-        }
+        
         public static void DebugRunCode(string code)
         {
             Stopwatch stopwatch = new Stopwatch();
@@ -86,7 +53,7 @@ namespace kula.Util
             switch (code)
             {
                 case "#gomo":
-                    HelloKula();
+                    KulaVersion.HelloKula();
                     return true;
             }
 

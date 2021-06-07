@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using kula.Data;
-using kula.Util;
+using Kula.Data;
+using Kula.Util;
 
-namespace kula.Core
+namespace Kula.Core
 {
     class Parser
     {
@@ -22,9 +22,9 @@ namespace kula.Core
             { "Any", typeof(object) },
             { "Num", typeof(float) },
             { "Str", typeof(string) },
-            { "Func", typeof(Data.FuncEnv) },
-            { "Array", typeof(kula.Data.Array) },
-            { "Map", typeof(kula.Data.Map) },
+            { "Func", typeof(Kula.Data.FuncEnv) },
+            { "Array", typeof(Kula.Data.Array) },
+            { "Map", typeof(Kula.Data.Map) },
         };
 
         private Parser() { }
@@ -34,7 +34,7 @@ namespace kula.Core
             Console.WriteLine("Parser ->");
             foreach (var node in aimFunc.NodeStream)
             {
-                Console.ForegroundColor = ConsoleUtility.KvmColorDict[node.Type];
+                Console.ForegroundColor = VMNode.KvmColorDict[node.Type];
                 Console.Write("\t");
                 Console.WriteLine(node);
             }
@@ -216,7 +216,7 @@ namespace kula.Core
             if (PLeftVar() && PSymbol("=") && PValue() && PSymbol(";"))
             {
                 string var_name = nameStack.Pop();
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VARIABLE, var_name));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VARIABLE, var_name));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
@@ -294,7 +294,7 @@ namespace kula.Core
 
                 if (PSymbol(")"))
                 {
-                    aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.FUNC, count));
+                    aimFunc.NodeStream.Add(new VMNode(VMNodeType.FUNC, count));
                     return true;
                 }
             }
@@ -308,7 +308,7 @@ namespace kula.Core
             var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NUMBER)
             {
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VALUE, float.Parse(token.Value)));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VALUE, float.Parse(token.Value)));
                 return true;
             }
             pos = _pos; return false;
@@ -319,7 +319,7 @@ namespace kula.Core
             var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.STRING)
             {
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.STRING, token.Value));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.STRING, token.Value));
                 return true;
             }
             pos = _pos; return false;
@@ -352,7 +352,7 @@ namespace kula.Core
             var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME)
             {
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.NAME, token.Value));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.NAME, token.Value));
                 return true;
             }
             pos = _pos;
@@ -364,7 +364,7 @@ namespace kula.Core
             int _pos = pos, _size = aimFunc.NodeStream.Count;
             if (PSymbol("[") && PValue() && PSymbol("]"))
             {
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VEC_KEY, '['));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VEC_KEY, '['));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
@@ -373,9 +373,10 @@ namespace kula.Core
         private bool PRightKey()
         {
             int _pos = pos, _size = aimFunc.NodeStream.Count;
+            // <"key">
             if (PSymbol("<") && PValue() && PSymbol(">"))
             {
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.VEC_KEY, '<'));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VEC_KEY, '<'));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
@@ -396,7 +397,7 @@ namespace kula.Core
         {
             if (PKeyword("return") && PValue())
             {
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.RETURN, null));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.RETURN, null));
                 return true;
             }
             return false;
@@ -428,7 +429,7 @@ namespace kula.Core
                 List<LexToken> func_tokens = aimFunc.TokenStream.GetRange(start_pos, count_pos - start_pos + 1);
                 var func = new Func(func_tokens);
 
-                aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.LAMBDA, func));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.LAMBDA, func));
                 pos = count_pos + 1;
                 return true;
             }
@@ -442,14 +443,14 @@ namespace kula.Core
             if (PKeyword("if") && PSymbol("(") && PValue() && PSymbol(")"))
             {
                 int tmpId = aimFunc.NodeStream.Count;
-                aimFunc.NodeStream.Add(new KvmNode());
+                aimFunc.NodeStream.Add(new VMNode());
 
                 if (PSymbol("{"))
                 {
                     while (PStatement()) ;
                     if (PSymbol("}"))
                     {
-                        aimFunc.NodeStream[tmpId] = new KvmNode(KvmNodeType.IFGOTO, aimFunc.NodeStream.Count);
+                        aimFunc.NodeStream[tmpId] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count);
                         return true;
                     }
                 }
@@ -466,15 +467,15 @@ namespace kula.Core
             if (PKeyword("while") && PSymbol("(") && PValue() && PSymbol(")"))
             {
                 int tmpId = aimFunc.NodeStream.Count;
-                aimFunc.NodeStream.Add(new KvmNode());
+                aimFunc.NodeStream.Add(new VMNode());
 
                 if (PSymbol("{"))
                 {
                     while (PStatement()) ;
                     if (PSymbol("}"))
                     {
-                        aimFunc.NodeStream[tmpId] = new KvmNode(KvmNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
-                        aimFunc.NodeStream.Add(new KvmNode(KvmNodeType.GOTO, backPos));
+                        aimFunc.NodeStream[tmpId] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
+                        aimFunc.NodeStream.Add(new VMNode(VMNodeType.GOTO, backPos));
                         return true;
                     }
                 }

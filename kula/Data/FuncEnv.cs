@@ -1,6 +1,6 @@
-﻿using kula.Core;
+﻿using Kula.Core;
 
-namespace kula.Data
+namespace Kula.Data
 {
     class FuncEnv
     {

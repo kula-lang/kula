@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace kula.Util
+namespace Kula.Util
 {
     class KulaVersion
     {
@@ -23,6 +19,20 @@ namespace kula.Util
         public override string ToString()
         {
             return "Kula - " + name + " - " + count + " [" + dateTime.Year + "/" + dateTime.Month + "/" + dateTime.Day + "]";
+        }
+
+
+        // 版本信息
+        private static readonly KulaVersion version = new KulaVersion("Diamond Breath LTS", 0, new DateTime(2021, 6, 8));
+        public static void HelloKula()
+        {
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine(version + " (on .net Framework at least 4.6)");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("developed by @HanaYabuki in github.com");
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine("https://github.com/HanaYabuki/Kula");
+            Console.ResetColor();
         }
     }
 }

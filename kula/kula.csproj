@@ -5,8 +5,8 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{EC7338B1-C9D0-42DB-98F4-DC015FA5C89B}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>kula</RootNamespace>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Kula</RootNamespace>
     <AssemblyName>kula</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -46,11 +46,10 @@
     <Compile Include="Data\Array.cs" />
     <Compile Include="Data\Func.cs" />
     <Compile Include="Data\FuncEnv.cs" />
-    <Compile Include="Core\KvmNode.cs" />
+    <Compile Include="Core\VMNode.cs" />
     <Compile Include="Core\LexToken.cs" />
     <Compile Include="Data\Map.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Util\ConsoleUtility.cs" />
+    <Compile Include="KulaEngine.cs" />
     <Compile Include="Util\KulaException.cs" />
     <Compile Include="Util\KulaVersion.cs" />
   </ItemGroup>

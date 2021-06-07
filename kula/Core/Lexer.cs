@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-using kula.Data;
-using kula.Util;
+using Kula.Data;
+using Kula.Util;
 
-namespace kula.Core
+namespace Kula.Core
 {
     class Lexer
     {
@@ -142,7 +142,7 @@ namespace kula.Core
             Console.WriteLine("Lexer ->");
             foreach (var token in tokenStream)
             {
-                Console.ForegroundColor = ConsoleUtility.LexColorDict[token.Type];
+                Console.ForegroundColor = LexToken.LexColorDict[token.Type];
                 Console.Write("\t");
                 Console.WriteLine(token);
             }

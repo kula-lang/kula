@@ -1,6 +1,9 @@
-﻿using kula.Util;
+﻿using System;
+using System.Collections.Generic;
 
-namespace kula.Core
+using Kula.Util;
+
+namespace Kula.Core
 {
     struct LexToken
     {
@@ -26,6 +29,18 @@ namespace kula.Core
                     + value.PadRight(18)
                     + " >";
         }
+
+
+        // 颜色表
+        public static readonly Dictionary<LexTokenType, ConsoleColor> LexColorDict = new Dictionary<LexTokenType, ConsoleColor>()
+        {
+            { LexTokenType.KEYWORD, ConsoleColor.Red },
+            { LexTokenType.TYPE, ConsoleColor.Yellow },
+            { LexTokenType.NAME, ConsoleColor.Cyan },
+            { LexTokenType.NUMBER, ConsoleColor.Blue },
+            { LexTokenType.STRING, ConsoleColor.Magenta },
+            { LexTokenType.SYMBOL, ConsoleColor.Green },
+        };
     }
 
     enum LexTokenType : byte

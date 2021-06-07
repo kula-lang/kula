@@ -1,66 +1,75 @@
 ﻿using System;
 
-namespace kula.Util
+namespace Kula.Util
 {
-    static class KulaException
+    public static class KulaException
     {
         // 底层错误
-        public class LexerException : ApplicationException
+        public class LexerException : Exception
         {
             public LexerException() : base("LexerException : Incomplete Code.") { }
         }
-        public class ParserException : ApplicationException
+        public class ParserException : Exception
         {
             public ParserException() : base("ParserException : Syntax Error.") { }
         }
         
         // 表面错误
-        public class VariableException : ApplicationException
+        public class VariableException : Exception
         {
             public VariableException() : base("VariableException : Use Variable Before Init.") { }
         }
-        public class FuncUsingException : ApplicationException
+
+        // Func Exception
+        public class FuncTypeException : Exception
         {
-            public FuncUsingException() : base("FuncUsingException : Wrong Arguments type.") { }
-            public FuncUsingException(bool flag) : base("FuncUsingException : Wrong Arguments count.") { }
+            public FuncTypeException() : base("FuncTypeException : Wrong Arguments Type.") { }
         }
-        public class VMOverflowException : ApplicationException
+        public class FuncUsingException : Exception
+        {
+            public FuncUsingException() : base("FuncUsingException : It is not a Func.") { }
+        }
+        public class FuncArgumentException : Exception
+        {
+            public FuncArgumentException() : base("FuncArgumentException : Wrong Arguments Type.") { }
+        }
+        public class VMOverflowException : Exception
         {
             public VMOverflowException() : base("VM-OverflowException : Out of Memory.") { }
         }
-        public class VMUnderflowException : ApplicationException
+        public class VMUnderflowException : Exception
         {
             public VMUnderflowException() : base("VM-UnderflowException : Wrong usage of Func?") { }
         }
 
         // Lambda
-        public class ReturnValueException : ApplicationException
+        public class ReturnValueException : Exception
         {
             public ReturnValueException() : base("ReturnValueException : Wrong Return Value Type.") { }
         }
 
         // Array Exception
-        public class ArrayTypeException : ApplicationException
+        public class ArrayTypeException : Exception
         {
-            public ArrayTypeException() : base("ArrayTypeException : Wrong Type in Using of Array.") { }
+            public ArrayTypeException() : base("ArrayTypeException : Wrong Type in Usage of Array.") { }
         }
-        public class ArrayIndexException : ApplicationException
+        public class ArrayIndexException : Exception
         {
             public ArrayIndexException() : base("ArrayIndexException : Array Index out of range.") { }
         }
 
         // Map Exception
-        public class MapTypeException : ApplicationException
+        public class MapTypeException : Exception
         {
-            public MapTypeException() : base("MapTypeException : Wrong Type in Using of Map.") { }
+            public MapTypeException() : base("MapTypeException : Wrong Type in Usage of Map.") { }
         }
-        public class MapKeyException : ApplicationException
+        public class MapKeyException : Exception
         {
-            public MapKeyException() : base("MapKeyException : Key Not in this Map") { }
+            public MapKeyException() : base("MapKeyException : Key Not in this Map.") { }
         }
 
         // 自定义 异常信息
-        public class UserException : ApplicationException
+        public class UserException : Exception
         {
             public UserException(string msg) : base("UserException : " + msg) { }
         }

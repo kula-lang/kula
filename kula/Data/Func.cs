@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using kula.Util;
-using kula.Core;
+using Kula.Util;
+using Kula.Core;
 
-namespace kula.Data
+namespace Kula.Data
 {
     delegate void KvmBuiltinFunc(object[] args, Stack<object> stack);
     class Func  // : IRunnable
@@ -54,8 +54,7 @@ namespace kula.Data
             } },
             {"toNum", (args, stack) => {
                 var arg = args[0];
-                if (arg.GetType() != typeof(string))
-                    throw new KulaException.FuncUsingException();
+                ArgsCheck(args, new Type[] { typeof(string) });
                 float.TryParse((string)arg, out float ans);
                 stack.Push(ans);
             } },
@@ -167,12 +166,12 @@ namespace kula.Data
             {
                 flag = types[i] == typeof(object) || args[i].GetType() == types[i];
             }
-            if (flag == false) throw new KulaException.FuncUsingException();
+            if (flag == false) throw new KulaException.FuncTypeException();
         }
 
         // 接口儿
         public List<LexToken> TokenStream { get => tokenStream; }
-        public List<KvmNode> NodeStream { get => nodeStream; }
+        public List<VMNode> NodeStream { get => nodeStream; }
         public bool Compiled { get => compiled; set => compiled = true; }
         public List<Type> ArgTypes { get => argTypes; }
         public List<string> ArgNames { get => argNames; }
@@ -181,7 +180,7 @@ namespace kula.Data
 
         private bool compiled;
         private readonly List<LexToken> tokenStream;
-        private readonly List<KvmNode> nodeStream;
+        private readonly List<VMNode> nodeStream;
 
         private readonly List<Type> argTypes;
         private readonly List<string> argNames;
@@ -193,7 +192,7 @@ namespace kula.Data
 
             this.argTypes = new List<Type>();
             this.argNames = new List<string>();
-            this.nodeStream = new List<KvmNode>();
+            this.nodeStream = new List<VMNode>();
         }
 
         public override string ToString()

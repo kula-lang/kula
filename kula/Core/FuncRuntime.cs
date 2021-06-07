@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using kula.Data;
-using kula.Util;
+using Kula.Data;
+using Kula.Util;
 
-namespace kula.Core
+namespace Kula.Core
 {
     class FuncRuntime   // : IRuntime
     {
-        private static readonly FuncRuntime mainRuntime = new FuncRuntime(null, null);
-        public static FuncRuntime MainRuntime { get => mainRuntime; }
-
         private readonly Dictionary<string, Object> varDict;
         private FuncEnv root;
         private bool returned;
@@ -46,14 +43,14 @@ namespace kula.Core
             {
                 if ((arguments==null ? 0 : arguments.Length) != root.Func.ArgNames.Count)
                 {
-                    throw new KulaException.FuncUsingException(false);
+                    throw new KulaException.FuncArgumentException();
                 }
                 for (int i = root.Func.ArgNames.Count - 1; i >= 0 && arguments != null; --i)
                 {
                     object arg = arguments[i];
                     if (arg.GetType() != root.Func.ArgTypes[i])
                     {
-                        throw new KulaException.FuncUsingException();
+                        throw new KulaException.FuncTypeException();
                     }
                     else
                     {
@@ -62,7 +59,6 @@ namespace kula.Core
                 }
 
                 envStack.Clear();
-                Console.ForegroundColor = ConsoleColor.White;
 
                 returned = false;
                 for (int i = 0; i < root.Func.NodeStream.Count && returned == false; ++i)
@@ -72,25 +68,25 @@ namespace kula.Core
                     {
                         switch (node.Type)
                         {
-                            case KvmNodeType.VALUE:
+                            case VMNodeType.VALUE:
                                 {
                                     envStack.Push(node.Value);
                                 }
                                 break;
-                            case KvmNodeType.STRING:
+                            case VMNodeType.STRING:
                                 {
                                     string val = (string)node.Value;
                                     val = System.Text.RegularExpressions.Regex.Unescape(val);
                                     envStack.Push(val);
                                 }
                                 break;
-                            case KvmNodeType.LAMBDA:
+                            case VMNodeType.LAMBDA:
                                 {
                                     object value = node.Value;
                                     envStack.Push(new FuncEnv((Func)value, this));
                                 }
                                 break;
-                            case KvmNodeType.VARIABLE:
+                            case VMNodeType.VARIABLE:
                                 { 
                                     bool flag = false;
                                     FuncRuntime now_env = this;
@@ -110,7 +106,7 @@ namespace kula.Core
                                     }
                                 }
                                 break;
-                            case KvmNodeType.NAME:
+                            case VMNodeType.NAME:
                                 { 
                                     bool flag = false;
                                     FuncRuntime now_env = this; 
@@ -136,7 +132,7 @@ namespace kula.Core
                                     }
                                 }
                                 break;
-                            case KvmNodeType.FUNC:
+                            case VMNodeType.FUNC:
                                 {
                                     // 按 参数个数 获取 参数值
                                     object[] args = new object[(int)node.Value];
@@ -159,7 +155,7 @@ namespace kula.Core
                                     }
                                 }
                                 break;
-                            case KvmNodeType.IFGOTO:
+                            case VMNodeType.IFGOTO:
                                 {
                                     float arg = (float)envStack.Pop();
                                     if (arg == 0)
@@ -168,12 +164,12 @@ namespace kula.Core
                                     }
                                 }
                                 break;
-                            case KvmNodeType.GOTO:
+                            case VMNodeType.GOTO:
                                 {
                                     i = (int)node.Value - 1;
                                 }
                                 break;
-                            case KvmNodeType.RETURN:
+                            case VMNodeType.RETURN:
                                 {
                                     object return_val = envStack.Pop();
                                     if (root.Func.ReturnType != typeof(object) && return_val.GetType() != root.Func.ReturnType)
@@ -184,7 +180,7 @@ namespace kula.Core
                                     returned = true;
                                 }
                                 break;
-                            case KvmNodeType.VEC_KEY:
+                            case VMNodeType.VEC_KEY:
                                 {
                                     object vector_key = envStack.Pop();
                                     object vector = envStack.Pop();

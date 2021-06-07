@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace kula.Data
+namespace Kula.Data
 {
     class Array
     {
