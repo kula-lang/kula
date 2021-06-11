@@ -13,7 +13,7 @@ namespace Kula.Data
         public static Dictionary<string, KvmBuiltinFunc> BuiltinFunc { get => builtinFunc; }
         private static readonly Dictionary<string, KvmBuiltinFunc> builtinFunc = new Dictionary<string, KvmBuiltinFunc>()
         {
-            // Float
+            // Num
             {"plus", (args, stack) => {
                 ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] + (float)args[1]);
@@ -150,6 +150,26 @@ namespace Kula.Data
                 ArgsCheck(args, new Type[] { typeof(string) });
                 if (!float.TryParse((string)args[0], out float tmp)) { tmp = 0; }
                 stack.Push(tmp);
+            } },
+
+            // #
+            {"_enqueue", (args, stack) => {
+                foreach(var arg in args)
+                {
+                    KulaEngine.KulaQueue.Enqueue(arg);
+                }
+            } },
+            {"_dequeue", (args, stack) => {
+                ArgsCheck(args, new Type[0]);
+                stack.Push(KulaEngine.KulaQueue.Dequeue());
+            } },
+            {"_peek", (args, stack) => {
+                ArgsCheck(args, new Type[0]);
+                stack.Push(KulaEngine.KulaQueue.Peek());
+            } },
+            {"_clear", (args, stack) => {
+                ArgsCheck(args, new Type[0]);
+                KulaEngine.KulaQueue.Clear();
             } },
 
             // Exception
