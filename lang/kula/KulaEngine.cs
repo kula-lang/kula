@@ -13,7 +13,7 @@ namespace Kula
         private readonly FuncRuntime mainRuntime;
         public KulaEngine()
         {
-            mainRuntime = new FuncRuntime(null, null);
+            mainRuntime = new FuncRuntime(null, null, this.queue);
         }
         public void Run(string sourceCode)
         {
@@ -59,16 +59,16 @@ namespace Kula
             mainRuntime.EnvStack.Clear();
         }
 
-
         public static void Hello()
         {
             Kula.Util.KulaVersion.HelloKula();
         }
-        // 静态
-        public static Queue<object> KulaQueue { get => kulaQueue; }
-        public static Dictionary<string, BuiltinFunc> ExtendFunc { get => extendFunc; }
 
-        private static readonly Queue<object> kulaQueue = new Queue<object>();
-        private static readonly Dictionary<string, BuiltinFunc> extendFunc = new Dictionary<string, BuiltinFunc>();
+        // 静态
+        public Queue<object> EngineQueue { get => queue; }
+        public Dictionary<string, BuiltinFunc> ExtendFunc { get => extendFunc; }
+
+        private readonly Queue<object> queue = new Queue<object>();
+        private readonly Dictionary<string, BuiltinFunc> extendFunc = new Dictionary<string, BuiltinFunc>();
     }
 }

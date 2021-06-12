@@ -6,7 +6,7 @@ using Kula.Core;
 
 namespace Kula.Data
 {
-    public delegate void BuiltinFunc(object[] args, Stack<object> stack);
+    public delegate void BuiltinFunc(object[] args, Stack<object> stack, Queue<object> queue);
     class Func  // : IRunnable
     {
         // 静态内置方法 们
@@ -14,179 +14,183 @@ namespace Kula.Data
         private static readonly Dictionary<string, BuiltinFunc> builtinFunc = new Dictionary<string, BuiltinFunc>()
         {
             // Num
-            {"plus", (args, stack) => {
+            {"plus", (args, stack, queue) => {
                 ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] + (float)args[1]);
             } },
-            {"minus", (args, stack) => {
+            {"minus", (args, stack, queue) => {
                 ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] - (float)args[1]);
             } },
-            {"times", (args, stack) => {
+            {"times", (args, stack, queue) => {
                 ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] * (float)args[1]);
             } },
-            {"div", (args, stack) => {
+            {"div", (args, stack, queue) => {
                 ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] / (float)args[1]);
             } },
 
             // IO
-            {"print", (args, stack) => {
+            {"print", (args, stack, queue) => {
                 foreach (var arg in args)
                 {
                     Console.Write( KToString(arg) );
                 }
             } },
-            {"println", (args, stack) => {
+            {"println", (args, stack, queue) => {
                 foreach (var arg in args)
                 {
                     Console.Write( KToString(arg) );
                 }
                 Console.WriteLine();
             } },
-            {"input", (args, stack) =>{
+            {"input", (args, stack, queue) =>{
                 stack.Push(Console.ReadLine());
             } },
             
             // String
-            {"toStr", (args, stack) => {
+            {"toStr", (args, stack, queue) => {
                 stack.Push(KToString(args[0]));
             } },
-            {"parseNum", (args, stack) => {
+            {"parseNum", (args, stack, queue) => {
                 var arg = args[0];
                 ArgsCheck(args, new Type[] { typeof(string) });
                 float.TryParse((string)arg, out float ans);
                 stack.Push(ans);
             } },
-            {"len", (args, stack) => {
+            {"len", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(string) });
                 stack.Push((float)((string)args[0]).Length);
             } },
-            {"cut", (args, stack) => {
+            {"cut", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(string), typeof(float), typeof(float) });
                 stack.Push(((string)args[0]).Substring((int)(float)args[1], (int)(float)args[2]));
             } },
-            {"concat", (args, stack) => {
+            {"concat", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(string), typeof(string) });
                 stack.Push((string)args[0] + (string)args[1]);
             } },
-            {"type", (args, stack) => {
-                var arg_type = args[0].GetType();
-                switch (Type.GetTypeCode(arg_type))
+            {"type", (args, stack, queue) => {
+                var arg = args[0].GetType();
+                foreach (var tp in Parser.TypeDict)
                 {
-                    case TypeCode.Single:
-                        stack.Push("Num");
+                    if (arg == tp.Value)
+                    {
+                        stack.Push(tp.Key);
                         break;
-                    case TypeCode.String:
-                        stack.Push("Str");
-                        break;
-                    default:
-                        if(arg_type == typeof(FuncEnv))
-                            stack.Push("Func");
-                        else if (arg_type == typeof(Array))
-                            stack.Push("Array");
-                        else if (arg_type == typeof(Map))
-                            stack.Push("Map");
-                        else
-                            stack.Push("None");
-                        break;
+                    }
                 }
+                /**
+                var arg = args[0];
+                if (arg is float)
+                    stack.Push("Num");
+                else if (arg is string)
+                    stack.Push("Str");
+                else if (arg is FuncEnv)
+                    stack.Push("Func");
+                else if (arg is Array)
+                    stack.Push("Array");
+                else if (arg is Map)
+                    stack.Push("Map");
+                else
+                    stack.Push("None");
+                **/
             } },
 
             // Bool
-            {"equal", (args, stack) => {
+            {"equal", (args, stack, queue) => {
                 stack.Push( object.Equals(args[0], args[1]) ? 1f : 0f);
             } },
-            {"greater", (args, stack) => {
+            {"greater", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 stack.Push( ((float)args[0] > (float)args[1]) ? 1f : 0f);
             } },
-            {"less",  (args, stack) => {
+            {"less",  (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 stack.Push( ((float)args[0] < (float)args[1]) ? 1f : 0f);
             } },
-            {"and",  (args, stack) => {
+            {"and",  (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 bool flag = ((float)args[0] != 0) && ((float)args[1] != 0);
                 stack.Push(flag ? 1f : 0f);
             } },
-            {"or", (args, stack) => {
+            {"or", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
                 bool flag = ((float)args[0] != 0) || ((float)args[1] != 0);
                 stack.Push(flag ? 1f : 0f);
             } },
-            {"not",  (args, stack) => {
+            {"not",  (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(float) });
                 stack.Push((float)args[0] == 0f ? 1f : 0f);
             } },
 
             // Array
-            {"newArray", (args, stack) => {
+            {"newArray", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(float) });
                 Array tmp = new Array((int)(float)args[0]);
                 stack.Push(tmp);
             } },
-            {"fill", (args, stack) => {
+            {"fill", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(Array), typeof(float), typeof(object) });
                 ((Array)args[0])[(int)(float)args[1]] = args[2];
             } },
 
             // Map
-            {"newMap", (args, stack) =>{
+            {"newMap", (args, stack, queue) =>{
                 Map tmp_map = new Map();
                 stack.Push(tmp_map);
             } },
-            {"let", (args, stack) => {
+            {"put", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(Map), typeof(string), typeof(object) });
                 ((Map)args[0]).Data[(string)args[1]] = args[2];
             } },
-            {"count", (args, stack) => {
+            {"count", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(Map) });
                 stack.Push((float) ((Map)args[0]).Data.Count);
             } },
-            {"keyIn", (args, stack) => {
+            {"keyIn", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(Map), typeof(string) });
                 stack.Push((float) (((Map)args[0]).Data.ContainsKey((string)args[1]) ? 1f : 0f ));
             } },
 
             // ASCII
-            {"AsciiToChar", (args, stack) => {
+            {"AsciiToChar", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(float) });
                 stack.Push(((char)(int)(float)args[0]).ToString());
             } },
-            {"CharToAscii", (args, stack) => {
+            {"CharToAscii", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(string) });
                 if (!float.TryParse((string)args[0], out float tmp)) { tmp = 0; }
                 stack.Push(tmp);
             } },
 
             // Sharp API
-            {"_enqueue", (args, stack) => {
+            {"__enqueue", (args, stack, queue) => {
                 foreach(var arg in args)
                 {
-                    KulaEngine.KulaQueue.Enqueue(arg);
+                    queue.Enqueue(arg);
                 }
             } },
-            {"_dequeue", (args, stack) => {
+            {"__dequeue", (args, stack, queue) => {
                 ArgsCheck(args, new Type[0]);
-                stack.Push(KulaEngine.KulaQueue.Dequeue());
+                stack.Push(queue.Dequeue());
             } },
-            {"_peek", (args, stack) => {
+            {"__peek", (args, stack, queue) => {
                 ArgsCheck(args, new Type[0]);
-                stack.Push(KulaEngine.KulaQueue.Peek());
+                stack.Push(queue.Peek());
             } },
-            {"_count", (args, stack) => {
+            {"__count", (args, stack, queue) => {
                 ArgsCheck(args, new Type[0]);
-                stack.Push((float)KulaEngine.KulaQueue.Count);
+                stack.Push((float)queue.Count);
             } },
-            {"_clear", (args, stack) => {
+            {"__clear", (args, stack, queue) => {
                 ArgsCheck(args, new Type[0]);
-                KulaEngine.KulaQueue.Clear();
+                queue.Clear();
             } },
 
             // Exception
-            {"throw", (args, stack) => {
+            {"throw", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] {typeof(string) });
                 throw new KulaException.UserException((string)args[0]);
             } },

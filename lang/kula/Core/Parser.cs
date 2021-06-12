@@ -26,6 +26,7 @@ namespace Kula.Core
             { "Array", typeof(Kula.Data.Array) },
             { "Map", typeof(Kula.Data.Map) },
         };
+        public static Dictionary<String, Type> TypeDict { get => typeDict; }
 
         private Parser() { }
 

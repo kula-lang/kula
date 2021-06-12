@@ -12,13 +12,16 @@ namespace Kula.Core
         private FuncEnv root;
         private bool returned;
 
+        private readonly Queue<object> engineQueue;
         private readonly Stack<object> envStack;
         private readonly Stack<object> fatherStack;
 
-        public FuncRuntime(FuncEnv root, Stack<object> fatherStack)
+        public FuncRuntime(FuncEnv root, Stack<object> fatherStack, Queue<object> engineQueue)
         {
             this.root = root;
             this.fatherStack = fatherStack;
+            this.engineQueue = engineQueue;
+
             this.envStack = new Stack<object>();
             this.varDict = new Dictionary<string, object>();
         }
@@ -143,11 +146,11 @@ namespace Kula.Core
                                     object func = envStack.Pop();
                                     if (func is BuiltinFunc builtin_func)
                                     {
-                                        builtin_func(args, envStack);
+                                        builtin_func(args, envStack, engineQueue);
                                     }
                                     else if (func is FuncEnv func_env)
                                     {
-                                        new FuncRuntime(func_env, envStack).Run(args);
+                                        new FuncRuntime(func_env, envStack, engineQueue).Run(args);
                                     }
                                     else 
                                     {
