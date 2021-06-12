@@ -34,8 +34,6 @@ namespace Kula.Core
         // 颜色表
         public static readonly Dictionary<LexTokenType, ConsoleColor> LexColorDict = new Dictionary<LexTokenType, ConsoleColor>()
         {
-            { LexTokenType.KEYWORD, ConsoleColor.Red },
-            { LexTokenType.TYPE, ConsoleColor.Yellow },
             { LexTokenType.NAME, ConsoleColor.Cyan },
             { LexTokenType.NUMBER, ConsoleColor.Blue },
             { LexTokenType.STRING, ConsoleColor.Magenta },
@@ -45,9 +43,7 @@ namespace Kula.Core
 
     enum LexTokenType : byte
     {
-        KEYWORD,    // 关键字
-        TYPE,       // 类型名
-        NAME,       // 名字，可解析为 变量名 函数名
+        NAME,       // 名字，可解析为 关键字 类型名 变量名 函数名
         NUMBER,     // 数字，float
         STRING,     // 字符串，string
         SYMBOL,     // 符号

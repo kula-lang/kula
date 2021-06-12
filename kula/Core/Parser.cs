@@ -82,11 +82,6 @@ namespace Kula.Core
             this.aimFunc = func;
             this.aimFunc.Compiled = true;
 
-            /*
-            foreach (var token in aimRunnable.TokenStream) 
-                Console.WriteLine(token);
-            */
-
             func.NodeStream.Clear();
             nameStack.Clear();
             if (PLambdaDeclare())
@@ -100,18 +95,11 @@ namespace Kula.Core
                         {
                             PStatement();
                         }
-                        catch (IndexOutOfRangeException)
+                        catch
                         {
-                            throw new KulaException.ParserException();
+                            break;
                         }
-                        catch (ArgumentOutOfRangeException)
-                        {
-                            throw new KulaException.ParserException();
-                        }
-                        catch (Exception e)
-                        {
-                            throw e;
-                        }
+                            
                     }
                     if (pos == aimFunc.TokenStream.Count - 1 && PSymbol("}"))
                     {
@@ -122,7 +110,7 @@ namespace Kula.Core
             }
             aimFunc.NodeStream.Clear();
             aimFunc.TokenStream.Clear();
-            return this;
+            throw new KulaException.ParserException();
         }
         
         // 
@@ -137,7 +125,7 @@ namespace Kula.Core
             **/
             var token1 = aimFunc.TokenStream[pos++];
             var token2 = aimFunc.TokenStream[pos++];
-            if (token1.Type == LexTokenType.KEYWORD && token1.Value == "func"
+            if (token1.Type == LexTokenType.NAME && token1.Value == "func"
                 && token2.Type == LexTokenType.SYMBOL && token2.Value == "("
                 )
             {
@@ -169,7 +157,7 @@ namespace Kula.Core
                 if (PSymbol(":"))
                 {
                     var final_type = aimFunc.TokenStream[pos++];
-                    if (final_type.Type == LexTokenType.TYPE)
+                    if (final_type.Type == LexTokenType.NAME && typeDict.ContainsKey(final_type.Value))
                     {
                         // 记录类型
                         aimFunc.ReturnType = (TypestrToType(final_type.Value));
@@ -189,7 +177,7 @@ namespace Kula.Core
             var token3 = aimFunc.TokenStream[pos++];
             if (token1.Type == LexTokenType.NAME 
                 && token2.Type == LexTokenType.SYMBOL && token2.Value == ":"
-                && token3.Type == LexTokenType.TYPE
+                && token3.Type == LexTokenType.NAME && typeDict.ContainsKey(token3.Value)
             ) {
                 nameStack.Push(token1.Value);
                 nameStack.Push(token3.Value);
@@ -210,6 +198,9 @@ namespace Kula.Core
             if (PSymbol(";")) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
+            if (PReturn() && PSymbol(";")) { return true; }
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+
             if (PValue() && PSymbol(";")) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
@@ -227,8 +218,6 @@ namespace Kula.Core
             if (PBlockWhile()) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
-            if (PReturn() && PSymbol(";")) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
             return false;
         }
@@ -387,7 +376,7 @@ namespace Kula.Core
         {
             int _pos = pos;
             var token = aimFunc.TokenStream[pos++];
-            if (token.Type == LexTokenType.KEYWORD && token.Value == kword)
+            if (token.Type == LexTokenType.NAME && token.Value == kword)
             {
                 return true;
             }

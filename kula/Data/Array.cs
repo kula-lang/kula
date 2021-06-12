@@ -33,7 +33,19 @@ namespace Kula.Data
                 }
             }
         }
-
+        private static string KToString(object arg)
+        {
+            if (arg == null) { return "null"; }
+            if (arg is string)
+            {
+                return "\"" + arg + "\"";
+            }
+            if (arg is BuiltinFunc)
+            {
+                return "<builtin-func/>";
+            }
+            return arg.ToString();
+        }
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
@@ -41,7 +53,7 @@ namespace Kula.Data
             for (int i = 0; i < data.Length; ++i)
             {
                 if (builder.Length != 1) { builder.Append(','); }
-                builder.Append(data[i] ?? "-");
+                builder.Append(KToString(data[i]));
             }
             builder.Append(']');
             return builder.ToString();

@@ -6,12 +6,12 @@ using Kula.Core;
 
 namespace Kula.Data
 {
-    delegate void KvmBuiltinFunc(object[] args, Stack<object> stack);
+    public delegate void BuiltinFunc(object[] args, Stack<object> stack);
     class Func  // : IRunnable
     {
         // 静态内置方法 们
-        public static Dictionary<string, KvmBuiltinFunc> BuiltinFunc { get => builtinFunc; }
-        private static readonly Dictionary<string, KvmBuiltinFunc> builtinFunc = new Dictionary<string, KvmBuiltinFunc>()
+        public static Dictionary<string, BuiltinFunc> BuiltinFunc { get => builtinFunc; }
+        private static readonly Dictionary<string, BuiltinFunc> builtinFunc = new Dictionary<string, BuiltinFunc>()
         {
             // Num
             {"plus", (args, stack) => {
@@ -35,14 +35,15 @@ namespace Kula.Data
             {"print", (args, stack) => {
                 foreach (var arg in args)
                 {
-                    Console.Write( arg );
+                    Console.Write( KToString(arg) );
                 }
             } },
             {"println", (args, stack) => {
                 foreach (var arg in args)
                 {
-                    Console.WriteLine( arg );
+                    Console.Write( KToString(arg) );
                 }
+                Console.WriteLine();
             } },
             {"input", (args, stack) =>{
                 stack.Push(Console.ReadLine());
@@ -50,9 +51,9 @@ namespace Kula.Data
             
             // String
             {"toStr", (args, stack) => {
-                stack.Push(args[0].ToString());
+                stack.Push(KToString(args[0]));
             } },
-            {"toNum", (args, stack) => {
+            {"parseNum", (args, stack) => {
                 var arg = args[0];
                 ArgsCheck(args, new Type[] { typeof(string) });
                 float.TryParse((string)arg, out float ans);
@@ -136,23 +137,31 @@ namespace Kula.Data
                 Map tmp_map = new Map();
                 stack.Push(tmp_map);
             } },
-            {"set", (args, stack) => {
+            {"let", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(Map), typeof(string), typeof(object) });
-                ((Map)args[0])[(string)args[1]] = args[2];
+                ((Map)args[0]).Data[(string)args[1]] = args[2];
+            } },
+            {"count", (args, stack) => {
+                ArgsCheck(args, new Type[] { typeof(Map) });
+                stack.Push((float) ((Map)args[0]).Data.Count);
+            } },
+            {"keyIn", (args, stack) => {
+                ArgsCheck(args, new Type[] { typeof(Map), typeof(string) });
+                stack.Push((float) (((Map)args[0]).Data.ContainsKey((string)args[1]) ? 1f : 0f ));
             } },
 
             // ASCII
-            {"asciiToChar", (args, stack) => {
+            {"AsciiToChar", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(float) });
                 stack.Push(((char)(int)(float)args[0]).ToString());
             } },
-            {"charToAscii", (args, stack) => {
+            {"CharToAscii", (args, stack) => {
                 ArgsCheck(args, new Type[] { typeof(string) });
                 if (!float.TryParse((string)args[0], out float tmp)) { tmp = 0; }
                 stack.Push(tmp);
             } },
 
-            // #
+            // Sharp API
             {"_enqueue", (args, stack) => {
                 foreach(var arg in args)
                 {
@@ -166,6 +175,10 @@ namespace Kula.Data
             {"_peek", (args, stack) => {
                 ArgsCheck(args, new Type[0]);
                 stack.Push(KulaEngine.KulaQueue.Peek());
+            } },
+            {"_count", (args, stack) => {
+                ArgsCheck(args, new Type[0]);
+                stack.Push((float)KulaEngine.KulaQueue.Count);
             } },
             {"_clear", (args, stack) => {
                 ArgsCheck(args, new Type[0]);
@@ -187,6 +200,17 @@ namespace Kula.Data
                 flag = types[i] == typeof(object) || args[i].GetType() == types[i];
             }
             if (flag == false) throw new KulaException.FuncTypeException();
+        }
+        private static string KToString(object arg)
+        {
+            if (arg.GetType() == typeof(BuiltinFunc))
+            {
+                return "<BuiltinFunc/>";
+            }
+            else
+            {
+                return arg.ToString();
+            }
         }
 
         // 接口儿

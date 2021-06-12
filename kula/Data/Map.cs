@@ -10,21 +10,22 @@ namespace Kula.Data
     {
         private readonly SortedDictionary<string, object> data;
 
+        public SortedDictionary<string, object> Data { get => data; }
         public Map() { data = new SortedDictionary<string, object>(); }
 
-        public object this[string key]
+        private static string KToString(object arg)
         {
-            get 
-            { 
-                if (data.ContainsKey(key))
-                {
-                    return data[key];
-                }
-                throw new Util.KulaException.MapKeyException();
+            if (arg == null) { return "null"; }
+            if (arg is string)
+            {
+                return "\"" + arg + "\"";
             }
-            set { data[key] = value; }
+            if (arg is BuiltinFunc)
+            {
+                return "<builtin-func/>";
+            }
+            return arg.ToString();
         }
-
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
@@ -33,10 +34,7 @@ namespace Kula.Data
             {
                 if (builder.Length != 1) builder.Append(',');
                 builder.Append(
-                    '\"' + kvp.Key + '\"' + ':' + 
-                    (kvp.Value.GetType() == typeof(string) ? 
-                        ('\"' + kvp.Value.ToString() + '\"') 
-                        : kvp.Value )
+                    '\"' + kvp.Key + '\"' + ':' + KToString(kvp.Value)
                 );
             }
             builder.Append('}');

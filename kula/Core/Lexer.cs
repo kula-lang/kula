@@ -14,14 +14,6 @@ namespace Kula.Core
         
         private string sourceCode;
         private List<LexToken> tokenStream;
-        private readonly HashSet<string> keywordSet = new HashSet<string>()
-        {
-            "if", "while", "func", "return"
-        };
-        private readonly HashSet<string> typeSet = new HashSet<string>()
-        {
-            "None", "Any", "Num", "Str", "Func", "Array", "Map"
-        };
         
         static class Is
         {
@@ -110,18 +102,7 @@ namespace Kula.Core
                                 break;
                         }
                         string tokenString = tokenBuilder.ToString();
-                        if (keywordSet.Contains(tokenString))
-                        {
-                            tokenStream.Add(new LexToken(LexTokenType.KEYWORD, tokenString));
-                        }
-                        else if (typeSet.Contains(tokenString))
-                        {
-                            tokenStream.Add(new LexToken(LexTokenType.TYPE, tokenString));
-                        }
-                        else
-                        {
-                            tokenStream.Add(new LexToken((LexTokenType)state, tokenString));
-                        }
+                        tokenStream.Add(new LexToken((LexTokenType)state, tokenString));
                         state = null;
                         tokenBuilder.Clear();
                         --i;

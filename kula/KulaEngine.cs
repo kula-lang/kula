@@ -29,7 +29,7 @@ namespace Kula
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(e.Message);
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ResetColor();
             }
         }
         public void DebugRun(string code)
@@ -47,8 +47,8 @@ namespace Kula
             catch (Exception e)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e);
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(e.Message);
+                Console.ResetColor();
             }
             stopwatch.Stop();
             Console.WriteLine("\tIt takes " + stopwatch.Elapsed.Milliseconds + " ms.\n");
@@ -66,39 +66,9 @@ namespace Kula
         }
         // 静态
         public static Queue<object> KulaQueue { get => kulaQueue; }
+        public static Dictionary<string, BuiltinFunc> ExtendFunc { get => extendFunc; }
+
         private static readonly Queue<object> kulaQueue = new Queue<object>();
-
-        /**
-        private static void Main(string[] args)
-        {
-            if (args.Length >= 1)
-            {
-                string code;
-                try
-                {
-                    code = File.ReadAllText(args[0]);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    return;
-                }
-
-                if (args.Length >= 2 && args[1] == "--release")
-                {
-                    ConsoleUtility.ReleaseRunCode(code);
-                }
-                else
-                {
-                    ConsoleUtility.DebugRunCode(code);
-                }
-            }
-            else
-            {
-                KulaVersion.HelloKula();
-                ConsoleUtility.DebugREPL();
-            }
-        }
-        **/
+        private static readonly Dictionary<string, BuiltinFunc> extendFunc = new Dictionary<string, BuiltinFunc>();
     }
 }

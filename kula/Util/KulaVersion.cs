@@ -16,6 +16,11 @@ namespace Kula.Util
             this.dateTime = dateTime;
         }
 
+        public string ToJson()
+        {
+            return "";
+        }
+
         public override string ToString()
         {
             return "Kula - " + name + " - " + count + " [" + dateTime.Year + "/" + dateTime.Month + "/" + dateTime.Day + "]";

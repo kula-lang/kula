@@ -141,7 +141,7 @@ namespace Kula.Core
                                         args[k] = envStack.Pop();
                                     }
                                     object func = envStack.Pop();
-                                    if (func is KvmBuiltinFunc builtin_func)
+                                    if (func is BuiltinFunc builtin_func)
                                     {
                                         builtin_func(args, envStack);
                                     }
@@ -202,8 +202,7 @@ namespace Kula.Core
                                             throw new KulaException.MapTypeException();
                                         }
                                         envStack.Push(
-                                            ((Data.Map)vector)
-                                                [(string)vector_key]
+                                            ((Data.Map)vector).Data[(string)vector_key]
                                         );
                                     }
                                 }
