@@ -11,6 +11,9 @@ namespace Kula
     public class KulaEngine
     {
         private readonly FuncRuntime mainRuntime;
+        private readonly Queue<object> queue = new Queue<object>();
+        public Queue<object> EngineQueue { get => queue; }
+
         public KulaEngine()
         {
             mainRuntime = new FuncRuntime(null, null, this.queue);
@@ -65,10 +68,7 @@ namespace Kula
         }
 
         // 静态
-        public Queue<object> EngineQueue { get => queue; }
-        public Dictionary<string, BuiltinFunc> ExtendFunc { get => extendFunc; }
-
-        private readonly Queue<object> queue = new Queue<object>();
-        private readonly Dictionary<string, BuiltinFunc> extendFunc = new Dictionary<string, BuiltinFunc>();
+        private static readonly Dictionary<string, BuiltinFunc> extendFunc = new Dictionary<string, BuiltinFunc>();
+        public static Dictionary<string, BuiltinFunc> ExtendFunc { get => extendFunc; }
     }
 }

@@ -119,6 +119,11 @@ namespace Kula.Core
                                         flag = true;
                                         envStack.Push(Func.BuiltinFunc[(string)node.Value]);
                                     }
+                                    else if (KulaEngine.ExtendFunc.ContainsKey((string)node.Value))
+                                    {
+                                        flag = true;
+                                        envStack.Push(KulaEngine.ExtendFunc[(string)node.Value]);
+                                    }
 
                                     while (flag == false && now_env != null)
                                     {
@@ -194,7 +199,7 @@ namespace Kula.Core
                                             throw new KulaException.ArrayTypeException();
                                         }
                                         envStack.Push(
-                                            ((Data.Array)vector)
+                                            ((Data.Array)vector).Data
                                                 [(int)(float)vector_key]
                                         );
                                     }

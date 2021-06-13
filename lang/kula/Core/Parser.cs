@@ -22,11 +22,12 @@ namespace Kula.Core
             { "Any", typeof(object) },
             { "Num", typeof(float) },
             { "Str", typeof(string) },
+            { "BuiltinFunc", typeof(Kula.Data.BuiltinFunc) },
             { "Func", typeof(Kula.Data.FuncEnv) },
             { "Array", typeof(Kula.Data.Array) },
             { "Map", typeof(Kula.Data.Map) },
         };
-        public static Dictionary<String, Type> TypeDict { get => typeDict; }
+        public static Dictionary<string, Type> TypeDict { get => typeDict; }
 
         private Parser() { }
 

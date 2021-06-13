@@ -7,7 +7,7 @@ using Kula.Core;
 namespace Kula.Data
 {
     public delegate void BuiltinFunc(object[] args, Stack<object> stack, Queue<object> queue);
-    class Func  // : IRunnable
+    class Func
     {
         // 静态内置方法 们
         public static Dictionary<string, BuiltinFunc> BuiltinFunc { get => builtinFunc; }
@@ -29,6 +29,14 @@ namespace Kula.Data
             {"div", (args, stack, queue) => {
                 ArgsCheck(args, new Type[]{typeof(float), typeof(float)});
                 stack.Push((float)args[0] / (float)args[1]);
+            } },
+            {"floor", (args, stack, queue) => {
+                ArgsCheck(args, new Type[] { typeof(float) });
+                stack.Push( (float)Math.Floor((float)args[0]) );
+            } },
+            {"mod", (args, stack, queue) => {
+                ArgsCheck(args, new Type[] { typeof(float), typeof(float) });
+                stack.Push( (float)((int)(float)args[0] % (int)(float)args[1]) );
             } },
 
             // IO
@@ -72,30 +80,20 @@ namespace Kula.Data
                 stack.Push((string)args[0] + (string)args[1]);
             } },
             {"type", (args, stack, queue) => {
+                if (args[0] == null)
+                {
+                    stack.Push("null");
+                    return;
+                }
                 var arg = args[0].GetType();
                 foreach (var tp in Parser.TypeDict)
                 {
                     if (arg == tp.Value)
                     {
                         stack.Push(tp.Key);
-                        break;
+                        return;
                     }
                 }
-                /**
-                var arg = args[0];
-                if (arg is float)
-                    stack.Push("Num");
-                else if (arg is string)
-                    stack.Push("Str");
-                else if (arg is FuncEnv)
-                    stack.Push("Func");
-                else if (arg is Array)
-                    stack.Push("Array");
-                else if (arg is Map)
-                    stack.Push("Map");
-                else
-                    stack.Push("None");
-                **/
             } },
 
             // Bool
@@ -133,7 +131,11 @@ namespace Kula.Data
             } },
             {"fill", (args, stack, queue) => {
                 ArgsCheck(args, new Type[] { typeof(Array), typeof(float), typeof(object) });
-                ((Array)args[0])[(int)(float)args[1]] = args[2];
+                ((Array)args[0]).Data[(int)(float)args[1]] = args[2];
+            } },
+            {"size", (args, stack, queue) => {
+                ArgsCheck(args, new Type[] { typeof(Array) });
+                stack.Push((float) ((Array)args[0]).Data.Length);
             } },
 
             // Map
@@ -209,7 +211,7 @@ namespace Kula.Data
         {
             if (arg.GetType() == typeof(BuiltinFunc))
             {
-                return "<BuiltinFunc/>";
+                return "<builtin-func/>";
             }
             else
             {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Kula.Data
 {
-    class Map
+    public class Map
     {
         private readonly SortedDictionary<string, object> data;
 

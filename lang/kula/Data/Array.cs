@@ -2,37 +2,16 @@
 
 namespace Kula.Data
 {
-    class Array
+    public class Array
     {
         private readonly object[] data;
+        public object[] Data { get => data; }
 
         public Array(int size)
         {
             this.data = new object[size];
         }
 
-        public object this[int index]
-        {
-            get 
-            { 
-                if (index < data.Length && index >= 0)
-                {
-                    return data[index];
-                }
-                throw new Util.KulaException.ArrayIndexException();
-            }
-            set 
-            {
-                if (index < data.Length && index >= 0)
-                {
-                    data[index] = value;
-                }
-                else
-                {
-                    throw new Util.KulaException.ArrayIndexException();
-                }
-            }
-        }
         private static string KToString(object arg)
         {
             if (arg == null) { return "null"; }
