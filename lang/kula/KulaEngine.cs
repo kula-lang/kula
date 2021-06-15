@@ -11,51 +11,46 @@ namespace Kula
     public class KulaEngine
     {
         private readonly FuncRuntime mainRuntime;
+        private readonly Dictionary<string, FuncEnv> byteCodeMap = new Dictionary<string, FuncEnv>();
         private readonly Queue<object> queue = new Queue<object>();
         public Queue<object> EngineQueue { get => queue; }
 
         public KulaEngine()
         {
-            mainRuntime = new FuncRuntime(null, null, this.queue);
+            mainRuntime = new FuncRuntime(null, null, queue);
         }
-        public void Run(string sourceCode)
+
+        public void Compile(string sourceCode, string codeID, bool isDebug)
         {
-            try
-            {
-                List<LexToken> lexTokens = Lexer.Instance.Read(sourceCode).Scan().Out();
-                Func main = new Func(lexTokens) { Compiled = true };
-                FuncEnv mainEnv = new FuncEnv(main, null);
-                Parser.Instance.Parse(main);
-                mainRuntime.Read(mainEnv).Run(null);
-            }
-            catch (Exception e)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e.Message);
-                Console.ResetColor();
-            }
+            var tmp1 = Lexer.Instance.Read(sourceCode).Scan();
+            if (isDebug) { tmp1.Show(); }
+            List<LexToken> lexTokens = tmp1.Out();
+
+            Func main = new Func(lexTokens) { Compiled = true };
+            FuncEnv mainEnv = new FuncEnv(main, null);
+            
+            var tmp2 = Parser.Instance.Parse(main);
+            if (isDebug) { tmp2.Show(); }
+            
+            byteCodeMap[codeID] = mainEnv;
         }
-        public void DebugRun(string code)
+
+        public void Run(string codeId, bool isDebug)
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            try
+            if (!isDebug)
             {
-                List<LexToken> lexTokens = Lexer.Instance.Read(code).Scan().Show().Out();
-                Func main = new Func(lexTokens) { Compiled = true };
-                FuncEnv mainEnv = new FuncEnv(main, null);
-                Parser.Instance.Parse(main).Show();
-                mainRuntime.Read(mainEnv).DebugRun();
+                mainRuntime.Read(byteCodeMap[codeId]).Run(null);
             }
-            catch (Exception e)
+            else
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e.Message);
-                Console.ResetColor();
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                mainRuntime.Read(byteCodeMap[codeId]).Run(null);
+                stopwatch.Stop();
+                Console.WriteLine("\tIt takes " + stopwatch.Elapsed.Milliseconds + " ms.\n");
             }
-            stopwatch.Stop();
-            Console.WriteLine("\tIt takes " + stopwatch.Elapsed.Milliseconds + " ms.\n");
         }
+
         public void Clear()
         {
             mainRuntime.VarDict.Clear();

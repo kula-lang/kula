@@ -14,16 +14,21 @@ namespace Kula.Core
         
         private string sourceCode;
         private List<LexToken> tokenStream;
-        
+
         static class Is
         {
-            public static bool CNumber(char c) { return (c <= '9' && c >= '0') || c == '.' || c == '+' || c == '-'; }
-            public static bool CName(char c) { return (c <= 'z' && c >= 'a') || (c <= 'Z' && c >= 'A') || (c == '_') || CNumber(c); }
+            public static bool CNumber(char c) { return (c <= '9' && c >= '0') || c == '.'; }
+            public static bool CNumberHead(char c) { return (c <= '9' && c >= '0') || c == '+' || c == '-'; }
+            public static bool CName(char c)
+            { return (c <= 'z' && c >= 'a') || (c <= 'Z' && c >= 'A') || (c == '_') || (c <= '0' && c >= '9'); }
             public static bool CSpace(char c) { return (c == '\n' || c == '\t' || c == '\r' || c == ' '); }
             public static bool CNewLine(char c) { return c == '\n'; }
-            public static bool CBracket(char c) 
-                { return c == '(' || c == '{' || c == ')' || c == '}' || c == '[' || c == ']' || c == '<' || c == '>'; }
+            public static bool CSymbol(char c)
+            { return c == ';' || c == ',' || c == '.' || c == ':' || c == '=' || CBracket(c); }
+            public static bool CBracket(char c)
+            { return c == '(' || c == '{' || c == ')' || c == '}' || c == '[' || c == ']' || c == '<' || c == '>'; }
             public static bool CAnnotation(char c) { return c == '#'; }
+            public static bool CPoint(char c) { return c == '.'; }
             public static bool CComma(char c) { return c == ','; }
             public static bool CColon(char c) { return c == ':'; }
             public static bool CEnd(char c) { return c == ';'; }
@@ -50,7 +55,7 @@ namespace Kula.Core
                         {
                             state = LexTokenType.STRING;
                         }
-                        else if (Is.CNumber(c))
+                        else if (Is.CNumberHead(c))
                         {
                             tokenBuilder.Append(c);
                             state = LexTokenType.NUMBER;
@@ -60,7 +65,8 @@ namespace Kula.Core
                             tokenBuilder.Append(c);
                             state = LexTokenType.NAME;
                         }
-                        else if (Is.CBracket(c) || Is.CAssign(c) || Is.CComma(c) || Is.CColon(c) || Is.CEnd(c))
+                        // else if (Is.CPoint(c) || Is.CBracket(c) || Is.CAssign(c) || Is.CComma(c) || Is.CColon(c) || Is.CEnd(c))
+                        else if (Is.CSymbol(c))
                         {
                             tokenStream.Add(new LexToken(LexTokenType.SYMBOL, c.ToString()));
                         }

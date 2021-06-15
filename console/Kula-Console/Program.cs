@@ -45,13 +45,16 @@ class Program
             }
             else
             {
-                if (debugMode)
+                try
                 {
-                    kulaEngine.DebugRun(code);
+                    kulaEngine.Compile(code, "", debugMode);
+                    kulaEngine.Run("", debugMode);
                 }
-                else
+                catch (Exception e)
                 {
-                    kulaEngine.Run(code);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(e.GetType().ToString() + " : " + e.Message);
+                    Console.ResetColor();
                 }
             }
         }
@@ -67,16 +70,20 @@ class Program
             }
             catch (Exception e)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(e);
                 return;
             }
-            if (args.Length >= 2 && args[1] == "--debug")
+            try
             {
-                kulaEngine.DebugRun(code);
+                kulaEngine.Compile(code, "", (args.Length >= 2 && args[1] == "--debug"));
+                kulaEngine.Run("", debugMode);
             }
-            else
+            catch (Exception e)
             {
-                kulaEngine.Run(code);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(e);
+                Console.ResetColor();
             }
         }
         else

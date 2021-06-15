@@ -36,7 +36,7 @@ namespace Kula.Core
         {
             { LexTokenType.NAME, ConsoleColor.Cyan },
             { LexTokenType.NUMBER, ConsoleColor.Blue },
-            { LexTokenType.STRING, ConsoleColor.Magenta },
+            { LexTokenType.STRING, ConsoleColor.DarkYellow },
             { LexTokenType.SYMBOL, ConsoleColor.Green },
         };
     }

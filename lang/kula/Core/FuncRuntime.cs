@@ -8,7 +8,7 @@ namespace Kula.Core
 {
     class FuncRuntime   // : IRuntime
     {
-        private readonly Dictionary<string, Object> varDict;
+        private readonly Dictionary<string, object> varDict;
         private FuncEnv root;
         private bool returned;
 
@@ -112,17 +112,18 @@ namespace Kula.Core
                             case VMNodeType.NAME:
                                 { 
                                     bool flag = false;
-                                    FuncRuntime now_env = this; 
-                                    
-                                    if (Func.BuiltinFunc.ContainsKey((string)node.Value))
-                                    {
-                                        flag = true;
-                                        envStack.Push(Func.BuiltinFunc[(string)node.Value]);
-                                    }
-                                    else if (KulaEngine.ExtendFunc.ContainsKey((string)node.Value))
+                                    FuncRuntime now_env = this;
+
+                                    // 扩展函数 覆盖 内置函数
+                                    if (KulaEngine.ExtendFunc.ContainsKey((string)node.Value))
                                     {
                                         flag = true;
                                         envStack.Push(KulaEngine.ExtendFunc[(string)node.Value]);
+                                    }
+                                    else if (Func.BuiltinFunc.ContainsKey((string)node.Value))
+                                    {
+                                        flag = true;
+                                        envStack.Push(Func.BuiltinFunc[(string)node.Value]);
                                     }
 
                                     while (flag == false && now_env != null)
