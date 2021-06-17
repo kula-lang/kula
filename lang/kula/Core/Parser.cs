@@ -206,10 +206,18 @@ namespace Kula.Core
             if (PValue() && PSymbol(";")) { return true; }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
 
+            if (PLeftVar() && PSymbol(":") && PSymbol("=") && PValue() && PSymbol(";"))
+            {
+                string var_name = nameStack.Pop();
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VAR, var_name));
+                return true;
+            }
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+
             if (PLeftVar() && PSymbol("=") && PValue() && PSymbol(";"))
             {
                 string var_name = nameStack.Pop();
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VARIABLE, var_name));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.LET, var_name));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
@@ -355,7 +363,7 @@ namespace Kula.Core
             int _pos = pos, _size = aimFunc.NodeStream.Count;
             if (PSymbol("[") && PValue() && PSymbol("]"))
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VEC_KEY, '['));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CON_KEY, '['));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
@@ -367,7 +375,7 @@ namespace Kula.Core
             // <"key">
             if (PSymbol("<") && PValue() && PSymbol(">"))
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VEC_KEY, '<'));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CON_KEY, '<'));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);

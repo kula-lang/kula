@@ -36,13 +36,14 @@ namespace Kula.Core
             { VMNodeType.VALUE, ConsoleColor.Blue },
             { VMNodeType.LAMBDA, ConsoleColor.DarkBlue },
             { VMNodeType.STRING, ConsoleColor.Blue },
-            { VMNodeType.VARIABLE, ConsoleColor.Cyan },
+            { VMNodeType.VAR, ConsoleColor.DarkYellow },
+            { VMNodeType.LET, ConsoleColor.Yellow },
             { VMNodeType.NAME, ConsoleColor.Cyan },
             { VMNodeType.FUNC, ConsoleColor.Magenta },
             { VMNodeType.IFGOTO, ConsoleColor.Red },
             { VMNodeType.GOTO, ConsoleColor.Red },
 
-            { VMNodeType.VEC_KEY, ConsoleColor.Yellow },
+            { VMNodeType.CON_KEY, ConsoleColor.Yellow },
         };
     }
 
@@ -51,13 +52,16 @@ namespace Kula.Core
         VALUE,      // 常量值
         STRING,     // 常字符串
         LAMBDA,     // 匿名函数
-        VARIABLE,   // 待接收
+
+        VAR,        // 声明赋值
+        LET,        // 赋值
+        
         NAME,       // 变量名
         FUNC,       // 运行 Lambda
         IFGOTO,     // 为零时跳转
         GOTO,       // 无条件跳转
         RETURN,     // 返回值
 
-        VEC_KEY,  // 右值索引
+        CONKEY,    // 右值索引
     }
 }

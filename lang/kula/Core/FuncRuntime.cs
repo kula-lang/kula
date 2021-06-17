@@ -89,7 +89,7 @@ namespace Kula.Core
                                     envStack.Push(new FuncEnv((Func)value, this));
                                 }
                                 break;
-                            case VMNodeType.VARIABLE:
+                            case VMNodeType.LET:
                                 { 
                                     bool flag = false;
                                     FuncRuntime now_env = this;
@@ -107,6 +107,11 @@ namespace Kula.Core
                                     {
                                         varDict[(string)node.Value] = envStack.Pop(); 
                                     }
+                                }
+                                break;
+                            case VMNodeType.VAR:
+                                {
+                                    this.VarDict[(string)node.Value] = envStack.Pop();
                                 }
                                 break;
                             case VMNodeType.NAME:
@@ -189,7 +194,7 @@ namespace Kula.Core
                                     returned = true;
                                 }
                                 break;
-                            case VMNodeType.VEC_KEY:
+                            case VMNodeType.CON_KEY:
                                 {
                                     object vector_key = envStack.Pop();
                                     object vector = envStack.Pop();
