@@ -7,8 +7,8 @@ namespace Kula.Core
 {
     struct VMNode
     {
-        VMNodeType type;
-        object value;
+        readonly VMNodeType type;
+        readonly object value;
 
         public VMNode(VMNodeType type, object value)
         {
@@ -16,8 +16,8 @@ namespace Kula.Core
             this.value = value;
         }
 
-        public VMNodeType Type { get => type; set => type = value; }
-        public object Value { get => value; set => this.value = value; }
+        public VMNodeType Type { get => type; }
+        public object Value { get => value; }
 
         public override string ToString()
         {
@@ -43,7 +43,7 @@ namespace Kula.Core
             { VMNodeType.IFGOTO, ConsoleColor.Red },
             { VMNodeType.GOTO, ConsoleColor.Red },
 
-            { VMNodeType.CON_KEY, ConsoleColor.Yellow },
+            { VMNodeType.CONKEY, ConsoleColor.Yellow },
         };
     }
 

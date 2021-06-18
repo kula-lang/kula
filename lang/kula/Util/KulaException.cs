@@ -21,9 +21,9 @@ namespace Kula.Util
         }
 
         // Func Exception
-        public class FuncTypeException : Exception
+        public class ArgsTypeException : Exception
         {
-            public FuncTypeException() : base("Wrong Arguments Type.") { }
+            public ArgsTypeException() : base("Wrong Arguments Type.") { }
         }
         public class FuncUsingException : Exception
         {

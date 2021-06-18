@@ -44,7 +44,11 @@ namespace Kula.Core
             Console.ResetColor();
             return this;
         }
-        // 入口
+
+        /// <summary>
+        /// 整体解析 程序入口
+        /// </summary>
+        /// <param name="main">主代码块</param>
         public Parser Parse(Func main)
         {
             pos = 0; int _pos = -1;
@@ -54,8 +58,8 @@ namespace Kula.Core
             while (pos < aimFunc.TokenStream.Count && _pos != pos)
             {
                 _pos = pos;
-                try 
-                { 
+                try
+                {
                     PStatement();
                 }
                 catch (IndexOutOfRangeException)
@@ -78,6 +82,11 @@ namespace Kula.Core
             aimFunc.TokenStream.Clear();
             return this;
         }
+
+        /// <summary>
+        /// 整体解析 函数体
+        /// </summary>
+        /// <param name="func">函数</param>
         public Parser ParseLambda(Func func)
         {
             pos = 0; int _pos = -1;
@@ -115,7 +124,9 @@ namespace Kula.Core
             throw new KulaException.ParserException();
         }
         
-        // 
+        /// <summary>
+        /// 只解析匿名函数 的大概形状
+        /// </summary>
         private bool PLambdaHead()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
@@ -137,6 +148,10 @@ namespace Kula.Core
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
+
+        /// <summary>
+        /// 匿名函数 声明区
+        /// </summary>
         private bool PLambdaDeclare()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
@@ -171,6 +186,10 @@ namespace Kula.Core
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
+
+        /// <summary>
+        /// 值:类型 对
+        /// </summary>
         private bool PValAndType()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
@@ -193,6 +212,16 @@ namespace Kula.Core
         {
             return typeDict[str];
         }
+
+        /// <summary>
+        /// 单个语句  
+        /// ;  
+        /// n;  
+        /// n := 1;  
+        /// n = 1;  
+        /// if 块  
+        /// while 块  
+        /// </summary>
         private bool PStatement()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
@@ -231,12 +260,21 @@ namespace Kula.Core
 
             return false;
         }
+
+        /// <summary>
+        /// 一个右值
+        /// </summary>
         private bool PValue()
         {
             int count = 0;
             while (PNode()) { count++; }
             return count > 0;
         }
+
+        /// <summary>
+        /// 值元素
+        /// （这个比较复杂
+        /// </summary>
         private bool PNode()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
@@ -264,6 +302,10 @@ namespace Kula.Core
 
             return false;
         }
+
+        /// <summary>
+        /// 解析 调用函数的一对括号
+        /// </summary>
         private bool PFuncBras()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
@@ -301,6 +343,10 @@ namespace Kula.Core
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
+
+        /// <summary>
+        /// 常量
+        /// </summary>
         private bool PConst()
         {
             int _pos = pos;
@@ -312,6 +358,10 @@ namespace Kula.Core
             }
             pos = _pos; return false;
         }
+
+        /// <summary>
+        /// 常字符串
+        /// </summary>
         private bool PConstString()
         {
             int _pos = pos;
@@ -323,6 +373,11 @@ namespace Kula.Core
             }
             pos = _pos; return false;
         }
+
+        /// <summary>
+        /// 符号
+        /// </summary>
+        /// <param name="sym">解析的目标符号，不支持正则</param>
         private bool PSymbol(string sym)
         {
             int _pos = pos;
@@ -333,6 +388,11 @@ namespace Kula.Core
             }
             pos = _pos; return false;
         }
+
+        /// <summary>
+        /// 左值 
+        /// 等待变量接收到本地表内
+        /// </summary>
         private bool PLeftVar()
         {
             int _pos = pos;
@@ -344,6 +404,11 @@ namespace Kula.Core
             }
             pos = _pos; return false;
         }
+
+        /// <summary>
+        /// 右值 
+        /// 可以解析变量名携带的值
+        /// </summary>
         private bool PRightVar()
         {
             int _pos = pos;
@@ -358,30 +423,57 @@ namespace Kula.Core
 
             return false;
         }
+
+        /// <summary>
+        /// Array类型的右索引
+        /// </summary>
         private bool PRightIndex()
         {
             int _pos = pos, _size = aimFunc.NodeStream.Count;
             if (PSymbol("[") && PValue() && PSymbol("]"))
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CON_KEY, '['));
-                return true;
-            }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
-            return false;
-        }
-        private bool PRightKey()
-        {
-            int _pos = pos, _size = aimFunc.NodeStream.Count;
-            // <"key">
-            if (PSymbol("<") && PValue() && PSymbol(">"))
-            {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CON_KEY, '<'));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '['));
                 return true;
             }
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
 
+        /// <summary>
+        /// Map类型的右索引
+        /// </summary>
+        private bool PRightKey()
+        {
+            int _pos = pos, _size = aimFunc.NodeStream.Count;
+            
+            // <"key">
+            if (PSymbol("<") && PValue() && PSymbol(">"))
+            {
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '<'));
+                return true;
+            }
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+
+            // .key
+            if (PSymbol("."))
+            {
+                var token_key = aimFunc.TokenStream[pos++];
+                if (token_key.Type == LexTokenType.NAME)
+                {
+                    aimFunc.NodeStream.Add(new VMNode(VMNodeType.STRING, token_key.Value));
+                    aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '<'));
+                    return true;
+                }
+            }
+            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+
+            return false;
+        }
+
+        /// <summary>
+        /// 解析 关键字
+        /// </summary>
+        /// <param name="kword">解析的目标关键字，不支持正则</param>
         private bool PKeyword(string kword)
         {
             int _pos = pos;
@@ -392,6 +484,10 @@ namespace Kula.Core
             }
             pos = _pos; return false;
         }
+
+        /// <summary>
+        /// return 关键字 和 返回值
+        /// </summary>
         private bool PReturn()
         {
             if (PKeyword("return") && PValue())
@@ -401,9 +497,14 @@ namespace Kula.Core
             }
             return false;
         }
-        /**
-         * foo = func (Num v1, Str v2) { ... } 
-         */
+
+        /// <summary>
+        /// lambda 函数体
+        /// 格式如：
+        ///     func (Num v1, Str v2) { ... } 
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private bool PLambdaBody()
         {
             int _pos = pos, start_pos = _pos;
@@ -435,12 +536,20 @@ namespace Kula.Core
             pos = _pos;
             return false;
         }
+
+        /// <summary>
+        /// if 块
+        /// 格式如：
+        ///     if ( xxx ) { yyy... }
+        /// </summary>
         private bool PBlockIf()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
 
             if (PKeyword("if") && PSymbol("(") && PValue() && PSymbol(")"))
             {
+                // 保存当前位置新建节点，用于稍后填充 IFGOTO
+                // 注意：VMNode 是 struct，没有GC负担
                 int tmpId = aimFunc.NodeStream.Count;
                 aimFunc.NodeStream.Add(new VMNode());
 
@@ -458,6 +567,12 @@ namespace Kula.Core
             pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
             return false;
         }
+
+        /// <summary>
+        /// while 块
+        /// 格式如：
+        ///     while ( xxx ) { yyy... }
+        /// </summary>
         private bool PBlockWhile()
         {
             int _pos = 0; int _size = aimFunc.NodeStream.Count;

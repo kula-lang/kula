@@ -17,7 +17,7 @@ namespace Kula
 
         public KulaEngine()
         {
-            mainRuntime = new FuncRuntime(null, null, queue);
+            mainRuntime = new FuncRuntime(null, null, this);
         }
 
         public void Compile(string sourceCode, string codeID, bool isDebug)

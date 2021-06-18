@@ -12,15 +12,15 @@ namespace Kula.Core
         private FuncEnv root;
         private bool returned;
 
-        private readonly Queue<object> engineQueue;
+        private readonly KulaEngine engine;
         private readonly Stack<object> envStack;
         private readonly Stack<object> fatherStack;
 
-        public FuncRuntime(FuncEnv root, Stack<object> fatherStack, Queue<object> engineQueue)
+        public FuncRuntime(FuncEnv root, Stack<object> fatherStack, KulaEngine engine)
         {
             this.root = root;
             this.fatherStack = fatherStack;
-            this.engineQueue = engineQueue;
+            this.engine = engine;
 
             this.envStack = new Stack<object>();
             this.varDict = new Dictionary<string, object>();
@@ -51,9 +51,9 @@ namespace Kula.Core
                 for (int i = root.Func.ArgNames.Count - 1; i >= 0 && arguments != null; --i)
                 {
                     object arg = arguments[i];
-                    if (arg.GetType() != root.Func.ArgTypes[i])
+                    if (root.Func.ArgTypes[i] != typeof(object) && arg.GetType() != root.Func.ArgTypes[i])
                     {
-                        throw new KulaException.FuncTypeException();
+                        throw new KulaException.ArgsTypeException();
                     }
                     else
                     {
@@ -157,11 +157,11 @@ namespace Kula.Core
                                     object func = envStack.Pop();
                                     if (func is BuiltinFunc builtin_func)
                                     {
-                                        builtin_func(args, envStack, engineQueue);
+                                        builtin_func(args, envStack, engine);
                                     }
                                     else if (func is FuncEnv func_env)
                                     {
-                                        new FuncRuntime(func_env, envStack, engineQueue).Run(args);
+                                        new FuncRuntime(func_env, envStack, engine).Run(args);
                                     }
                                     else 
                                     {
@@ -194,7 +194,7 @@ namespace Kula.Core
                                     returned = true;
                                 }
                                 break;
-                            case VMNodeType.CON_KEY:
+                            case VMNodeType.CONKEY:
                                 {
                                     object vector_key = envStack.Pop();
                                     object vector = envStack.Pop();

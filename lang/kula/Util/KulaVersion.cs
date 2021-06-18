@@ -28,7 +28,7 @@ namespace Kula.Util
 
 
         // 版本信息
-        private static readonly KulaVersion version = new KulaVersion("Diamond Breath", 1, new DateTime(2021, 6, 13));
+        private static readonly KulaVersion version = new KulaVersion("LTS", 0, new DateTime(2021, 6, 13));
         public static void HelloKula()
         {
             Console.ForegroundColor = ConsoleColor.Magenta;

@@ -34,10 +34,10 @@ namespace Kula.Core
         // 颜色表
         public static readonly Dictionary<LexTokenType, ConsoleColor> LexColorDict = new Dictionary<LexTokenType, ConsoleColor>()
         {
-            { LexTokenType.NAME, ConsoleColor.Cyan },
+            { LexTokenType.NAME, ConsoleColor.Green },
             { LexTokenType.NUMBER, ConsoleColor.Blue },
-            { LexTokenType.STRING, ConsoleColor.DarkYellow },
-            { LexTokenType.SYMBOL, ConsoleColor.Green },
+            { LexTokenType.STRING, ConsoleColor.Red },
+            { LexTokenType.SYMBOL, ConsoleColor.DarkYellow },
         };
     }
 
