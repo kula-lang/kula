@@ -8,18 +8,35 @@ using Kula.Data;
 
 namespace Kula
 {
+    /// <summary>
+    /// Kula 源引擎
+    /// </summary>
     public class KulaEngine
     {
+        /// <summary>
+        /// 主运行时
+        /// </summary>
         private readonly FuncRuntime mainRuntime;
+        
+        /// <summary>
+        /// 编译好的 字节码 集合
+        /// </summary>
         private readonly Dictionary<string, FuncEnv> byteCodeMap = new Dictionary<string, FuncEnv>();
-        private readonly Queue<object> queue = new Queue<object>();
-        public Queue<object> EngineQueue { get => queue; }
 
+        /// <summary>
+        /// 构造函数，生成空运行时
+        /// </summary>
         public KulaEngine()
         {
             mainRuntime = new FuncRuntime(null, null, this);
         }
 
+        /// <summary>
+        /// 编译 生成字节码 存储到字节码集合
+        /// </summary>
+        /// <param name="sourceCode">源代码</param>
+        /// <param name="codeID">字节码名称</param>
+        /// <param name="isDebug">是否为Debug编译</param>
         public void Compile(string sourceCode, string codeID, bool isDebug)
         {
             var tmp1 = Lexer.Instance.Read(sourceCode).Scan();
@@ -35,6 +52,11 @@ namespace Kula
             byteCodeMap[codeID] = mainEnv;
         }
 
+        /// <summary>
+        /// 运行 字节码集合 中的 字节码
+        /// </summary>
+        /// <param name="codeId">字节码名称</param>
+        /// <param name="isDebug">是否为Debug输出</param>
         public void Run(string codeId, bool isDebug)
         {
             if (!isDebug)
@@ -51,18 +73,25 @@ namespace Kula
             }
         }
 
+        /// <summary>
+        /// 清空 变量表 和 虚拟机栈
+        /// </summary>
         public void Clear()
         {
             mainRuntime.VarDict.Clear();
             mainRuntime.EnvStack.Clear();
         }
 
-        public static void Hello()
-        {
-            Kula.Util.KulaVersion.HelloKula();
-        }
+        /// <summary>
+        /// 没用
+        /// </summary>
+        public static string Version { get => Kula.Util.KulaVersion.Version.ToString(); }
 
         // 静态
+
+        /// <summary>
+        /// 扩展函数集合
+        /// </summary>
         private static readonly Dictionary<string, BuiltinFunc> extendFunc = new Dictionary<string, BuiltinFunc>();
         public static Dictionary<string, BuiltinFunc> ExtendFunc { get => extendFunc; }
     }

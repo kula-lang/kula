@@ -17,7 +17,7 @@ namespace Kula.Util
         // 表面错误
         public class VariableException : Exception
         {
-            public VariableException() : base("Use Variable Before Init.") { }
+            public VariableException(string name) : base("Use Variable Before Init. => " + name) { }
         }
 
         // Func Exception

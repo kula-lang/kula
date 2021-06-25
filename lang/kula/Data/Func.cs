@@ -6,7 +6,7 @@ using Kula.Core;
 
 namespace Kula.Data
 {
-    public delegate void BuiltinFunc(object[] args, Stack<object> stack, KulaEngine engine);
+    public delegate void BuiltinFunc(object[] args, Stack<object> stack);
     class Func
     {
         // 静态内置方法 们
@@ -14,72 +14,72 @@ namespace Kula.Data
         private static readonly Dictionary<string, BuiltinFunc> builtinFunc = new Dictionary<string, BuiltinFunc>()
         {
             // Num
-            {"plus", (args, stack, engine) => {
+            {"plus", (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 stack.Push((float)args[0] + (float)args[1]);
             } },
-            {"minus", (args, stack, engine) => {
+            {"minus", (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 stack.Push((float)args[0] - (float)args[1]);
             } },
-            {"times", (args, stack, engine) => {
+            {"times", (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 stack.Push((float)args[0] * (float)args[1]);
             } },
-            {"div", (args, stack, engine) => {
+            {"div", (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 stack.Push((float)args[0] / (float)args[1]);
             } },
-            {"floor", (args, stack, engine) => {
+            {"floor", (args, stack) => {
                 ArgsCheck(args, typeof(float));
                 stack.Push( (float)Math.Floor((float)args[0]) );
             } },
-            {"mod", (args, stack, engine) => {
+            {"mod", (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 stack.Push( (float)((int)(float)args[0] % (int)(float)args[1]) );
             } },
 
             // IO
-            {"print", (args, stack, engine) => {
+            {"print", (args, stack) => {
                 foreach (var arg in args)
                 {
                     Console.Write( KToString(arg) );
                 }
             } },
-            {"println", (args, stack, engine) => {
+            {"println", (args, stack) => {
                 foreach (var arg in args)
                 {
                     Console.Write( KToString(arg) );
                 }
                 Console.WriteLine();
             } },
-            {"input", (args, stack, engine) =>{
+            {"input", (args, stack) =>{
                 stack.Push(Console.ReadLine());
             } },
             
             // String
-            {"toStr", (args, stack, engine) => {
+            {"toStr", (args, stack) => {
                 stack.Push(KToString(args[0]));
             } },
-            {"parseNum", (args, stack, engine) => {
+            {"parseNum", (args, stack) => {
                 var arg = args[0];
                 ArgsCheck(args, typeof(string));
                 float.TryParse((string)arg, out float ans);
                 stack.Push(ans);
             } },
-            {"len", (args, stack, engine) => {
+            {"len", (args, stack) => {
                 ArgsCheck(args, typeof(string));
                 stack.Push((float)((string)args[0]).Length);
             } },
-            {"cut", (args, stack, engine) => {
+            {"cut", (args, stack) => {
                 ArgsCheck(args, typeof(string), typeof(float), typeof(float));
                 stack.Push(((string)args[0]).Substring((int)(float)args[1], (int)(float)args[2]));
             } },
-            {"concat", (args, stack, engine) => {
+            {"concat", (args, stack) => {
                 ArgsCheck(args, typeof(string), typeof(string));
                 stack.Push((string)args[0] + (string)args[1]);
             } },
-            {"type", (args, stack, engine) => {
+            {"type", (args, stack) => {
                 if (args[0] == null)
                 {
                     stack.Push("Null");
@@ -97,98 +97,79 @@ namespace Kula.Data
             } },
 
             // Bool
-            {"equal", (args, stack, engine) => {
+            {"equal", (args, stack) => {
                 stack.Push( object.Equals(args[0], args[1]) ? 1f : 0f);
             } },
-            {"greater", (args, stack, engine) => {
+            {"greater", (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 stack.Push( ((float)args[0] > (float)args[1]) ? 1f : 0f);
             } },
-            {"less",  (args, stack, engine) => {
+            {"less",  (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 stack.Push( ((float)args[0] < (float)args[1]) ? 1f : 0f);
             } },
-            {"and",  (args, stack, engine) => {
+            {"and",  (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 bool flag = ((float)args[0] != 0) && ((float)args[1] != 0);
                 stack.Push(flag ? 1f : 0f);
             } },
-            {"or", (args, stack, engine) => {
+            {"or", (args, stack) => {
                 ArgsCheck(args, typeof(float), typeof(float));
                 bool flag = ((float)args[0] != 0) || ((float)args[1] != 0);
                 stack.Push(flag ? 1f : 0f);
             } },
-            {"not",  (args, stack, engine) => {
+            {"not",  (args, stack) => {
                 ArgsCheck(args, typeof(float));
                 stack.Push((float)args[0] == 0f ? 1f : 0f);
             } },
 
             // Array
-            {"newArray", (args, stack, engine) => {
+            {"newArray", (args, stack) => {
                 ArgsCheck(args, typeof(float));
                 Array tmp = new Array((int)(float)args[0]);
                 stack.Push(tmp);
             } },
-            {"fill", (args, stack, engine) => {
+            {"fill", (args, stack) => {
                 ArgsCheck(args, typeof(Array), typeof(float), typeof(object));
                 ((Array)args[0]).Data[(int)(float)args[1]] = args[2];
             } },
-            {"size", (args, stack, engine) => {
+            {"size", (args, stack) => {
                 ArgsCheck(args, typeof(Array));
                 stack.Push((float) ((Array)args[0]).Data.Length);
             } },
 
             // Map
-            {"newMap", (args, stack, engine) =>{
+            {"newMap", (args, stack) =>{
                 Map tmp_map = new Map();
                 stack.Push(tmp_map);
             } },
-            {"put", (args, stack, engine) => {
+            {"put", (args, stack) => {
                 ArgsCheck(args, typeof(Map), typeof(string), typeof(object));
                 ((Map)args[0]).Data[(string)args[1]] = args[2];
             } },
-            {"count", (args, stack, engine) => {
+            {"count", (args, stack) => {
                 ArgsCheck(args, typeof(Map));
                 stack.Push((float) ((Map)args[0]).Data.Count);
             } },
-            {"keyIn", (args, stack, engine) => {
+            {"keyIn", (args, stack) => {
                 ArgsCheck(args, typeof(Map), typeof(string));
                 stack.Push((float) (((Map)args[0]).Data.ContainsKey((string)args[1]) ? 1f : 0f ));
             } },
 
             // ASCII
-            {"AsciiToChar", (args, stack, engine) => {
+            {"AsciiToChar", (args, stack) => {
                 ArgsCheck(args, typeof(float));
                 stack.Push(((char)(int)(float)args[0]).ToString());
             } },
-            {"CharToAscii", (args, stack, engine) => {
+            {"CharToAscii", (args, stack) => {
                 ArgsCheck(args, typeof(string));
                 if (!float.TryParse((string)args[0], out float tmp)) { tmp = 0; }
                 stack.Push(tmp);
             } },
 
-            // Sharp API
-            {"__enqueue", (args, stack, engine) => {
-                foreach(var arg in args)
-                {
-                    engine.EngineQueue.Enqueue(arg);
-                }
-            } },
-            {"__dequeue", (args, stack, engine) => {
-                stack.Push(engine.EngineQueue.Dequeue());
-            } },
-            {"__peek", (args, stack, engine) => {
-                stack.Push(engine.EngineQueue.Peek());
-            } },
-            {"__count", (args, stack, engine) => {
-                stack.Push((float)engine.EngineQueue.Count);
-            } },
-            {"__clear", (args, stack, engine) => {
-                engine.EngineQueue.Clear();
-            } },
 
             // Exception
-            {"throw", (args, stack, engine) => {
+            {"throw", (args, stack) => {
                 ArgsCheck(args, typeof(string));
                 throw new KulaException.UserException((string)args[0]);
             } },

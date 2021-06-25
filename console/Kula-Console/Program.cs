@@ -14,18 +14,8 @@ class Program
         {"", () => { } },
         {"#debug", () => { debugMode = true; Console.WriteLine("Debug-Mode"); } },
         {"#release", () => { debugMode = false; Console.WriteLine("Release-Mode");} },
-        {"#gomo", () => { KulaEngine.Hello(); } },
+        {"#gomo", () => { HelloKula(); } },
         {"#clear", () => { kulaEngine.Clear(); } },
-        {"#dequeue", () => {
-            if (kulaEngine.EngineQueue.Count <= 0)
-            {
-                Console.WriteLine("KulaQueue is Empty");
-            }
-            else
-            {
-                Console.WriteLine(kulaEngine.EngineQueue.Dequeue());
-            }
-        } }
     };
 
     private static void Repl()
@@ -59,6 +49,23 @@ class Program
             }
         }
     }
+
+    public static void HelloKula()
+    {
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.WriteLine(KulaEngine.Version + " (on .net Framework at least 4.6)");
+        
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("developed by @HanaYabuki in github.com");
+
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.Write("More Info on ");
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.WriteLine("https://github.com/kula-lang/Kula");
+
+        Console.ResetColor();
+    }
+
     private static void Main(string[] args)
     {
         if (args.Length >= 1)
@@ -88,7 +95,7 @@ class Program
         }
         else
         {
-            KulaEngine.Hello();
+            HelloKula();
             Repl();
         }
     }

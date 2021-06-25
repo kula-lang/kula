@@ -142,7 +142,7 @@ namespace Kula.Core
                                     }
                                     if (!flag) 
                                     { 
-                                        throw new KulaException.VariableException(); 
+                                        throw new KulaException.VariableException(node.Value.ToString()); 
                                     }
                                 }
                                 break;
@@ -157,7 +157,7 @@ namespace Kula.Core
                                     object func = envStack.Pop();
                                     if (func is BuiltinFunc builtin_func)
                                     {
-                                        builtin_func(args, envStack, engine);
+                                        builtin_func(args, envStack);
                                     }
                                     else if (func is FuncEnv func_env)
                                     {

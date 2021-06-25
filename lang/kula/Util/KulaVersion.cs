@@ -9,7 +9,7 @@ namespace Kula.Util
 
         private readonly DateTime dateTime;
 
-        public KulaVersion(string name, int count, DateTime dateTime)
+        private KulaVersion(string name, int count, DateTime dateTime)
         {
             this.name = name;
             this.count = count;
@@ -26,18 +26,8 @@ namespace Kula.Util
             return "Kula - " + name + " - " + count + " [" + dateTime.Year + "/" + dateTime.Month + "/" + dateTime.Day + "]";
         }
 
-
         // 版本信息
-        private static readonly KulaVersion version = new KulaVersion("LTS", 0, new DateTime(2021, 6, 13));
-        public static void HelloKula()
-        {
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine(version + " (on .net Framework at least 4.6)");
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("developed by @HanaYabuki in github.com");
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("https://github.com/HanaYabuki/Kula");
-            Console.ResetColor();
-        }
+        private static readonly KulaVersion version = new KulaVersion("LTS", 0, new DateTime(2021, 6, 25));
+        public static KulaVersion Version { get => version; }
     }
 }
