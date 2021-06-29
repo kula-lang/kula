@@ -78,8 +78,7 @@ namespace Kula
         /// </summary>
         public void Clear()
         {
-            mainRuntime.VarDict.Clear();
-            mainRuntime.EnvStack.Clear();
+            mainRuntime.Clear();
         }
 
         /// <summary>
@@ -93,6 +92,9 @@ namespace Kula
         /// 扩展函数集合
         /// </summary>
         private static readonly Dictionary<string, BuiltinFunc> extendFunc = new Dictionary<string, BuiltinFunc>();
+        /// <summary>
+        /// 扩展函数集合
+        /// </summary>
         public static Dictionary<string, BuiltinFunc> ExtendFunc { get => extendFunc; }
     }
 }

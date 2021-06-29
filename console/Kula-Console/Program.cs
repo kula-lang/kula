@@ -14,7 +14,7 @@ class Program
         {"", () => { } },
         {"#debug", () => { debugMode = true; Console.WriteLine("Debug-Mode"); } },
         {"#release", () => { debugMode = false; Console.WriteLine("Release-Mode");} },
-        {"#gomo", () => { HelloKula(); } },
+        {"#gomo", () => { Hello(); } },
         {"#clear", () => { kulaEngine.Clear(); } },
     };
 
@@ -50,7 +50,7 @@ class Program
         }
     }
 
-    public static void HelloKula()
+    public static void Hello()
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine(KulaEngine.Version + " (on .net Framework at least 4.6)");
@@ -95,7 +95,7 @@ class Program
         }
         else
         {
-            HelloKula();
+            Hello();
             Repl();
         }
     }

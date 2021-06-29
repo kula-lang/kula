@@ -6,6 +6,11 @@ using Kula.Core;
 
 namespace Kula.Data
 {
+    /// <summary>
+    /// 内置函数 添加扩展函数时需要实现之
+    /// </summary>
+    /// <param name="args">参数</param>
+    /// <param name="stack">目标栈</param>
     public delegate void BuiltinFunc(object[] args, Stack<object> stack);
     class Func
     {
@@ -181,8 +186,8 @@ namespace Kula.Data
             for (int i = 0; i < args.Length && flag; i++)
             {
                 flag = types[i] == typeof(object) || args[i].GetType() == types[i];
+                if (!flag) throw new KulaException.ArgsTypeException(args[i].GetType().Name, types[i].Name);
             }
-            if (flag == false) throw new KulaException.ArgsTypeException();
         }
         private static string KToString(object arg)
         {

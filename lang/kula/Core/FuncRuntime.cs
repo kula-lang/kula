@@ -26,15 +26,23 @@ namespace Kula.Core
             this.varDict = new Dictionary<string, object>();
         }
 
-        public Dictionary<string, object> VarDict => varDict;
-        public Stack<object> EnvStack => envStack;
-        public Stack<object> FatherStack => fatherStack;
+        public void Clear()
+        {
+            this.varDict.Clear();
+            this.envStack.Clear();
+        }
 
         public FuncRuntime Read(FuncEnv func)
         {
             root = func;
             return this;
         }
+
+        /// <summary>
+        /// 函数调用
+        /// Release 模式运行
+        /// </summary>
+        /// <param name="arguments">函数调用的参数列表</param>
         public void Run(object[] arguments)
         {
             if (root.Runtime != null && root.Func.Compiled == false)
@@ -53,7 +61,7 @@ namespace Kula.Core
                     object arg = arguments[i];
                     if (root.Func.ArgTypes[i] != typeof(object) && arg.GetType() != root.Func.ArgTypes[i])
                     {
-                        throw new KulaException.ArgsTypeException();
+                        throw new KulaException.ArgsTypeException(root.Func.ArgTypes[i].Name, arg.GetType().Name);
                     }
                     else
                     {
@@ -96,9 +104,9 @@ namespace Kula.Core
                                     
                                     while (flag == false && now_env != null)
                                     {
-                                        if (now_env.VarDict.ContainsKey((string)node.Value))
+                                        if (now_env.varDict.ContainsKey((string)node.Value))
                                         {
-                                            now_env.VarDict[(string)node.Value] = envStack.Pop();
+                                            now_env.varDict[(string)node.Value] = envStack.Pop();
                                             flag = true;
                                         }
                                         now_env = now_env.root.Runtime;
@@ -111,7 +119,7 @@ namespace Kula.Core
                                 break;
                             case VMNodeType.VAR:
                                 {
-                                    this.VarDict[(string)node.Value] = envStack.Pop();
+                                    this.varDict[(string)node.Value] = envStack.Pop();
                                 }
                                 break;
                             case VMNodeType.NAME:
@@ -133,9 +141,9 @@ namespace Kula.Core
 
                                     while (flag == false && now_env != null)
                                     {
-                                        if (now_env.VarDict.ContainsKey((string)node.Value))
+                                        if (now_env.varDict.ContainsKey((string)node.Value))
                                         {
-                                            envStack.Push(now_env.VarDict[(string)node.Value]);
+                                            envStack.Push(now_env.varDict[(string)node.Value]);
                                             flag = true;
                                         }
                                         now_env = now_env.root.Runtime;
@@ -165,7 +173,7 @@ namespace Kula.Core
                                     }
                                     else 
                                     {
-                                        throw new KulaException.FuncUsingException();
+                                        throw new KulaException.FuncUsingException(func.ToString());
                                     }
                                 }
                                 break;
@@ -188,9 +196,9 @@ namespace Kula.Core
                                     object return_val = envStack.Pop();
                                     if (root.Func.ReturnType != typeof(object) && return_val.GetType() != root.Func.ReturnType)
                                     {
-                                        throw new KulaException.ReturnValueException();
+                                        throw new KulaException.ReturnValueException(return_val.GetType().Name, root.Func.ReturnType.Name);
                                     }
-                                    FatherStack.Push(return_val);
+                                    fatherStack.Push(return_val);
                                     returned = true;
                                 }
                                 break;
@@ -227,23 +235,27 @@ namespace Kula.Core
                     {
                         throw new KulaException.VMUnderflowException();
                     }
-                    catch (OutOfMemoryException)
-                    {
-                        throw new KulaException.VMOverflowException();
-                    }
                 }
                 if (returned == false && root.Func.ReturnType != null)
                 {
-                    throw new KulaException.ReturnValueException();
+                    throw new KulaException.ReturnValueException("None", root.Func.ReturnType.Name);
                 }
             }
         }
+
+        /// <summary>
+        /// Debug 模式运行
+        /// </summary>
         public void DebugRun()
         {
             Console.WriteLine("Output ->");
             Run(null);
             Show();
         }
+
+        /// <summary>
+        /// Debug 模式下，输出实时编译信息
+        /// </summary>
         public void Show()
         {
             int cnt = 0;

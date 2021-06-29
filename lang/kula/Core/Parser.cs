@@ -130,12 +130,6 @@ namespace Kula.Core
         private bool PLambdaHead()
         {
             int _pos = pos; int _size = aimFunc.NodeStream.Count;
-            /**
-            if (pos + 2 >= aimFunc.TokenStream.Count)
-            {
-                return false;
-            }
-            **/
             var token1 = aimFunc.TokenStream[pos++];
             var token2 = aimFunc.TokenStream[pos++];
             if (token1.Type == LexTokenType.NAME && token1.Value == "func"
@@ -504,7 +498,6 @@ namespace Kula.Core
         ///     func (Num v1, Str v2) { ... } 
         /// 
         /// </summary>
-        /// <returns></returns>
         private bool PLambdaBody()
         {
             int _pos = pos, start_pos = _pos;
