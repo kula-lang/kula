@@ -82,7 +82,8 @@ namespace Kula.Util
             /// <summary>
             /// 函数参数个数错误
             /// </summary>
-            public FuncArgumentException() : base("Wrong Arguments Count.") { }
+            public FuncArgumentException() 
+                : base("Wrong Arguments Count.") { }
         }
 
         /// <summary>
@@ -94,7 +95,8 @@ namespace Kula.Util
             /// Kula 虚拟机栈 下溢出
             /// 疑似函数使用错误
             /// </summary>
-            public VMUnderflowException() : base("Wrong usage of Func?") { }
+            public VMUnderflowException() 
+                : base("Wrong usage of Func?") { }
         }
 
         // Lambda
@@ -123,7 +125,8 @@ namespace Kula.Util
             /// <summary>
             /// 索引不为 Number
             /// </summary>
-            public ArrayTypeException() : base("Wrong Type in Usage of Array.") { }
+            public ArrayTypeException() 
+                : base("Wrong Type in Usage of Array.") { }
         }
 
         // Map Exception
@@ -136,7 +139,23 @@ namespace Kula.Util
             /// <summary>
             /// 键不为 Str
             /// </summary>
-            public MapTypeException() : base("Wrong Type in Usage of Map.") { }
+            public MapTypeException() 
+                : base("Wrong Type in Usage of Map.") { }
+        }
+
+        // 类型异常
+
+        /// <summary>
+        /// 类型异常 非 Kula 支持的类型
+        /// </summary>
+        public class KTypeException : Exception
+        {
+            /// <summary>
+            /// 该类型不为 Kula 支持的类型
+            /// </summary>
+            /// <param name="type">类型名</param>
+            public KTypeException(string type) 
+                : base("It can not be regarded as a Kula Type => " + type) { }
         }
 
         // 自定义 异常信息
@@ -150,7 +169,8 @@ namespace Kula.Util
             /// 自定义异常
             /// </summary>
             /// <param name="msg"></param>
-            public UserException(string msg) : base(msg) { }
+            public UserException(string msg) 
+                : base(msg) { }
         }
     }
 }

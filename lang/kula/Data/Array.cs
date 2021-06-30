@@ -1,5 +1,7 @@
 ﻿using System.Text;
 
+using Kula.Util;
+
 namespace Kula.Data
 {
     /// <summary>
@@ -8,7 +10,7 @@ namespace Kula.Data
     public class Array
     {
         private readonly object[] data;
-        
+
         /// <summary>
         /// 获取 实质数据
         /// </summary>
@@ -23,19 +25,6 @@ namespace Kula.Data
             this.data = new object[size];
         }
 
-        private static string KToString(object arg)
-        {
-            if (arg == null) { return "null"; }
-            if (arg is string)
-            {
-                return "\"" + arg + "\"";
-            }
-            if (arg is BuiltinFunc)
-            {
-                return "<builtin-func/>";
-            }
-            return arg.ToString();
-        }
 
         /// <summary>
         /// 转化为字符串 JSON
@@ -48,7 +37,7 @@ namespace Kula.Data
             for (int i = 0; i < data.Length; ++i)
             {
                 if (builder.Length != 1) { builder.Append(','); }
-                builder.Append(KToString(data[i]));
+                builder.Append(data[i].KToString());
             }
             builder.Append(']');
             return builder.ToString();

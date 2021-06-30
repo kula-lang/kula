@@ -14,6 +14,7 @@ namespace Kula.Core
         private Func aimFunc;
 
         private readonly Stack<string> nameStack = new Stack<string>();
+        private readonly Queue<Func> funcQueue = new Queue<Func>();
         private int pos;
 
         private static readonly Dictionary<string, Type> typeDict = new Dictionary<string, Type>
@@ -80,6 +81,10 @@ namespace Kula.Core
                 throw new KulaException.ParserException();
             }
             aimFunc.TokenStream.Clear();
+            while (funcQueue.Count > 0)
+            {
+                ParseLambda(funcQueue.Dequeue());
+            }
             return this;
         }
 
@@ -91,7 +96,6 @@ namespace Kula.Core
         {
             pos = 0; int _pos = -1;
             this.aimFunc = func;
-            this.aimFunc.Compiled = true;
 
             func.NodeStream.Clear();
             nameStack.Clear();
@@ -110,7 +114,7 @@ namespace Kula.Core
                         {
                             break;
                         }
-                            
+
                     }
                     if (pos == aimFunc.TokenStream.Count - 1 && PSymbol("}"))
                     {
@@ -123,9 +127,9 @@ namespace Kula.Core
             aimFunc.TokenStream.Clear();
             throw new KulaException.ParserException();
         }
-        
+
         /// <summary>
-        /// 只解析匿名函数 的大概形状
+        /// 只解析匿名函数 "脑袋" 的形状
         /// </summary>
         private bool PLambdaHead()
         {
@@ -190,10 +194,11 @@ namespace Kula.Core
             var token1 = aimFunc.TokenStream[pos++];
             var token2 = aimFunc.TokenStream[pos++];
             var token3 = aimFunc.TokenStream[pos++];
-            if (token1.Type == LexTokenType.NAME 
+            if (token1.Type == LexTokenType.NAME
                 && token2.Type == LexTokenType.SYMBOL && token2.Value == ":"
                 && token3.Type == LexTokenType.NAME && typeDict.ContainsKey(token3.Value)
-            ) {
+            )
+            {
                 nameStack.Push(token1.Value);
                 nameStack.Push(token3.Value);
                 return true;
@@ -439,7 +444,7 @@ namespace Kula.Core
         private bool PRightKey()
         {
             int _pos = pos, _size = aimFunc.NodeStream.Count;
-            
+
             // <"key">
             if (PSymbol("<") && PValue() && PSymbol(">"))
             {
@@ -521,6 +526,9 @@ namespace Kula.Core
                 // 截取Token 写入函数 待编译
                 List<LexToken> func_tokens = aimFunc.TokenStream.GetRange(start_pos, count_pos - start_pos + 1);
                 var func = new Func(func_tokens);
+
+                // 将待使用函数送入编译队列
+                funcQueue.Enqueue(func);
 
                 aimFunc.NodeStream.Add(new VMNode(VMNodeType.LAMBDA, func));
                 pos = count_pos + 1;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Kula.Util;
 using Kula.Core;
+using System.Text;
 
 namespace Kula.Data
 {
@@ -12,11 +13,14 @@ namespace Kula.Data
     /// <param name="args">参数</param>
     /// <param name="stack">目标栈</param>
     public delegate void BuiltinFunc(object[] args, Stack<object> stack);
+
     class Func
     {
-        // 静态内置方法 们
-        public static Dictionary<string, BuiltinFunc> BuiltinFunc { get => builtinFunc; }
-        private static readonly Dictionary<string, BuiltinFunc> builtinFunc = new Dictionary<string, BuiltinFunc>()
+        // 静态
+        /// <summary>
+        /// Kula 内置方法表
+        /// </summary>
+        public static Dictionary<string, BuiltinFunc> BuiltinFunc { get; } = new Dictionary<string, BuiltinFunc>()
         {
             // Num
             {"plus", (args, stack) => {
@@ -48,13 +52,13 @@ namespace Kula.Data
             {"print", (args, stack) => {
                 foreach (var arg in args)
                 {
-                    Console.Write( KToString(arg) );
+                    Console.Write( arg.ToString() );
                 }
             } },
             {"println", (args, stack) => {
                 foreach (var arg in args)
                 {
-                    Console.Write( KToString(arg) );
+                    Console.Write( arg.ToString() );
                 }
                 Console.WriteLine();
             } },
@@ -64,7 +68,7 @@ namespace Kula.Data
             
             // String
             {"toStr", (args, stack) => {
-                stack.Push(KToString(args[0]));
+                stack.Push( args[0].ToString() );
             } },
             {"parseNum", (args, stack) => {
                 var arg = args[0];
@@ -180,6 +184,11 @@ namespace Kula.Data
             } },
         };
 
+        /// <summary>
+        /// 类型断言
+        /// </summary>
+        /// <param name="args">参数数组</param>
+        /// <param name="types">类型数组</param>
         private static void ArgsCheck(object[] args, params Type[] types)
         {
             bool flag = args.Length == types.Length;
@@ -189,28 +198,16 @@ namespace Kula.Data
                 if (!flag) throw new KulaException.ArgsTypeException(args[i].GetType().Name, types[i].Name);
             }
         }
-        private static string KToString(object arg)
-        {
-            if (arg.GetType() == typeof(BuiltinFunc))
-            {
-                return "<builtin-func/>";
-            }
-            else
-            {
-                return arg.ToString();
-            }
-        }
 
         // 接口儿
         public List<LexToken> TokenStream { get => tokenStream; }
         public List<VMNode> NodeStream { get => nodeStream; }
-        public bool Compiled { get => compiled; set => compiled = true; }
         public List<Type> ArgTypes { get => argTypes; }
         public List<string> ArgNames { get => argNames; }
         public Type ReturnType { get => returnType; set => returnType = value; }
 
 
-        private bool compiled;
+
         private readonly List<LexToken> tokenStream;
         private readonly List<VMNode> nodeStream;
 
@@ -227,10 +224,27 @@ namespace Kula.Data
             this.nodeStream = new List<VMNode>();
         }
 
+        private string @string = null;
+
         public override string ToString()
         {
-            return "<o_O> lambda";
+            if (@string == null)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("func(");
+                for (int i = 0; i < argTypes.Count; ++i)
+                {
+                    if (i != 0)
+                    {
+                        sb.Append(',');
+                    }
+                    sb.Append(argTypes[i].KTypeToString());
+                }
+                sb.Append("):");
+                sb.Append(returnType.KTypeToString());
+                @string = sb.ToString();
+            }
+            return @string;
         }
-
     }
 }

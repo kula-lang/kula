@@ -17,7 +17,7 @@ namespace Kula
         /// 主运行时
         /// </summary>
         private readonly FuncRuntime mainRuntime;
-        
+
         /// <summary>
         /// 编译好的 字节码 集合
         /// </summary>
@@ -43,12 +43,12 @@ namespace Kula
             if (isDebug) { tmp1.Show(); }
             List<LexToken> lexTokens = tmp1.Out();
 
-            Func main = new Func(lexTokens) { Compiled = true };
+            Func main = new Func(lexTokens);
             FuncEnv mainEnv = new FuncEnv(main, null);
-            
+
             var tmp2 = Parser.Instance.Parse(main);
             if (isDebug) { tmp2.Show(); }
-            
+
             byteCodeMap[codeID] = mainEnv;
         }
 
@@ -82,7 +82,7 @@ namespace Kula
         }
 
         /// <summary>
-        /// 没用
+        /// 获取当前 Kula 版本号字符串
         /// </summary>
         public static string Version { get => Kula.Util.KulaVersion.Version.ToString(); }
 
@@ -92,6 +92,7 @@ namespace Kula
         /// 扩展函数集合
         /// </summary>
         private static readonly Dictionary<string, BuiltinFunc> extendFunc = new Dictionary<string, BuiltinFunc>();
+
         /// <summary>
         /// 扩展函数集合
         /// </summary>

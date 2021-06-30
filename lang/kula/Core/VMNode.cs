@@ -55,7 +55,7 @@ namespace Kula.Core
 
         VAR,        // 声明赋值
         LET,        // 赋值
-        
+
         NAME,       // 变量名
         FUNC,       // 运行 Lambda
         IFGOTO,     // 为零时跳转

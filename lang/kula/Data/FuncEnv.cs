@@ -18,7 +18,7 @@ namespace Kula.Data
 
         public override string ToString()
         {
-            return "<lambda/>";
+            return func.ToString();
         }
     }
 }
