@@ -47,7 +47,7 @@
     <Compile Include="Core\Parser.cs" />
     <Compile Include="Data\Array.cs" />
     <Compile Include="Data\Func.cs" />
-    <Compile Include="Data\FuncEnv.cs" />
+    <Compile Include="Data\FuncWithEnv.cs" />
     <Compile Include="Core\VMNode.cs" />
     <Compile Include="Core\LexToken.cs" />
     <Compile Include="Data\Map.cs" />

@@ -9,14 +9,14 @@ namespace Kula.Core
     class FuncRuntime   // : IRuntime
     {
         private readonly Dictionary<string, object> varDict;
-        private FuncEnv root;
+        private FuncWithEnv root;
         private bool returned;
 
         private readonly KulaEngine engine;
         private readonly Stack<object> envStack;
         private readonly Stack<object> fatherStack;
 
-        public FuncRuntime(FuncEnv root, Stack<object> fatherStack, KulaEngine engine)
+        public FuncRuntime(FuncWithEnv root, Stack<object> fatherStack, KulaEngine engine)
         {
             this.root = root;
             this.fatherStack = fatherStack;
@@ -32,7 +32,7 @@ namespace Kula.Core
             this.envStack.Clear();
         }
 
-        public FuncRuntime Read(FuncEnv func)
+        public FuncRuntime Read(FuncWithEnv func)
         {
             root = func;
             return this;
@@ -47,14 +47,14 @@ namespace Kula.Core
         {
             if ((arguments == null ? 0 : arguments.Length) != root.Func.ArgNames.Count)
             {
-                throw new KulaException.FuncArgumentException();
+                throw new KulaException.FuncArgumentException(root.Func.ArgTypes.ToArray());
             }
             for (int i = root.Func.ArgNames.Count - 1; i >= 0 && arguments != null; --i)
             {
                 object arg = arguments[i];
                 if (root.Func.ArgTypes[i] != typeof(object) && arg.GetType() != root.Func.ArgTypes[i])
                 {
-                    throw new KulaException.ArgsTypeException(root.Func.ArgTypes[i].Name, arg.GetType().Name);
+                    throw new KulaException.ArgsTypeException(arg.GetType().Name, root.Func.ArgTypes[i].Name);
                 }
                 else
                 {
@@ -87,7 +87,7 @@ namespace Kula.Core
                         case VMNodeType.LAMBDA:
                             {
                                 object value = node.Value;
-                                envStack.Push(new FuncEnv((Func)value, this));
+                                envStack.Push(new FuncWithEnv((Func)value, this));
                             }
                             break;
                         case VMNodeType.LET:
@@ -121,10 +121,10 @@ namespace Kula.Core
                                 FuncRuntime now_env = this;
 
                                 // 扩展函数 覆盖 内置函数
-                                if (KulaEngine.ExtendFunc.ContainsKey((string)node.Value))
+                                if (engine.ExtendFunc.ContainsKey((string)node.Value))
                                 {
                                     flag = true;
-                                    envStack.Push(KulaEngine.ExtendFunc[(string)node.Value]);
+                                    envStack.Push(engine.ExtendFunc[(string)node.Value]);
                                 }
                                 else if (Func.BuiltinFunc.ContainsKey((string)node.Value))
                                 {
@@ -158,9 +158,9 @@ namespace Kula.Core
                                 object func = envStack.Pop();
                                 if (func is BuiltinFunc builtin_func)
                                 {
-                                    builtin_func(args, envStack);
+                                    builtin_func(args, envStack, this.engine);
                                 }
-                                else if (func is FuncEnv func_env)
+                                else if (func is FuncWithEnv func_env)
                                 {
                                     new FuncRuntime(func_env, envStack, engine).Run(args);
                                 }

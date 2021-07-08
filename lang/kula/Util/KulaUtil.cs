@@ -10,16 +10,12 @@ namespace Kula.Util
     /// </summary>
     static class KulaUtil
     {
-        public static string ToString(this BuiltinFunc _this)
-        {
-            return "<builtin-func/>";
-        }
-
         /// <summary>
-        /// 对所有 容器内元素 的 字符串转化
+        /// 对所有 容器内元素 的 字符串转化 
+        /// 形成类似 JSON 格式的字符串
         /// </summary>
         /// <param name="_this">元素</param>
-        /// <returns>字符串</returns>
+        /// <returns>类JSON格式字符串</returns>
         public static string KToString(this object _this)
         {
             if (_this == null) { return "null"; }
@@ -27,17 +23,27 @@ namespace Kula.Util
             {
                 return "\"" + _this + "\"";
             }
+            else if (_this is BuiltinFunc)
+            {
+                return Parser.InvertTypeDict[typeof(BuiltinFunc)];
+            }
             return _this.ToString();
         }
 
+        /// <summary>
+        /// 将 Kula 语言支持的类型转化为对应的 字符串
+        /// </summary>
+        /// <param name="_this">Kula支持的类型</param>
+        /// <returns>对应字符串</returns>
         public static string KTypeToString(this Type _this)
         {
-            foreach (var kv in Parser.TypeDict)
+            if (_this == null)
             {
-                if (_this == kv.Value)
-                {
-                    return kv.Key;
-                }
+                return "None";
+            }
+            if (Parser.InvertTypeDict.ContainsKey(_this))
+            {
+                return Parser.InvertTypeDict[_this];
             }
             throw new KulaException.KTypeException(_this.Name);
         }

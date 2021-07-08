@@ -58,7 +58,7 @@ namespace Kula.Util
             /// <param name="realType">传入的参数</param>
             /// <param name="needType">应为参数</param>
             public ArgsTypeException(string realType, string needType) 
-                : base("Wrong Arguments Type. => " + needType + " but " + realType){ }
+                : base("Wrong Arguments Type. => need " + needType + " but " + realType + " is given"){ }
         }
 
         /// <summary>
@@ -79,11 +79,21 @@ namespace Kula.Util
         /// </summary>
         public class FuncArgumentException : Exception
         {
+            private static string TypeString(Type[] types)
+            {
+                string @string = "";
+                foreach (var tp in types)
+                {
+                    @string += " " + tp.Name;
+                }
+                return @string;
+            }
+
             /// <summary>
             /// 函数参数个数错误
             /// </summary>
-            public FuncArgumentException() 
-                : base("Wrong Arguments Count.") { }
+            public FuncArgumentException(Type[] types)
+                : base("Wrong Arguments Count. We need =>" + TypeString(types)) { }
         }
 
         /// <summary>
@@ -112,7 +122,7 @@ namespace Kula.Util
             /// <param name="realType">传出的类型</param>
             /// <param name="needType">应为类型</param>
             public ReturnValueException(string realType, string needType) 
-                : base("Wrong Return Value Type. => " + needType + " but " + realType){ }
+                : base("Wrong Return Value Type. => need " + needType + " but " + realType + " is given"){ }
         }
 
         // Array Exception

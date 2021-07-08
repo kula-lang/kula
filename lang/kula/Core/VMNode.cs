@@ -1,27 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using Kula.Util;
-
 namespace Kula.Core
 {
     struct VMNode
     {
-        readonly VMNodeType type;
-        readonly object value;
-
         public VMNode(VMNodeType type, object value)
         {
-            this.type = type;
-            this.value = value;
+            this.Type = type;
+            this.Value = value;
         }
 
-        public VMNodeType Type { get => type; }
-        public object Value { get => value; }
+        public VMNodeType Type { get; }
+        public object Value { get; }
 
         public override string ToString()
         {
-            string str_type = type.ToString(), str_value = value.ToString();
+            string str_type = Type.ToString(),
+                str_value = Value == null ? "" : Value.ToString();
             return ""
                     + "[ "
                     + str_type.PadRight(9)
@@ -44,6 +40,7 @@ namespace Kula.Core
             { VMNodeType.GOTO, ConsoleColor.Red },
 
             { VMNodeType.CONKEY, ConsoleColor.Yellow },
+            { VMNodeType.RETURN, ConsoleColor.DarkMagenta },
         };
     }
 

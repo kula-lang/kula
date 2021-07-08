@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 using Kula;
@@ -7,13 +8,13 @@ using Kula;
 class Program
 {
     private static readonly KulaEngine kulaEngine = new KulaEngine();
-    private static bool debugMode = false;
+    private static bool mode = false;
     private delegate void ConsoleFunction();
-    private static readonly Dictionary<string, ConsoleFunction> ConsoleFunctionDict = new Dictionary<string, ConsoleFunction>() 
+    private static readonly Dictionary<string, ConsoleFunction> ConsoleFunctionDict = new Dictionary<string, ConsoleFunction>()
     {
         {"", () => { } },
-        {"#debug", () => { debugMode = true; Console.WriteLine("Debug-Mode"); } },
-        {"#release", () => { debugMode = false; Console.WriteLine("Release-Mode");} },
+        {"#debug", () => { mode = true; Console.WriteLine("Debug-Mode"); } },
+        {"#release", () => { mode = false; Console.WriteLine("Release-Mode");} },
         {"#gomo", () => { Hello(); } },
         {"#clear", () => { kulaEngine.Clear(); } },
     };
@@ -37,13 +38,13 @@ class Program
             {
                 try
                 {
-                    kulaEngine.Compile(code, "", debugMode);
-                    kulaEngine.Run("", debugMode);
+                    kulaEngine.Compile(code, "", mode);
+                    kulaEngine.Run("", mode);
                 }
                 catch (Exception e)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e.GetType().ToString() + " : " + e.Message);
+                    Console.WriteLine(e.GetType().ToString() + " : " + e/*.Message*/);
                     Console.ResetColor();
                 }
             }
@@ -54,7 +55,7 @@ class Program
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine(KulaEngine.Version + " (on .net Framework at least 4.6)");
-        
+
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("developed by @HanaYabuki in github.com");
 
@@ -81,10 +82,17 @@ class Program
                 Console.WriteLine(e);
                 return;
             }
+
             try
             {
-                kulaEngine.Compile(code, "", (args.Length >= 2 && args[1] == "--debug"));
-                kulaEngine.Run("", debugMode);
+                mode = (args.Length >= 2 && args[1] == "--debug");
+                if (mode)
+                {
+                    kulaEngine.Compile("println(println);", "");
+                    kulaEngine.Run("");
+                }
+                kulaEngine.Compile(code, "", mode);
+                kulaEngine.Run("", mode);
             }
             catch (Exception e)
             {

@@ -8,8 +8,7 @@ namespace Kula.Core
 {
     class Parser
     {
-        private static readonly Parser instance = new Parser();
-        public static Parser Instance { get => instance; }
+        public static Parser Instance { get; } = new Parser();
 
         private Func aimFunc;
 
@@ -17,20 +16,33 @@ namespace Kula.Core
         private readonly Queue<Func> funcQueue = new Queue<Func>();
         private int pos;
 
-        private static readonly Dictionary<string, Type> typeDict = new Dictionary<string, Type>
-        {
-            { "None", null },
-            { "Any", typeof(object) },
-            { "Num", typeof(float) },
-            { "Str", typeof(string) },
-            { "BuiltinFunc", typeof(Kula.Data.BuiltinFunc) },
-            { "Func", typeof(Kula.Data.FuncEnv) },
-            { "Array", typeof(Kula.Data.Array) },
-            { "Map", typeof(Kula.Data.Map) },
-        };
-        public static Dictionary<string, Type> TypeDict { get => typeDict; }
+        public static Dictionary<string, Type> TypeDict { get; private set; }
+        public static Dictionary<Type, string> InvertTypeDict { get; private set; }
 
         private Parser() { }
+        static Parser()
+        {
+            TypeDict = new Dictionary<string, Type>()
+            {
+                { "None", null },
+                { "Any", typeof(object) },
+                { "Num", typeof(float) },
+                { "Str", typeof(string) },
+                { "BuiltinFunc", typeof(Kula.Data.BuiltinFunc) },
+                { "Func", typeof(Kula.Data.FuncWithEnv) },
+                { "Array", typeof(Kula.Data.Array) },
+                { "Map", typeof(Kula.Data.Map) },
+            };
+
+            if (InvertTypeDict == null)
+            {
+                InvertTypeDict = new Dictionary<Type, string>();
+                foreach (var kv in TypeDict)
+                {
+                    if (kv.Value != null) InvertTypeDict[kv.Value] = kv.Key;
+                }
+            }
+        }
 
         public Parser Show()
         {
@@ -92,7 +104,7 @@ namespace Kula.Core
         /// 整体解析 函数体
         /// </summary>
         /// <param name="func">函数</param>
-        public Parser ParseLambda(Func func)
+        private Parser ParseLambda(Func func)
         {
             pos = 0; int _pos = -1;
             this.aimFunc = func;
@@ -172,7 +184,7 @@ namespace Kula.Core
                 if (PSymbol(":"))
                 {
                     var final_type = aimFunc.TokenStream[pos++];
-                    if (final_type.Type == LexTokenType.NAME && typeDict.ContainsKey(final_type.Value))
+                    if (final_type.Type == LexTokenType.NAME && TypeDict.ContainsKey(final_type.Value))
                     {
                         // 记录类型
                         aimFunc.ReturnType = (TypestrToType(final_type.Value));
@@ -196,7 +208,7 @@ namespace Kula.Core
             var token3 = aimFunc.TokenStream[pos++];
             if (token1.Type == LexTokenType.NAME
                 && token2.Type == LexTokenType.SYMBOL && token2.Value == ":"
-                && token3.Type == LexTokenType.NAME && typeDict.ContainsKey(token3.Value)
+                && token3.Type == LexTokenType.NAME && TypeDict.ContainsKey(token3.Value)
             )
             {
                 nameStack.Push(token1.Value);
@@ -209,7 +221,7 @@ namespace Kula.Core
         }
         private Type TypestrToType(string str)
         {
-            return typeDict[str];
+            return TypeDict[str];
         }
 
         /// <summary>
