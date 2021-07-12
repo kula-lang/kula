@@ -97,6 +97,19 @@ namespace Kula.Util
         }
 
         /// <summary>
+        /// 递归溢出
+        /// </summary>
+        public class OverflowException : Exception
+        {
+            /// <summary>
+            /// Kula 递归调用深度超出限制
+            /// </summary>
+            public OverflowException() 
+                : base("Too deep recursion.") { }
+        }
+
+
+        /// <summary>
         /// 下溢出
         /// </summary>
         public class VMUnderflowException : Exception

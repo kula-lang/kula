@@ -46,6 +46,7 @@
     <Compile Include="Core\Lexer.cs" />
     <Compile Include="Core\Parser.cs" />
     <Compile Include="Data\Array.cs" />
+    <Compile Include="Data\BuiltinFunc.cs" />
     <Compile Include="Data\Func.cs" />
     <Compile Include="Data\FuncWithEnv.cs" />
     <Compile Include="Core\VMNode.cs" />

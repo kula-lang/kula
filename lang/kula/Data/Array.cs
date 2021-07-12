@@ -40,8 +40,12 @@ namespace Kula.Data
             builder.Append('[');
             for (int i = 0; i < Data.Length; ++i)
             {
-                if (builder.Length != 1) { builder.Append(','); }
-                builder.Append(Data[i].KToString());
+                if (Data[i] is FuncWithEnv || Data[i] is BFunc) { }
+                else
+                {
+                    if (builder.Length != 1) { builder.Append(','); }
+                    builder.Append(Data[i].KToString());
+                }
             }
             builder.Append(']');
             return builder.ToString();

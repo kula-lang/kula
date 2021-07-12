@@ -9,9 +9,8 @@ namespace Kula.Core
 {
     class Lexer
     {
-        private static readonly Lexer instance = new Lexer();
-        public static Lexer Instance { get => instance; }
-        
+        public static Lexer Instance { get; } = new Lexer();
+
         private string sourceCode;
         private List<LexToken> tokenStream;
 
@@ -20,7 +19,7 @@ namespace Kula.Core
             public static bool CNumber(char c) { return (c <= '9' && c >= '0') || c == '.'; }
             public static bool CNumberHead(char c) { return (c <= '9' && c >= '0') || c == '+' || c == '-'; }
             public static bool CName(char c)
-            { return (c <= 'z' && c >= 'a') || (c <= 'Z' && c >= 'A') || (c == '_') || (c <= '0' && c >= '9'); }
+            { return (c <= 'z' && c >= 'a') || (c <= 'Z' && c >= 'A') || (c == '_') || (c <= '9' && c >= '0'); }
             public static bool CSpace(char c) { return (c == '\n' || c == '\t' || c == '\r' || c == ' '); }
             public static bool CNewLine(char c) { return c == '\n'; }
             public static bool CSymbol(char c)
@@ -37,17 +36,17 @@ namespace Kula.Core
         }
         private Lexer() { sourceCode = ""; }
         public Lexer Read(string code) { sourceCode = code; return this; }
-        public Lexer Scan()
+        public Lexer Scan(bool isDebug)
         {
             tokenStream = new List<LexToken>();
-            LexTokenType? state = null;
+            LexTokenType state = LexTokenType.NULL;
             StringBuilder tokenBuilder = new StringBuilder();
 
             try
             {
                 for (int i = 0; i < sourceCode.Length; ++i)
                 {
-                    if (state == null)
+                    if (state == LexTokenType.NULL)
                     {
                         char c = sourceCode[i];
                         if (Is.CSpace(c)) { continue; }
@@ -108,8 +107,8 @@ namespace Kula.Core
                                 break;
                         }
                         string tokenString = tokenBuilder.ToString();
-                        tokenStream.Add(new LexToken((LexTokenType)state, tokenString));
-                        state = null;
+                        tokenStream.Add(new LexToken(state, tokenString));
+                        state = LexTokenType.NULL;
                         tokenBuilder.Clear();
                         --i;
                     }
@@ -120,12 +119,12 @@ namespace Kula.Core
                 tokenStream.Clear();
                 throw new KulaException.LexerException();
             }
+            if (isDebug) { DebugShow(); }
 
             return this;
         }
-        public Lexer Show()
+        public Lexer DebugShow()
         {
-            if (tokenStream == null) { Scan(); }
             Console.WriteLine("Lexer ->");
             foreach (var token in tokenStream)
             {

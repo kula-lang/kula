@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 using Kula;
@@ -9,14 +8,26 @@ class Program
 {
     private static readonly KulaEngine kulaEngine = new KulaEngine();
     private static bool mode = false;
-    private delegate void ConsoleFunction();
-    private static readonly Dictionary<string, ConsoleFunction> ConsoleFunctionDict = new Dictionary<string, ConsoleFunction>()
+    
+    private delegate void ShellCommand();
+    private static readonly Dictionary<string, ShellCommand> ShellCommandDict = new Dictionary<string, ShellCommand>()
     {
         {"", () => { } },
         {"#debug", () => { mode = true; Console.WriteLine("Debug-Mode"); } },
         {"#release", () => { mode = false; Console.WriteLine("Release-Mode");} },
         {"#gomo", () => { Hello(); } },
         {"#clear", () => { kulaEngine.Clear(); } },
+    };
+
+    private delegate void ShellArgument();
+    private static readonly Dictionary<string, ShellArgument> ShellArgumentDict = new Dictionary<string, ShellArgument>()
+    {
+        {"--debug", () => { mode = true; } },
+        {"--d", () => { mode = true; } },
+
+        {"--release", () => { mode = false; } },
+        {"--r", () => { mode = false; } },
+
     };
 
     private static void Repl()
@@ -30,9 +41,9 @@ class Program
             {
                 break;
             }
-            else if (ConsoleFunctionDict.ContainsKey(code))
+            else if (ShellCommandDict.ContainsKey(code))
             {
-                ConsoleFunctionDict[code]();
+                ShellCommandDict[code]();
             }
             else
             {
@@ -51,55 +62,56 @@ class Program
         }
     }
 
-    public static void Hello()
+    private static void Hello()
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine(KulaEngine.Version + " (on .net Framework at least 4.6)");
 
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("developed by @HanaYabuki in github.com");
+        Console.WriteLine("developed by @HanaYabuki on github.com");
 
         Console.ForegroundColor = ConsoleColor.Gray;
-        Console.Write("More Info on ");
+        Console.Write("More Info - ");
         Console.ForegroundColor = ConsoleColor.Blue;
         Console.WriteLine("https://github.com/kula-lang/Kula");
 
         Console.ResetColor();
     }
 
+    private static void CompileAndRun(string code)
+    {
+        kulaEngine.Compile(code, "", mode);
+        kulaEngine.Run("", mode);
+    }
+
     private static void Main(string[] args)
     {
-        if (args.Length >= 1)
+        if (args.Length > 0)
         {
             string code;
-            try
+            foreach (string arg in args)
             {
-                code = File.ReadAllText(args[0]);
-            }
-            catch (Exception e)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e);
-                return;
+                if (arg.StartsWith("--") && ShellArgumentDict.ContainsKey(arg))
+                {
+                    ShellArgumentDict[arg]();
+                }
+                else
+                {
+                    try
+                    {
+                        code = File.ReadAllText(arg);
+                        CompileAndRun(code);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(e);
+                        Console.ResetColor();
+                        return;
+                    }
+                }
             }
 
-            try
-            {
-                mode = (args.Length >= 2 && args[1] == "--debug");
-                if (mode)
-                {
-                    kulaEngine.Compile("println(println);", "");
-                    kulaEngine.Run("");
-                }
-                kulaEngine.Compile(code, "", mode);
-                kulaEngine.Run("", mode);
-            }
-            catch (Exception e)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e);
-                Console.ResetColor();
-            }
         }
         else
         {

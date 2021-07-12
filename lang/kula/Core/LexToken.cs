@@ -1,32 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using Kula.Util;
-
 namespace Kula.Core
 {
     struct LexToken
     {
-        private readonly LexTokenType type;
-        private readonly string value;
-
-        public string Value { get => value; }
-        public LexTokenType Type { get => type; }
+        public string Value { get; }
+        public LexTokenType Type { get; }
 
         public LexToken(LexTokenType type, string value)
         {
-            this.type = type;
-            this.value = value;
+            this.Type = type;
+            this.Value = value;
         }
 
         public override string ToString()
         {
-            string str_type = type.ToString();
+            string str_type = Type.ToString();
             return ""
                     + "< "
                     + str_type.PadRight(9)
                     + "| "
-                    + value.PadRight(18)
+                    + Value.PadRight(18)
                     + " >";
         }
 
@@ -43,6 +38,7 @@ namespace Kula.Core
 
     enum LexTokenType : byte
     {
+        NULL,       // 无属性
         NAME,       // 名字，可解析为 关键字 类型名 变量名 函数名
         NUMBER,     // 数字，float
         STRING,     // 字符串，string

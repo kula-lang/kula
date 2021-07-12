@@ -42,10 +42,14 @@ namespace Kula.Data
             builder.Append('{');
             foreach (KeyValuePair<string, object> kvp in Data)
             {
-                if (builder.Length != 1) builder.Append(',');
-                builder.Append(
-                    '\"' + kvp.Key + '\"' + ':' + kvp.Value.KToString()
-                );
+                if (kvp.Value is FuncWithEnv || kvp.Value is BFunc) { }
+                else
+                {
+                    if (builder.Length != 1) builder.Append(',');
+                    builder.Append(
+                        '\"' + kvp.Key + '\"' + ':' + kvp.Value.KToString()
+                    );
+                }
             }
             builder.Append('}');
             return builder.ToString();

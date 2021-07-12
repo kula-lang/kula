@@ -23,10 +23,6 @@ namespace Kula.Util
             {
                 return "\"" + _this + "\"";
             }
-            else if (_this is BuiltinFunc)
-            {
-                return Parser.InvertTypeDict[typeof(BuiltinFunc)];
-            }
             return _this.ToString();
         }
 

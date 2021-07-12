@@ -28,7 +28,7 @@ namespace Kula.Core
                 { "Any", typeof(object) },
                 { "Num", typeof(float) },
                 { "Str", typeof(string) },
-                { "BuiltinFunc", typeof(Kula.Data.BuiltinFunc) },
+                { "BuiltinFunc", typeof(Kula.Data.BFunc) },
                 { "Func", typeof(Kula.Data.FuncWithEnv) },
                 { "Array", typeof(Kula.Data.Array) },
                 { "Map", typeof(Kula.Data.Map) },
@@ -44,7 +44,7 @@ namespace Kula.Core
             }
         }
 
-        public Parser Show()
+        public Parser DebugShow()
         {
             Console.WriteLine("Parser ->");
             foreach (var node in aimFunc.NodeStream)
@@ -58,11 +58,7 @@ namespace Kula.Core
             return this;
         }
 
-        /// <summary>
-        /// 整体解析 程序入口
-        /// </summary>
-        /// <param name="main">主代码块</param>
-        public Parser Parse(Func main)
+        public Parser Parse(Func main, bool isDebug)
         {
             pos = 0; int _pos = -1;
             this.aimFunc = main;
@@ -83,19 +79,18 @@ namespace Kula.Core
                 {
                     throw new KulaException.ParserException();
                 }
-                catch (Exception e)
-                {
-                    throw e;
-                }
             }
             if (pos != aimFunc.TokenStream.Count)
             {
                 throw new KulaException.ParserException();
             }
             aimFunc.TokenStream.Clear();
+            if (isDebug) { DebugShow(); }
+
             while (funcQueue.Count > 0)
             {
                 ParseLambda(funcQueue.Dequeue());
+                if (isDebug) { DebugShow(); }
             }
             return this;
         }
@@ -122,11 +117,14 @@ namespace Kula.Core
                         {
                             PStatement();
                         }
-                        catch
+                        catch (IndexOutOfRangeException)
                         {
-                            break;
+                            throw new KulaException.ParserException();
                         }
-
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            throw new KulaException.ParserException();
+                        }
                     }
                     if (pos == aimFunc.TokenStream.Count - 1 && PSymbol("}"))
                     {
