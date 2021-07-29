@@ -12,7 +12,6 @@ namespace Kula.Core
 
         private Func aimFunc;
 
-        private readonly Stack<string> nameStack = new Stack<string>();
         private readonly Queue<Func> funcQueue = new Queue<Func>();
         private int pos;
 
@@ -63,7 +62,6 @@ namespace Kula.Core
             pos = 0; int _pos = -1;
             this.aimFunc = main;
             aimFunc.NodeStream.Clear();
-            nameStack.Clear();
             while (pos < aimFunc.TokenStream.Count && _pos != pos)
             {
                 _pos = pos;
@@ -82,6 +80,7 @@ namespace Kula.Core
             }
             if (pos != aimFunc.TokenStream.Count)
             {
+                if (isDebug) { DebugShow(); }
                 throw new KulaException.ParserException();
             }
             aimFunc.TokenStream.Clear();
@@ -105,10 +104,9 @@ namespace Kula.Core
             this.aimFunc = func;
 
             func.NodeStream.Clear();
-            nameStack.Clear();
             if (PLambdaDeclare())
             {
-                if (PSymbol("{"))
+                if (MetaSymbol("{"))
                 {
                     while (pos < aimFunc.TokenStream.Count - 1 && _pos != pos)
                     {
@@ -126,7 +124,7 @@ namespace Kula.Core
                             throw new KulaException.ParserException();
                         }
                     }
-                    if (pos == aimFunc.TokenStream.Count - 1 && PSymbol("}"))
+                    if (pos == aimFunc.TokenStream.Count - 1 && MetaSymbol("}"))
                     {
                         aimFunc.TokenStream.Clear();
                         return this;
@@ -138,23 +136,74 @@ namespace Kula.Core
             throw new KulaException.ParserException();
         }
 
-        /// <summary>
-        /// 只解析匿名函数 "脑袋" 的形状
-        /// </summary>
-        private bool PLambdaHead()
+        /*
+         *  以下部分涉及到一个硬核的手写递归下降语法分析器
+         *  经过反复设计和重写，为了保证代码的可读，设计规范如下
+         *  Meta系列函数：元分析，只单独分析单个Token，显式操作TokenSteam。必要时返回对应类型的值，做回溯处理。
+         *  P系列函数：结构式分析，只调用Meta或递归，不显式操作TokenSteam，做回溯处理。
+         */
+        
+        private bool MetaKeyword(string kword)
         {
-            int _pos = pos; int _size = aimFunc.NodeStream.Count;
-            var token1 = aimFunc.TokenStream[pos++];
-            var token2 = aimFunc.TokenStream[pos++];
-            if (token1.Type == LexTokenType.NAME && token1.Value == "func"
-                && token2.Type == LexTokenType.SYMBOL && token2.Value == "("
-                )
+            var rcd = Record();
+            var token = aimFunc.TokenStream[pos++];
+            if (token.Type == LexTokenType.NAME && token.Value == kword)
             {
                 return true;
             }
-
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
             return false;
+        }
+
+        private bool MetaSymbol(string sym)
+        {
+            var rcd = Record();
+            var token = aimFunc.TokenStream[pos++];
+            if (token.Type == LexTokenType.SYMBOL && token.Value == sym)
+            {
+                return true;
+            }
+            Backtrack(rcd);
+            return false;
+        }
+
+        private bool MetaName(out string name)
+        {
+            var rcd = Record();
+            var token = aimFunc.TokenStream[pos++];
+            if (token.Type == LexTokenType.NAME)
+            {
+                name = token.Value;
+                return true;
+            }
+            name = null;
+            Backtrack(rcd);
+            return false;
+        }
+
+        private bool MetaType(out string typeName)
+        {
+            var rcd = Record();
+            var token = aimFunc.TokenStream[pos++];
+            if (token.Type == LexTokenType.NAME && TypeDict.ContainsKey(token.Value))
+            {
+                typeName = token.Value;
+                return true;
+            }
+            typeName = null;
+            Backtrack(rcd);
+            return false;
+        }
+
+        private KeyValuePair<int, int> Record()
+        {
+            return new KeyValuePair<int, int>(pos, aimFunc.NodeStream.Count);
+        }
+
+        private void Backtrack(KeyValuePair<int, int> rcd)
+        {
+            pos = rcd.Key; 
+            aimFunc.NodeStream.RemoveRange(rcd.Value, aimFunc.NodeStream.Count - rcd.Value);
         }
 
         /// <summary>
@@ -162,59 +211,57 @@ namespace Kula.Core
         /// </summary>
         private bool PLambdaDeclare()
         {
-            int _pos = pos; int _size = aimFunc.NodeStream.Count;
+            var rcd = Record();
 
-            if (PLambdaHead())
+            if (MetaKeyword("func") && MetaSymbol("("))
             {
-                while (!PSymbol(")"))
+                while (!MetaSymbol(")"))
                 {
-                    if (PValAndType())
+                    if (PValAndType(out string val_name, out string type_name))
                     {
-                        aimFunc.ArgTypes.Add(TypestrToType(nameStack.Pop()));
-                        aimFunc.ArgNames.Add(nameStack.Pop());
-                        PSymbol(",");
+                        aimFunc.ArgTypes.Add(TypestrToType(type_name));
+                        aimFunc.ArgNames.Add(val_name);
+                        MetaSymbol(",");
                     }
                     else
                     {
                         break;
                     }
                 }
-                if (PSymbol(":"))
+                if (MetaSymbol(":"))
                 {
-                    var final_type = aimFunc.TokenStream[pos++];
-                    if (final_type.Type == LexTokenType.NAME && TypeDict.ContainsKey(final_type.Value))
+                    if (MetaType(out string final_type_name))
                     {
                         // 记录类型
-                        aimFunc.ReturnType = (TypestrToType(final_type.Value));
+                        aimFunc.ReturnType = TypestrToType(final_type_name);
                         return true;
                     }
                 }
             }
 
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
             return false;
         }
 
         /// <summary>
         /// 值:类型 对
         /// </summary>
-        private bool PValAndType()
+        private bool PValAndType(out string valName, out string typeName)
         {
-            int _pos = pos; int _size = aimFunc.NodeStream.Count;
-            var token1 = aimFunc.TokenStream[pos++];
-            var token2 = aimFunc.TokenStream[pos++];
-            var token3 = aimFunc.TokenStream[pos++];
-            if (token1.Type == LexTokenType.NAME
-                && token2.Type == LexTokenType.SYMBOL && token2.Value == ":"
-                && token3.Type == LexTokenType.NAME && TypeDict.ContainsKey(token3.Value)
-            )
+            var rcd = Record();
+            if (MetaName(out string token_value1)
+                && MetaSymbol(":")
+                && MetaName(out string token_value2)
+                && TypeDict.ContainsKey(token_value2))
             {
-                nameStack.Push(token1.Value);
-                nameStack.Push(token3.Value);
+                valName = token_value1;
+                typeName = token_value2;
                 return true;
             }
 
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
+            valName = null;
+            typeName = null;
             return false;
         }
         private Type TypestrToType(string str)
@@ -224,47 +271,42 @@ namespace Kula.Core
 
         /// <summary>
         /// 单个语句  
-        /// ;  
-        /// n;  
-        /// n := 1;  
-        /// n = 1;  
-        /// if 块  
-        /// while 块  
+        ///     ;  
+        ///     n;  
+        ///     n := 1;  
+        ///     n = 1;  
+        ///     if 块  
+        ///     while 块  
         /// </summary>
         private bool PStatement()
         {
-            int _pos = pos; int _size = aimFunc.NodeStream.Count;
+            var rcd = Record();
 
-            if (PSymbol(";")) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            if (MetaSymbol(";")) { return true; }
+            Backtrack(rcd);
 
-            if (PReturn() && PSymbol(";")) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            if (PReturn() && MetaSymbol(";")) { return true; }
+            Backtrack(rcd);
 
-            if (PValue() && PSymbol(";")) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            if (PValue() && MetaSymbol(";")) { return true; }
+            Backtrack(rcd);
 
-            if (PLeftVar() && PSymbol(":") && PSymbol("=") && PValue() && PSymbol(";"))
+            if (PLeftVar(out string var_name))
             {
-                string var_name = nameStack.Pop();
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VAR, var_name));
-                return true;
+                bool flag = MetaSymbol(":");
+                if (MetaSymbol("=") && PValue() && MetaSymbol(";"))
+                {
+                    aimFunc.NodeStream.Add(new VMNode(flag ? VMNodeType.VAR : VMNodeType.LET, var_name));
+                    return true;
+                }
             }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
-
-            if (PLeftVar() && PSymbol("=") && PValue() && PSymbol(";"))
-            {
-                string var_name = nameStack.Pop();
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.LET, var_name));
-                return true;
-            }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             if (PBlockIf()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             if (PBlockWhile()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
 
             return false;
@@ -275,39 +317,46 @@ namespace Kula.Core
         /// </summary>
         private bool PValue()
         {
-            int count = 0;
-            while (PNode()) { count++; }
-            return count > 0;
+            bool count = false;
+            while (PNode()) { count = true; }
+            return count;
         }
 
         /// <summary>
         /// 值元素
         /// （这个比较复杂
+        /// 可能包含：
+        ///     常量
+        ///     常字符串
+        ///     匿名函数体
+        ///     函数调用括号
+        ///     右值
+        ///     两种索引
         /// </summary>
         private bool PNode()
         {
-            int _pos = pos; int _size = aimFunc.NodeStream.Count;
+            var rcd = Record();
 
             if (PConst()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             if (PConstString()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             if (PLambdaBody()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             if (PFuncBras()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             if (PRightVar()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             if (PRightIndex()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             if (PRightKey()) { return true; }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             return false;
         }
@@ -317,39 +366,38 @@ namespace Kula.Core
         /// </summary>
         private bool PFuncBras()
         {
-            int _pos = pos; int _size = aimFunc.NodeStream.Count;
+            var rcd = Record();
 
-            if (PSymbol("("))
+            if (MetaSymbol("("))
             {
                 int count = 0;
                 bool flag = true;
                 while (flag)
                 {
-                    int _tmp_pos = pos; int _tmp_size = aimFunc.NodeStream.Count;
+                    var tmp_rcd = Record();
                     if (PValue())
                     {
                         ++count;
-                        if (!PSymbol(","))
+                        if (!MetaSymbol(","))
                         {
                             flag = false;
                         }
                     }
                     else
                     {
-                        pos = _tmp_pos;
-                        aimFunc.NodeStream.RemoveRange(_tmp_size, aimFunc.NodeStream.Count - _tmp_size);
+                        Backtrack(tmp_rcd);
                         flag = false;
                     }
                 }
 
-                if (PSymbol(")"))
+                if (MetaSymbol(")"))
                 {
                     aimFunc.NodeStream.Add(new VMNode(VMNodeType.FUNC, count));
                     return true;
                 }
             }
 
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
             return false;
         }
 
@@ -384,34 +432,20 @@ namespace Kula.Core
         }
 
         /// <summary>
-        /// 符号
-        /// </summary>
-        /// <param name="sym">解析的目标符号，不支持正则</param>
-        private bool PSymbol(string sym)
-        {
-            int _pos = pos;
-            var token = aimFunc.TokenStream[pos++];
-            if (token.Type == LexTokenType.SYMBOL && token.Value == sym)
-            {
-                return true;
-            }
-            pos = _pos; return false;
-        }
-
-        /// <summary>
         /// 左值 
         /// 等待变量接收到本地表内
         /// </summary>
-        private bool PLeftVar()
+        private bool PLeftVar(out string name)
         {
-            int _pos = pos;
-            var token = aimFunc.TokenStream[pos++];
-            if (token.Type == LexTokenType.NAME)
+            var rcd = Record();
+            if (MetaName(out string token_value))
             {
-                nameStack.Push(token.Value);
+                name = token_value;
                 return true;
             }
-            pos = _pos; return false;
+            Backtrack(rcd);
+            name = null;
+            return false;
         }
 
         /// <summary>
@@ -438,13 +472,13 @@ namespace Kula.Core
         /// </summary>
         private bool PRightIndex()
         {
-            int _pos = pos, _size = aimFunc.NodeStream.Count;
-            if (PSymbol("[") && PValue() && PSymbol("]"))
+            var rcd = Record();
+            if (MetaSymbol("[") && PValue() && MetaSymbol("]"))
             {
                 aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '['));
                 return true;
             }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
             return false;
         }
 
@@ -453,53 +487,36 @@ namespace Kula.Core
         /// </summary>
         private bool PRightKey()
         {
-            int _pos = pos, _size = aimFunc.NodeStream.Count;
+            var rcd = Record();
 
             // <"key">
-            if (PSymbol("<") && PValue() && PSymbol(">"))
+            if (MetaSymbol("<") && PValue() && MetaSymbol(">"))
             {
                 aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '<'));
                 return true;
             }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
-            // .key
-            if (PSymbol("."))
+            // .key 语法糖
+            if (MetaSymbol(".") && MetaName(out string token_key))
             {
-                var token_key = aimFunc.TokenStream[pos++];
-                if (token_key.Type == LexTokenType.NAME)
-                {
-                    aimFunc.NodeStream.Add(new VMNode(VMNodeType.STRING, token_key.Value));
-                    aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '<'));
-                    return true;
-                }
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.STRING, token_key));
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '<'));
+                return true;
             }
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
 
             return false;
         }
 
-        /// <summary>
-        /// 解析 关键字
-        /// </summary>
-        /// <param name="kword">解析的目标关键字，不支持正则</param>
-        private bool PKeyword(string kword)
-        {
-            int _pos = pos;
-            var token = aimFunc.TokenStream[pos++];
-            if (token.Type == LexTokenType.NAME && token.Value == kword)
-            {
-                return true;
-            }
-            pos = _pos; return false;
-        }
+        
 
         /// <summary>
         /// return 关键字 和 返回值
         /// </summary>
         private bool PReturn()
         {
-            if (PKeyword("return") && PValue())
+            if (MetaKeyword("return") && PValue())
             {
                 aimFunc.NodeStream.Add(new VMNode(VMNodeType.RETURN, null));
                 return true;
@@ -508,7 +525,7 @@ namespace Kula.Core
         }
 
         /// <summary>
-        /// lambda 函数体
+        /// 分析 lambda 函数体，记录后备用
         /// 格式如：
         ///     func (Num v1, Str v2) { ... } 
         /// 
@@ -516,7 +533,7 @@ namespace Kula.Core
         private bool PLambdaBody()
         {
             int _pos = pos, start_pos = _pos;
-            if (PKeyword("func"))
+            if (MetaKeyword("func"))
             {
                 // 数大括号儿
                 int count_stack = 1, count_pos = pos;
@@ -555,27 +572,45 @@ namespace Kula.Core
         /// </summary>
         private bool PBlockIf()
         {
-            int _pos = pos; int _size = aimFunc.NodeStream.Count;
+            var rcd = Record();
 
-            if (PKeyword("if") && PSymbol("(") && PValue() && PSymbol(")"))
+            if (MetaKeyword("if") && MetaSymbol("(") && PValue() && MetaSymbol(")"))
             {
                 // 保存当前位置新建节点，用于稍后填充 IFGOTO
-                // 注意：VMNode 是 struct，没有GC负担
-                int tmpId = aimFunc.NodeStream.Count;
+                // 注意：VMNode 是 struct，没有GC负担，且需要 空new
+                int if_id = aimFunc.NodeStream.Count;
                 aimFunc.NodeStream.Add(new VMNode());
 
-                if (PSymbol("{"))
+                if (MetaSymbol("{"))
                 {
                     while (PStatement()) ;
-                    if (PSymbol("}"))
+                    if (MetaSymbol("}"))
                     {
-                        aimFunc.NodeStream[tmpId] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count);
+                        // 到这里已经完成了 IF 语法的解析
+                        // 补充一个 ELSE 实现
+                        if (MetaKeyword("else") && MetaSymbol("{"))
+                        {
+                            aimFunc.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
+
+                            int else_id = aimFunc.NodeStream.Count;
+                            aimFunc.NodeStream.Add(new VMNode());
+
+                            while (PStatement()) ;
+                            if (MetaSymbol("}"))
+                            {
+                                aimFunc.NodeStream[else_id] = new VMNode(VMNodeType.GOTO, aimFunc.NodeStream.Count);
+                            }
+                        }
+                        else
+                        {
+                            aimFunc.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count);
+                        }
                         return true;
                     }
                 }
             }
 
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
             return false;
         }
 
@@ -586,27 +621,27 @@ namespace Kula.Core
         /// </summary>
         private bool PBlockWhile()
         {
-            int _pos = 0; int _size = aimFunc.NodeStream.Count;
+            var rcd = Record();
 
             int backPos = aimFunc.NodeStream.Count;
-            if (PKeyword("while") && PSymbol("(") && PValue() && PSymbol(")"))
+            if (MetaKeyword("while") && MetaSymbol("(") && PValue() && MetaSymbol(")"))
             {
-                int tmpId = aimFunc.NodeStream.Count;
+                int while_id = aimFunc.NodeStream.Count;
                 aimFunc.NodeStream.Add(new VMNode());
 
-                if (PSymbol("{"))
+                if (MetaSymbol("{"))
                 {
                     while (PStatement()) ;
-                    if (PSymbol("}"))
+                    if (MetaSymbol("}"))
                     {
-                        aimFunc.NodeStream[tmpId] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
+                        aimFunc.NodeStream[while_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
                         aimFunc.NodeStream.Add(new VMNode(VMNodeType.GOTO, backPos));
                         return true;
                     }
                 }
             }
 
-            pos = _pos; aimFunc.NodeStream.RemoveRange(_size, aimFunc.NodeStream.Count - _size);
+            Backtrack(rcd);
             return false;
         }
     }

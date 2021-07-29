@@ -99,6 +99,7 @@ namespace Kula.Core
                                     if (now_env.varDict.ContainsKey((string)node.Value))
                                     {
                                         now_env.varDict[(string)node.Value] = envStack.Pop();
+                                        envStack.Clear();
                                         flag = true;
                                     }
                                     now_env = now_env.Root.Runtime;
@@ -106,6 +107,7 @@ namespace Kula.Core
                                 if (!flag)
                                 {
                                     varDict[(string)node.Value] = envStack.Pop();
+                                    envStack.Clear();
                                 }
                             }
                             break;
@@ -114,6 +116,7 @@ namespace Kula.Core
                         case VMNodeType.VAR:
                             {
                                 this.varDict[(string)node.Value] = envStack.Pop();
+                                envStack.Clear();
                             }
                             break;
 

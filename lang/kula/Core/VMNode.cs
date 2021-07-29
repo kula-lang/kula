@@ -59,6 +59,6 @@ namespace Kula.Core
         GOTO,       // 无条件跳转
         RETURN,     // 返回值
 
-        CONKEY,    // 右值索引
+        CONKEY,     // 右值索引
     }
 }

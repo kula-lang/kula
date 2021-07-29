@@ -27,12 +27,7 @@ namespace Kula.Core
             public static bool CBracket(char c)
             { return c == '(' || c == '{' || c == ')' || c == '}' || c == '[' || c == ']' || c == '<' || c == '>'; }
             public static bool CAnnotation(char c) { return c == '#'; }
-            public static bool CPoint(char c) { return c == '.'; }
-            public static bool CComma(char c) { return c == ','; }
-            public static bool CColon(char c) { return c == ':'; }
-            public static bool CEnd(char c) { return c == ';'; }
             public static bool CQuote(char c) { return c == '\"' || c == '\''; }
-            public static bool CAssign(char c) { return (c == '='); }
         }
         private Lexer() { sourceCode = ""; }
         public Lexer Read(string code) { sourceCode = code; return this; }
