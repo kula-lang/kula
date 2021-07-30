@@ -588,6 +588,7 @@ namespace Kula.Core
                     {
                         // 到这里已经完成了 IF 语法的解析
                         // 补充一个 ELSE 实现
+                        var else_rcd = Record();
                         if (MetaKeyword("else") && MetaSymbol("{"))
                         {
                             aimFunc.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
@@ -604,6 +605,7 @@ namespace Kula.Core
                         else
                         {
                             aimFunc.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count);
+                            Backtrack(else_rcd);
                         }
                         return true;
                     }
