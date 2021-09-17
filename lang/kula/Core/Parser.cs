@@ -346,7 +346,16 @@ namespace Kula.Core
             if (PLambdaBody()) { return true; }
             Backtrack(rcd);
 
+            // Using Lambda
             if (PFuncBras()) { return true; }
+            Backtrack(rcd);
+
+            // PIPE
+            if (MetaSymbol("|")) 
+            {
+                aimFunc.NodeStream.Add(new VMNode(VMNodeType.PIPE, "|"));
+                return true; 
+            }
             Backtrack(rcd);
 
             if (PRightVar()) { return true; }
@@ -646,5 +655,17 @@ namespace Kula.Core
             Backtrack(rcd);
             return false;
         }
+
+        /// <summary>
+        /// for 遍历
+        /// 格式如：
+        ///     for (k, v in )
+        /// </summary>
+        /// <returns></returns>
+        
+        /*private bool PBlockFor()
+        {
+        }
+        */
     }
 }

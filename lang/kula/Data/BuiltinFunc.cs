@@ -164,6 +164,11 @@ namespace Kula.Data
                 ((Map)args[0]).Data[(string)args[1]] = args[2];
                 return null;
             } },
+            {"remove", (args, engine) => {
+                ArgsCheck(args, typeof(Map), typeof(string));
+                ((Map)args[0]).Data.Remove((string)args[1]);
+                return null;
+            } },
             {"count", (args, engine) => {
                 ArgsCheck(args, typeof(Map));
                 return((float) ((Map)args[0]).Data.Count);
@@ -177,7 +182,7 @@ namespace Kula.Data
                 ArgsCheck(args, typeof(Map), typeof(FuncWithEnv));
                 foreach(var kv in ((Map)args[0]).Data)
                 {
-                    new FuncRuntime((FuncWithEnv)args[1], /*stack,*/ engine).Run(new object[2] { kv.Key, kv.Value });
+                    new FuncRuntime((FuncWithEnv)args[1], engine).Run(new object[2] { kv.Key, kv.Value });
                 }
                 return null;
             } },

@@ -13,8 +13,8 @@ class Program
     private static readonly Dictionary<string, ShellCommand> ShellCommandDict = new Dictionary<string, ShellCommand>()
     {
         {"", () => { } },
-        {"#debug", () => { mode = true; Console.WriteLine("Debug-Mode"); } },
-        {"#release", () => { mode = false; Console.WriteLine("Release-Mode");} },
+        {"#debug", () => { mode = true; Console.WriteLine("Kula - Debug - Mode"); } },
+        {"#release", () => { mode = false; Console.WriteLine("Kula - Release - Mode");} },
         {"#gomo", () => { Hello(); } },
         {"#clear", () => { kulaEngine.Clear(); } },
     };
@@ -27,7 +27,6 @@ class Program
 
         {"--release", () => { mode = false; } },
         {"--r", () => { mode = false; } },
-
     };
 
     private static void Repl()

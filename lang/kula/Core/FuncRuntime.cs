@@ -56,7 +56,11 @@ namespace Kula.Core
 
             envStack.Clear();
 
+            // 本函数返回值
             object @return = null;
+            // 管道操作计数器
+            int pipe_counter = 0;
+
             for (int i = 0; i < Root.Func.NodeStream.Count && @return == null; ++i)
             {
                 var node = Root.Func.NodeStream[i];
@@ -167,20 +171,29 @@ namespace Kula.Core
                         case VMNodeType.FUNC:
                             {
                                 // 按 参数个数 获取 参数值
-                                object[] args = new object[(int)node.Value];
-                                for (int k = args.Length - 1; k >= 0; --k)
+                                // 管道操作下，改变参数个数
+                                object[] args = new object[(int)node.Value + pipe_counter];
+                                for (int k = args.Length - 1; k >= pipe_counter; --k)
                                 {
                                     args[k] = envStack.Pop();
                                 }
                                 object func = envStack.Pop();
+                                // 管道操作下的剩余参数
+                                while (pipe_counter > 0)
+                                {
+                                    args[pipe_counter - 1] = envStack.Pop();
+                                    --pipe_counter;
+                                }
+
+                                // 函数正常调用
                                 if (func is BFunc builtin_func)
                                 {
                                     var tmp_return = builtin_func(args, engine);
                                     if (tmp_return != null) { envStack.Push(tmp_return); }
                                 }
-                                else if (func is FuncWithEnv func_env)
+                                else if (func is FuncWithEnv func_wth_env)
                                 {
-                                    var tmp_return = new FuncRuntime(func_env, engine).Run(args);
+                                    var tmp_return = new FuncRuntime(func_wth_env, engine).Run(args);
                                     if (tmp_return != null) { envStack.Push(tmp_return); }
                                 }
                                 else
@@ -212,11 +225,11 @@ namespace Kula.Core
                         case VMNodeType.RETURN:
                             {
                                 object return_val = envStack.Pop();
+                                if (return_val == null) { break; }
                                 if (Root.Func.ReturnType != typeof(object) && return_val.GetType() != Root.Func.ReturnType)
                                 {
                                     throw new KulaException.ReturnValueException(return_val.GetType().Name, Root.Func.ReturnType.Name);
                                 }
-                                // fatherStack.Push(return_val);
                                 @return = return_val;
                             }
                             break;
@@ -253,6 +266,9 @@ namespace Kula.Core
                                 }
                             }
                             break;
+                        case VMNodeType.PIPE:
+                            ++pipe_counter;
+                            break;
                     }
                 }
                 catch (InvalidOperationException)
@@ -287,7 +303,11 @@ namespace Kula.Core
             while (envStack.Count > 0)
             {
                 object tmp = envStack.Pop();
-                if (tmp.GetType() == typeof(string))
+                if (tmp == null)
+                {
+                    tmp = "null";
+                }
+                else if (tmp.GetType() == typeof(string))
                 {
                     tmp = "\"" + tmp + "\"";
                 }

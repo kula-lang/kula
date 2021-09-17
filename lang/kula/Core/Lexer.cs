@@ -23,14 +23,25 @@ namespace Kula.Core
             public static bool CSpace(char c) { return (c == '\n' || c == '\t' || c == '\r' || c == ' '); }
             public static bool CNewLine(char c) { return c == '\n'; }
             public static bool CSymbol(char c)
-            { return c == ';' || c == ',' || c == '.' || c == ':' || c == '=' || CBracket(c); }
+            { 
+                return c == ';'     // 语句分隔符
+                    || c == ','     // 逗号分隔
+                    || c == '.'     // 点操作符
+                    || c == '|'     // 管道操作符
+                    || c == ':'     // 类型限定
+                    || c == '='     // 赋值符
+                    || CBracket(c); 
+            }
             public static bool CBracket(char c)
             { return c == '(' || c == '{' || c == ')' || c == '}' || c == '[' || c == ']' || c == '<' || c == '>'; }
             public static bool CAnnotation(char c) { return c == '#'; }
             public static bool CQuote(char c) { return c == '\"' || c == '\''; }
         }
+
         private Lexer() { sourceCode = ""; }
+
         public Lexer Read(string code) { sourceCode = code; return this; }
+
         public Lexer Scan(bool isDebug)
         {
             tokenStream = new List<LexToken>();
@@ -59,7 +70,6 @@ namespace Kula.Core
                             tokenBuilder.Append(c);
                             state = LexTokenType.NAME;
                         }
-                        // else if (Is.CPoint(c) || Is.CBracket(c) || Is.CAssign(c) || Is.CComma(c) || Is.CColon(c) || Is.CEnd(c))
                         else if (Is.CSymbol(c))
                         {
                             tokenStream.Add(new LexToken(LexTokenType.SYMBOL, c.ToString()));
@@ -116,8 +126,11 @@ namespace Kula.Core
             }
             if (isDebug) { DebugShow(); }
 
+            sourceCode = null;
+
             return this;
         }
+
         public Lexer DebugShow()
         {
             Console.WriteLine("Lexer ->");
@@ -131,6 +144,7 @@ namespace Kula.Core
             Console.ResetColor();
             return this;
         }
+
         public List<LexToken> Out() { return this.tokenStream; }
     }
 }

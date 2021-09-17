@@ -22,20 +22,28 @@ Kula 语言诞生于 2021 年 5 月 (下旬)，并且正在高速的发展之中
 * 和 C# 双向交互，可由 C# 实现高度的扩展性
 
 ## [帮助文档 *( 点我跳转 )*](https://kula-lang.github.io/Kula-Guide/)
-> *单独的使用 Kula 语言不需要太多的前置知识，不需要学习 C#。    
+> *单独的使用 Kula 语言不需要太多的前置知识，可以不学习 C#。    
 > 但是 Kula 语言只有和 C#共同使用才能发挥其最大的作用！*
 
 ## 伴生项目
-* [Kula - Diana : Kula 语言的 VSCode 插件](https://github.com/HanaYabuki/Kula-Diana)
-* [Kula - Guide : Kula 语言的 完全帮助文档](https://github.com/HanaYabuki/Kula-Guide)
+* [Kula - Diana : Kula 语言的 VSCode 插件](https://github.com/kula-lang/Kula-Diana)
+* [Kula - Guide : Kula 语言的 完全帮助文档](https://github.com/kula-lang/Kula-Guide)
 
 ------
 
 ## 更新日志
 
+### 2021-9-17
+* **添加语法：PIPE 管道操作**，可以通过 `|` 运算符进行链式的函数调用
+* 调整 `null` 相关错误信息
+
+### 2021-9-9
+* ~~好久没更新了~~
+* `Map` 容器增加操作：`remove(map: Map, key: Str): None` 移除元素
+
 ### 2021-7-29
 * 部分重写了 Parser，现在的 Parser 巧妙利用了许多 C#特性，封装性更好且副作用小
-* **支持 `else` 语法**
+* **支持与 `if` 对应的 `else` 语法**
 
 ### 2021-7-12
 * 更改了 Shell 的使用方式
@@ -46,7 +54,7 @@ Kula 语言诞生于 2021 年 5 月 (下旬)，并且正在高速的发展之中
 * 更改编译器底层，确保了编译器线程安全
 
 ### 2021-7-10
-* 添加 `null` 关键字，允许在 Kula 中使用空值 ~~(后果自负)~~
+* 添加 `null` 关键字，允许在 Kula 中使用空值 ~~(后果自负)(非常不建议使用)~~
 * 重写底层 Kula Func 机制，简化 `BFunc` 委托格式，确保 C# 可以直接*轻便的*调用 Kula 函数。
 * 完全支持 Kula-C# 交互。`KulaEngine`类 添加 `Call` 方法，允许在 C# 中调用 Kula 的函数
 
@@ -138,6 +146,7 @@ Kula 语言诞生于 2021 年 5 月 (下旬)，并且正在高速的发展之中
 
 ### 参与贡献代码的方式
 > 1. 直接和我击剑
+> 2. 参与到相关申必组织
 
 ### 开源协议
 > [GPL3.0](./LICENSE)
