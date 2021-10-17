@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Kula.Core;
+using Kula.Data;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
-using Kula.Core;
-using Kula.Data;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Versioning;
 
 namespace Kula
 {
@@ -12,7 +14,17 @@ namespace Kula
     /// </summary>
     public class KulaEngine
     {
+
         private readonly FuncRuntime mainRuntime;
+
+        /// <summary>
+        /// 获取依赖版本
+        /// </summary>
+        public string FrameworkVersion => Assembly.GetExecutingAssembly()
+                                                  .GetCustomAttributes(true)
+                                                  .OfType<TargetFrameworkAttribute>()
+                                                  .First().FrameworkName
+                                                  .Replace(",Version=", " ");
 
         /// <summary>
         /// 编译好的 字节码 集合

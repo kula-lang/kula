@@ -9,6 +9,7 @@ namespace Kula.Util
 
         private readonly DateTime dateTime;
 
+
         private KulaVersion(string name, string number, DateTime dateTime)
         {
             this.name = name;

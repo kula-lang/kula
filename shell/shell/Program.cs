@@ -1,14 +1,13 @@
-﻿using System;
+﻿using Kula;
+using System;
 using System.Collections.Generic;
 using System.IO;
-
-using Kula;
 
 class Program
 {
     private static readonly KulaEngine kulaEngine = new KulaEngine();
     private static bool mode = false;
-    
+
     private delegate void ShellCommand();
     private static readonly Dictionary<string, ShellCommand> ShellCommandDict = new Dictionary<string, ShellCommand>()
     {
@@ -64,7 +63,8 @@ class Program
     private static void Hello()
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
-        Console.WriteLine(KulaEngine.Version + " (on .net Framework at least 4.6)");
+
+        Console.WriteLine(KulaEngine.Version + $" (on {kulaEngine.FrameworkVersion})");
 
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("developed by @HanaYabuki on github.com");
