@@ -20,11 +20,17 @@ namespace Kula
         /// <summary>
         /// 获取依赖版本
         /// </summary>
-        public string FrameworkVersion => Assembly.GetExecutingAssembly()
-                                                  .GetCustomAttributes(true)
-                                                  .OfType<TargetFrameworkAttribute>()
-                                                  .First().FrameworkName
-                                                  .Replace(",Version=", " ");
+        public string FrameworkVersion 
+        { 
+            get 
+            {
+                var fn = new FrameworkName(Assembly.GetExecutingAssembly()
+                                                   .GetCustomAttributes(true)
+                                                   .OfType<TargetFrameworkAttribute>()
+                                                   .First().FrameworkName);
+                return $"{fn.Identifier} v{fn.Version}";
+            } 
+        }
 
         /// <summary>
         /// 编译好的 字节码 集合
@@ -117,7 +123,7 @@ namespace Kula
             FuncWithEnv fwe = func as FuncWithEnv;
             if (fwe is Kula.Data.FuncWithEnv)
             {
-                return new Kula.Core.FuncRuntime(fwe, this).Run(arguments);
+                return new FuncRuntime(fwe, this).Run(arguments);
             }
             else
             {

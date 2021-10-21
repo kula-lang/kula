@@ -53,7 +53,7 @@ class Program
                 catch (Exception e)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e.GetType().ToString() + ":\n" + e.Message/*.Message*/);
+                    Console.WriteLine(e.GetType().ToString() + ":\n" + e.Message);
                     Console.ResetColor();
                 }
             }
@@ -64,7 +64,7 @@ class Program
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
 
-        Console.WriteLine(KulaEngine.Version + $" (on {kulaEngine.FrameworkVersion})");
+        Console.WriteLine($"{KulaEngine.Version} (on {kulaEngine.FrameworkVersion})");
 
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("developed by @HanaYabuki on github.com");
@@ -85,6 +85,11 @@ class Program
 
     private static void Main(string[] args)
     {
+        // 测试
+        kulaEngine.ExtendFunc["KULA_CALL"] = (args, engine) => {
+            return kulaEngine.Call(args[0], ((Kula.Data.Array)args[1]).Data);
+        };
+
         if (args.Length > 0)
         {
             string code;

@@ -64,18 +64,7 @@ namespace Kula.Core
             while (pos < aimFunc.TokenStream.Count && _pos != pos)
             {
                 _pos = pos;
-                try
-                {
-                    PStatement();
-                }
-                catch (IndexOutOfRangeException)
-                {
-                    throw new KulaException.ParserException();
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                    throw new KulaException.ParserException();
-                }
+                PStatement();
             }
             if (pos != aimFunc.TokenStream.Count)
             {
@@ -110,18 +99,7 @@ namespace Kula.Core
                     while (pos < aimFunc.TokenStream.Count - 1 && _pos != pos)
                     {
                         _pos = pos;
-                        try
-                        {
-                            PStatement();
-                        }
-                        catch (IndexOutOfRangeException)
-                        {
-                            throw new KulaException.ParserException();
-                        }
-                        catch (ArgumentOutOfRangeException)
-                        {
-                            throw new KulaException.ParserException();
-                        }
+                        PStatement();
                     }
                     if (pos == aimFunc.TokenStream.Count - 1 && MetaSymbol("}"))
                     {
@@ -145,6 +123,8 @@ namespace Kula.Core
         private bool MetaKeyword(string kword)
         {
             var rcd = Record();
+            // 过长
+            if (pos >= aimFunc.TokenStream.Count) return false;
             var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME && token.Value == kword)
             {
@@ -157,6 +137,7 @@ namespace Kula.Core
         private bool MetaSymbol(string sym)
         {
             var rcd = Record();
+            if (pos >= aimFunc.TokenStream.Count) return false;
             var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.SYMBOL && token.Value == sym)
             {
@@ -169,6 +150,11 @@ namespace Kula.Core
         private bool MetaName(out string name)
         {
             var rcd = Record();
+            if (pos >= aimFunc.TokenStream.Count)
+            {
+                name = null;
+                return false;
+            }
             var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME)
             {
@@ -183,6 +169,11 @@ namespace Kula.Core
         private bool MetaType(out string typeName)
         {
             var rcd = Record();
+            if (pos >= aimFunc.TokenStream.Count)
+            {
+                typeName = null;
+                return false;
+            }
             var token = aimFunc.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME && TypeDict.ContainsKey(token.Value))
             {
@@ -558,6 +549,7 @@ namespace Kula.Core
                         else if (aimFunc.TokenStream[count_pos].Value == "}") { --count_stack; }
                     }
                 }
+
                 // 截取Token 写入函数 待编译
                 List<LexToken> func_tokens = aimFunc.TokenStream.GetRange(start_pos, count_pos - start_pos + 1);
                 var func = new Func(func_tokens);
@@ -596,11 +588,11 @@ namespace Kula.Core
                     {
                         // 到这里已经完成了 IF 语法的解析
                         // 补充一个 ELSE 实现
+
                         var else_rcd = Record();
                         if (MetaKeyword("else") && MetaSymbol("{"))
                         {
                             aimFunc.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
-
                             int else_id = aimFunc.NodeStream.Count;
                             aimFunc.NodeStream.Add(new VMNode());
 
