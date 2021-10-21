@@ -94,7 +94,7 @@ namespace Kula
                 mainRuntime.Root = byteCodeMap[codeId];
                 mainRuntime.DebugRun();
                 stopwatch.Stop();
-                Console.WriteLine("\tIt takes " + stopwatch.Elapsed.Milliseconds + " ms.\n");
+                Console.WriteLine("Timer ->\n\t" + stopwatch.Elapsed.Milliseconds + " ms.");
             }
         }
 

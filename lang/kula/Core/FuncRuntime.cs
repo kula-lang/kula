@@ -299,7 +299,7 @@ namespace Kula.Core
         private void Show()
         {
             int cnt = 0;
-            Console.WriteLine("\nVM ->");
+            Console.WriteLine("VM ->");
             while (envStack.Count > 0)
             {
                 object tmp = envStack.Pop();
@@ -313,7 +313,6 @@ namespace Kula.Core
                 }
                 Console.WriteLine("\tVM-Stack {" + cnt++ + "} : " + tmp);
             }
-            Console.WriteLine();
             Console.ResetColor();
         }
     }

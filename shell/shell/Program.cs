@@ -33,9 +33,9 @@ class Program
         string code;
         while (true)
         {
-            Console.Write(">> ");
+            Console.Write("\n>> ");
             code = Console.ReadLine();
-            if (code == "#exit")
+            if (code == null || code == "#exit")
             {
                 break;
             }
@@ -53,7 +53,7 @@ class Program
                 catch (Exception e)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e.GetType().ToString() + " : " + e/*.Message*/);
+                    Console.WriteLine(e.GetType().ToString() + ":\n" + e.Message/*.Message*/);
                     Console.ResetColor();
                 }
             }

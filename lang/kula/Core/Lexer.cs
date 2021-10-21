@@ -50,11 +50,11 @@ namespace Kula.Core
 
             try
             {
-                for (int i = 0; i < sourceCode.Length; ++i)
+                for (int i = 0; i <= sourceCode.Length; ++i)
                 {
                     if (state == LexTokenType.NULL)
                     {
-                        char c = sourceCode[i];
+                        char c = i == sourceCode.Length ? '\n' : sourceCode[i];
                         if (Is.CSpace(c)) { continue; }
                         else if (Is.CQuote(c))
                         {
@@ -140,7 +140,6 @@ namespace Kula.Core
                 Console.Write("\t");
                 Console.WriteLine(token);
             }
-            Console.WriteLine();
             Console.ResetColor();
             return this;
         }

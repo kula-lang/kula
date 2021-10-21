@@ -52,7 +52,6 @@ namespace Kula.Core
                 Console.Write("\t");
                 Console.WriteLine(node);
             }
-            Console.WriteLine();
             Console.ResetColor();
             return this;
         }
