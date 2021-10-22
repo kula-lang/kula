@@ -22,10 +22,10 @@ class Program
     private static readonly Dictionary<string, ShellArgument> ShellArgumentDict = new Dictionary<string, ShellArgument>()
     {
         {"--debug", () => { mode = true; } },
-        {"--d", () => { mode = true; } },
+        {"-d", () => { mode = true; } },
 
         {"--release", () => { mode = false; } },
-        {"--r", () => { mode = false; } },
+        {"-r", () => { mode = false; } },
     };
 
     private static void Repl()
@@ -74,6 +74,9 @@ class Program
         Console.ForegroundColor = ConsoleColor.Blue;
         Console.WriteLine("https://github.com/kula-lang/Kula");
 
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("Copyright (C) 2021");
+
         Console.ResetColor();
     }
 
@@ -95,7 +98,7 @@ class Program
             string code;
             foreach (string arg in args)
             {
-                if (arg.StartsWith("--") && ShellArgumentDict.ContainsKey(arg))
+                if (arg.StartsWith("-") && ShellArgumentDict.ContainsKey(arg))
                 {
                     ShellArgumentDict[arg]();
                 }

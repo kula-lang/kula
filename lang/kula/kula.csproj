@@ -8,9 +8,13 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DocumentationFile>bin\Release\kula.xml</DocumentationFile>
     <RegisterForComInterop>false</RegisterForComInterop>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
+    <ApplicationIcon />
+    <Win32Resource />
+    <Authors>HanaYabuki</Authors>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Util\ConsoleUtility.cs" />
