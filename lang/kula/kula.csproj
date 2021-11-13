@@ -8,13 +8,16 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DocumentationFile>bin\Release\kula.xml</DocumentationFile>
     <RegisterForComInterop>false</RegisterForComInterop>
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
     <ApplicationIcon />
     <Win32Resource />
     <Authors>HanaYabuki</Authors>
+    <AssemblyName>kula_lib</AssemblyName>
+    <RootNamespace>Kula</RootNamespace>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Util\ConsoleUtility.cs" />
@@ -23,5 +26,8 @@
     <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.3.246501">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Exception\" />
   </ItemGroup>
 </Project>

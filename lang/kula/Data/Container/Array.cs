@@ -1,8 +1,8 @@
 ﻿using System.Text;
-
+using Kula.Data.Function;
 using Kula.Util;
 
-namespace Kula.Data
+namespace Kula.Data.Container
 {
     /// <summary>
     /// Kula 中的 Array 结构
@@ -40,7 +40,7 @@ namespace Kula.Data
             builder.Append('[');
             for (int i = 0; i < Data.Length; ++i)
             {
-                if (Data[i] is FuncWithEnv || Data[i] is BFunc) { }
+                if (Data[i] is Func || Data[i] is SharpFunc) { }
                 else
                 {
                     if (builder.Length != 1) { builder.Append(','); }

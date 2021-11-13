@@ -1,52 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-
-using Kula.Data;
+﻿using Kula.Data;
+using Kula.Data.Container;
+using Kula.Data.Function;
+using Kula.Data.Type;
 using Kula.Util;
+using System;
+using System.Collections.Generic;
 
 namespace Kula.Core
 {
     class Parser
     {
+        private Parser() { }
         public static Parser Instance { get; } = new Parser();
 
-        private Func aimFunc;
+        private Lambda aimLambda;
 
-        private readonly Queue<Func> funcQueue = new Queue<Func>();
+        private readonly Queue<Lambda> lambdaQue = new Queue<Lambda>();
         private int pos;
-
-        public static Dictionary<string, Type> TypeDict { get; private set; }
-        public static Dictionary<Type, string> InvertTypeDict { get; private set; }
-
-        private Parser() { }
-        static Parser()
-        {
-            TypeDict = new Dictionary<string, Type>()
-            {
-                { "None", null },
-                { "Any", typeof(object) },
-                { "Num", typeof(float) },
-                { "Str", typeof(string) },
-                { "BuiltinFunc", typeof(Kula.Data.BFunc) },
-                { "Func", typeof(Kula.Data.FuncWithEnv) },
-                { "Array", typeof(Kula.Data.Array) },
-                { "Map", typeof(Kula.Data.Map) },
-            };
-
-            if (InvertTypeDict == null)
-            {
-                InvertTypeDict = new Dictionary<Type, string>();
-                foreach (var kv in TypeDict)
-                {
-                    if (kv.Value != null) InvertTypeDict[kv.Value] = kv.Key;
-                }
-            }
-        }
+        private int pipes;
+        private KulaEngine engineRoot;
 
         public Parser DebugShow()
         {
             Console.WriteLine("Parser ->");
-            foreach (var node in aimFunc.NodeStream)
+            foreach (var node in aimLambda.NodeStream)
             {
                 Console.ForegroundColor = VMNode.KvmColorDict[node.Type];
                 Console.Write("\t");
@@ -56,27 +33,31 @@ namespace Kula.Core
             return this;
         }
 
-        public Parser Parse(Func main, bool isDebug)
+        public Parser Parse(KulaEngine engine, Lambda main, bool isDebug)
         {
+            this.engineRoot = engine;
             pos = 0; int _pos = -1;
-            this.aimFunc = main;
-            aimFunc.NodeStream.Clear();
-            while (pos < aimFunc.TokenStream.Count && _pos != pos)
+            pipes = 0;
+            this.aimLambda = main;
+            this.aimLambda.ReturnType = RawType.None;
+
+            aimLambda.NodeStream.Clear();
+            while (pos < aimLambda.TokenStream.Count && _pos != pos)
             {
                 _pos = pos;
                 PStatement();
             }
-            if (pos != aimFunc.TokenStream.Count)
+            if (pos != aimLambda.TokenStream.Count)
             {
                 if (isDebug) { DebugShow(); }
                 throw new KulaException.ParserException();
             }
-            aimFunc.TokenStream.Clear();
+            aimLambda.TokenStream.Clear();
             if (isDebug) { DebugShow(); }
 
-            while (funcQueue.Count > 0)
+            while (lambdaQue.Count > 0)
             {
-                ParseLambda(funcQueue.Dequeue());
+                ParseLambda(lambdaQue.Dequeue());
                 if (isDebug) { DebugShow(); }
             }
             return this;
@@ -86,30 +67,30 @@ namespace Kula.Core
         /// 整体解析 函数体
         /// </summary>
         /// <param name="func">函数</param>
-        private Parser ParseLambda(Func func)
+        private Parser ParseLambda(Lambda func)
         {
             pos = 0; int _pos = -1;
-            this.aimFunc = func;
+            this.aimLambda = func;
 
             func.NodeStream.Clear();
             if (PLambdaDeclare())
             {
                 if (MetaSymbol("{"))
                 {
-                    while (pos < aimFunc.TokenStream.Count - 1 && _pos != pos)
+                    while (pos < aimLambda.TokenStream.Count - 1 && _pos != pos)
                     {
                         _pos = pos;
                         PStatement();
                     }
-                    if (pos == aimFunc.TokenStream.Count - 1 && MetaSymbol("}"))
+                    if (pos == aimLambda.TokenStream.Count - 1 && MetaSymbol("}"))
                     {
-                        aimFunc.TokenStream.Clear();
+                        aimLambda.TokenStream.Clear();
                         return this;
                     }
                 }
             }
-            aimFunc.NodeStream.Clear();
-            aimFunc.TokenStream.Clear();
+            aimLambda.NodeStream.Clear();
+            aimLambda.TokenStream.Clear();
             throw new KulaException.ParserException();
         }
 
@@ -119,13 +100,13 @@ namespace Kula.Core
          *  Meta系列函数：元分析，只单独分析单个Token，显式操作TokenSteam。必要时返回对应类型的值，做回溯处理。
          *  P系列函数：结构式分析，只调用Meta或递归，不显式操作TokenSteam，做回溯处理。
          */
-        
+
         private bool MetaKeyword(string kword)
         {
             var rcd = Record();
             // 过长
-            if (pos >= aimFunc.TokenStream.Count) return false;
-            var token = aimFunc.TokenStream[pos++];
+            if (pos >= aimLambda.TokenStream.Count) return false;
+            var token = aimLambda.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME && token.Value == kword)
             {
                 return true;
@@ -137,8 +118,8 @@ namespace Kula.Core
         private bool MetaSymbol(string sym)
         {
             var rcd = Record();
-            if (pos >= aimFunc.TokenStream.Count) return false;
-            var token = aimFunc.TokenStream[pos++];
+            if (pos >= aimLambda.TokenStream.Count) return false;
+            var token = aimLambda.TokenStream[pos++];
             if (token.Type == LexTokenType.SYMBOL && token.Value == sym)
             {
                 return true;
@@ -150,12 +131,12 @@ namespace Kula.Core
         private bool MetaName(out string name)
         {
             var rcd = Record();
-            if (pos >= aimFunc.TokenStream.Count)
+            if (pos >= aimLambda.TokenStream.Count)
             {
                 name = null;
                 return false;
             }
-            var token = aimFunc.TokenStream[pos++];
+            var token = aimLambda.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME)
             {
                 name = token.Value;
@@ -169,13 +150,13 @@ namespace Kula.Core
         private bool MetaType(out string typeName)
         {
             var rcd = Record();
-            if (pos >= aimFunc.TokenStream.Count)
+            if (pos >= aimLambda.TokenStream.Count)
             {
                 typeName = null;
                 return false;
             }
-            var token = aimFunc.TokenStream[pos++];
-            if (token.Type == LexTokenType.NAME && TypeDict.ContainsKey(token.Value))
+            var token = aimLambda.TokenStream[pos++];
+            if (token.Type == LexTokenType.NAME /*&& TypeDict.ContainsKey(token.Value)*/)
             {
                 typeName = token.Value;
                 return true;
@@ -185,15 +166,16 @@ namespace Kula.Core
             return false;
         }
 
-        private KeyValuePair<int, int> Record()
+        private (int, int) Record()
         {
-            return new KeyValuePair<int, int>(pos, aimFunc.NodeStream.Count);
+            return (pos, aimLambda.NodeStream.Count);
         }
 
-        private void Backtrack(KeyValuePair<int, int> rcd)
+        private void Backtrack((int, int) rcd)
         {
-            pos = rcd.Key; 
-            aimFunc.NodeStream.RemoveRange(rcd.Value, aimFunc.NodeStream.Count - rcd.Value);
+            pos = rcd.Item1;
+            if (rcd.Item2 != aimLambda.NodeStream.Count)
+                aimLambda.NodeStream.RemoveRange(rcd.Item2, aimLambda.NodeStream.Count - rcd.Item2);
         }
 
         /// <summary>
@@ -209,8 +191,8 @@ namespace Kula.Core
                 {
                     if (PValAndType(out string val_name, out string type_name))
                     {
-                        aimFunc.ArgTypes.Add(TypestrToType(type_name));
-                        aimFunc.ArgNames.Add(val_name);
+                        aimLambda.ArgTypes.Add(TypestrToType(type_name));
+                        aimLambda.ArgNames.Add(val_name);
                         MetaSymbol(",");
                     }
                     else
@@ -223,7 +205,7 @@ namespace Kula.Core
                     if (MetaType(out string final_type_name))
                     {
                         // 记录类型
-                        aimFunc.ReturnType = TypestrToType(final_type_name);
+                        aimLambda.ReturnType = TypestrToType(final_type_name);
                         return true;
                     }
                 }
@@ -241,8 +223,7 @@ namespace Kula.Core
             var rcd = Record();
             if (MetaName(out string token_value1)
                 && MetaSymbol(":")
-                && MetaName(out string token_value2)
-                && TypeDict.ContainsKey(token_value2))
+                && MetaName(out string token_value2))
             {
                 valName = token_value1;
                 typeName = token_value2;
@@ -254,9 +235,17 @@ namespace Kula.Core
             typeName = null;
             return false;
         }
-        private Type TypestrToType(string str)
+        private IType TypestrToType(string str)
         {
-            return TypeDict[str];
+            if (RawType.TypeDict.ContainsKey(str))
+            {
+                return RawType.TypeDict[str];
+            }
+            if (engineRoot.DuckTypeDict.ContainsKey(str))
+            {
+                return engineRoot.DuckTypeDict[str];
+            }
+            throw new KulaException.KTypeException(str);
         }
 
         /// <summary>
@@ -275,6 +264,9 @@ namespace Kula.Core
             if (MetaSymbol(";")) { return true; }
             Backtrack(rcd);
 
+            if (PInterface()) { return true; }
+            Backtrack(rcd);
+
             if (PReturn() && MetaSymbol(";")) { return true; }
             Backtrack(rcd);
 
@@ -286,7 +278,7 @@ namespace Kula.Core
                 bool flag = MetaSymbol(":");
                 if (MetaSymbol("=") && PValue() && MetaSymbol(";"))
                 {
-                    aimFunc.NodeStream.Add(new VMNode(flag ? VMNodeType.VAR : VMNodeType.LET, var_name));
+                    aimLambda.NodeStream.Add(new VMNode(flag ? VMNodeType.VAR : VMNodeType.LET, var_name));
                     return true;
                 }
             }
@@ -341,10 +333,11 @@ namespace Kula.Core
             Backtrack(rcd);
 
             // PIPE
-            if (MetaSymbol("|")) 
+            if (MetaSymbol("|"))
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.PIPE, "|"));
-                return true; 
+                // aimFunc.NodeStream.Add(new VMNode(VMNodeType.PIPE, "|"));
+                ++pipes;
+                return true;
             }
             Backtrack(rcd);
 
@@ -354,8 +347,10 @@ namespace Kula.Core
             if (PRightIndex()) { return true; }
             Backtrack(rcd);
 
+            /*
             if (PRightKey()) { return true; }
             Backtrack(rcd);
+            */
 
             return false;
         }
@@ -366,6 +361,8 @@ namespace Kula.Core
         private bool PFuncBras()
         {
             var rcd = Record();
+            int _pipes = pipes;
+            pipes = 0;
 
             if (MetaSymbol("("))
             {
@@ -391,12 +388,13 @@ namespace Kula.Core
 
                 if (MetaSymbol(")"))
                 {
-                    aimFunc.NodeStream.Add(new VMNode(VMNodeType.FUNC, count));
+                    aimLambda.NodeStream.Add(new VMNode(VMNodeType.FUNC, count + (_pipes << 16)));
                     return true;
                 }
             }
 
             Backtrack(rcd);
+            pipes = _pipes;
             return false;
         }
 
@@ -406,10 +404,10 @@ namespace Kula.Core
         private bool PConst()
         {
             int _pos = pos;
-            var token = aimFunc.TokenStream[pos++];
+            var token = aimLambda.TokenStream[pos++];
             if (token.Type == LexTokenType.NUMBER)
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.VALUE, float.Parse(token.Value)));
+                aimLambda.NodeStream.Add(new VMNode(VMNodeType.VALUE, float.Parse(token.Value)));
                 return true;
             }
             pos = _pos; return false;
@@ -421,10 +419,10 @@ namespace Kula.Core
         private bool PConstString()
         {
             int _pos = pos;
-            var token = aimFunc.TokenStream[pos++];
+            var token = aimLambda.TokenStream[pos++];
             if (token.Type == LexTokenType.STRING)
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.STRING, token.Value));
+                aimLambda.NodeStream.Add(new VMNode(VMNodeType.STRING, token.Value));
                 return true;
             }
             pos = _pos; return false;
@@ -455,10 +453,10 @@ namespace Kula.Core
         {
             int _pos = pos;
             // 单一变量做右值
-            var token = aimFunc.TokenStream[pos++];
+            var token = aimLambda.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME)
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.NAME, token.Value));
+                aimLambda.NodeStream.Add(new VMNode(VMNodeType.NAME, token.Value));
                 return true;
             }
             pos = _pos;
@@ -472,35 +470,19 @@ namespace Kula.Core
         private bool PRightIndex()
         {
             var rcd = Record();
-            if (MetaSymbol("[") && PValue() && MetaSymbol("]"))
-            {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '['));
-                return true;
-            }
-            Backtrack(rcd);
-            return false;
-        }
-
-        /// <summary>
-        /// Map类型的右索引
-        /// </summary>
-        private bool PRightKey()
-        {
-            var rcd = Record();
-
-            // <"key">
-            if (MetaSymbol("<") && PValue() && MetaSymbol(">"))
-            {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '<'));
-                return true;
-            }
-            Backtrack(rcd);
 
             // .key 语法糖
             if (MetaSymbol(".") && MetaName(out string token_key))
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.STRING, token_key));
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '<'));
+                aimLambda.NodeStream.Add(new VMNode(VMNodeType.STRING, token_key));
+                aimLambda.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '.'));
+                return true;
+            }
+            Backtrack(rcd);
+
+            if (MetaSymbol("[") && PValue() && MetaSymbol("]"))
+            {
+                aimLambda.NodeStream.Add(new VMNode(VMNodeType.CONKEY, '['));
                 return true;
             }
             Backtrack(rcd);
@@ -508,7 +490,6 @@ namespace Kula.Core
             return false;
         }
 
-        
 
         /// <summary>
         /// return 关键字 和 返回值
@@ -517,7 +498,7 @@ namespace Kula.Core
         {
             if (MetaKeyword("return") && PValue())
             {
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.RETURN, null));
+                aimLambda.NodeStream.Add(new VMNode(VMNodeType.RETURN, null));
                 return true;
             }
             return false;
@@ -536,28 +517,28 @@ namespace Kula.Core
             {
                 // 数大括号儿
                 int count_stack = 1, count_pos = pos;
-                while (aimFunc.TokenStream[count_pos].Type != LexTokenType.SYMBOL || aimFunc.TokenStream[count_pos].Value != "{")
+                while (aimLambda.TokenStream[count_pos].Type != LexTokenType.SYMBOL || aimLambda.TokenStream[count_pos].Value != "{")
                 {
                     ++count_pos;
                 }
                 while (count_stack > 0)
                 {
                     ++count_pos;
-                    if (aimFunc.TokenStream[count_pos].Type == LexTokenType.SYMBOL)
+                    if (aimLambda.TokenStream[count_pos].Type == LexTokenType.SYMBOL)
                     {
-                        if (aimFunc.TokenStream[count_pos].Value == "{") { ++count_stack; }
-                        else if (aimFunc.TokenStream[count_pos].Value == "}") { --count_stack; }
+                        if (aimLambda.TokenStream[count_pos].Value == "{") { ++count_stack; }
+                        else if (aimLambda.TokenStream[count_pos].Value == "}") { --count_stack; }
                     }
                 }
 
                 // 截取Token 写入函数 待编译
-                List<LexToken> func_tokens = aimFunc.TokenStream.GetRange(start_pos, count_pos - start_pos + 1);
-                var func = new Func(func_tokens);
+                List<LexToken> func_tokens = aimLambda.TokenStream.GetRange(start_pos, count_pos - start_pos + 1);
+                var func = new Lambda(func_tokens);
 
                 // 将待使用函数送入编译队列
-                funcQueue.Enqueue(func);
+                lambdaQue.Enqueue(func);
 
-                aimFunc.NodeStream.Add(new VMNode(VMNodeType.LAMBDA, func));
+                aimLambda.NodeStream.Add(new VMNode(VMNodeType.LAMBDA, func));
                 pos = count_pos + 1;
                 return true;
             }
@@ -578,8 +559,8 @@ namespace Kula.Core
             {
                 // 保存当前位置新建节点，用于稍后填充 IFGOTO
                 // 注意：VMNode 是 struct，没有GC负担，且需要 空new
-                int if_id = aimFunc.NodeStream.Count;
-                aimFunc.NodeStream.Add(new VMNode());
+                int if_id = aimLambda.NodeStream.Count;
+                aimLambda.NodeStream.Add(new VMNode());
 
                 if (MetaSymbol("{"))
                 {
@@ -592,19 +573,19 @@ namespace Kula.Core
                         var else_rcd = Record();
                         if (MetaKeyword("else") && MetaSymbol("{"))
                         {
-                            aimFunc.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
-                            int else_id = aimFunc.NodeStream.Count;
-                            aimFunc.NodeStream.Add(new VMNode());
+                            aimLambda.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimLambda.NodeStream.Count + 1);
+                            int else_id = aimLambda.NodeStream.Count;
+                            aimLambda.NodeStream.Add(new VMNode());
 
                             while (PStatement()) ;
                             if (MetaSymbol("}"))
                             {
-                                aimFunc.NodeStream[else_id] = new VMNode(VMNodeType.GOTO, aimFunc.NodeStream.Count);
+                                aimLambda.NodeStream[else_id] = new VMNode(VMNodeType.GOTO, aimLambda.NodeStream.Count);
                             }
                         }
                         else
                         {
-                            aimFunc.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count);
+                            aimLambda.NodeStream[if_id] = new VMNode(VMNodeType.IFGOTO, aimLambda.NodeStream.Count);
                             Backtrack(else_rcd);
                         }
                         return true;
@@ -625,19 +606,60 @@ namespace Kula.Core
         {
             var rcd = Record();
 
-            int backPos = aimFunc.NodeStream.Count;
+            int backPos = aimLambda.NodeStream.Count;
             if (MetaKeyword("while") && MetaSymbol("(") && PValue() && MetaSymbol(")"))
             {
-                int while_id = aimFunc.NodeStream.Count;
-                aimFunc.NodeStream.Add(new VMNode());
+                int while_id = aimLambda.NodeStream.Count;
+                aimLambda.NodeStream.Add(new VMNode());
 
                 if (MetaSymbol("{"))
                 {
                     while (PStatement()) ;
                     if (MetaSymbol("}"))
                     {
-                        aimFunc.NodeStream[while_id] = new VMNode(VMNodeType.IFGOTO, aimFunc.NodeStream.Count + 1);
-                        aimFunc.NodeStream.Add(new VMNode(VMNodeType.GOTO, backPos));
+                        aimLambda.NodeStream[while_id] = new VMNode(VMNodeType.IFGOTO, aimLambda.NodeStream.Count + 1);
+                        aimLambda.NodeStream.Add(new VMNode(VMNodeType.GOTO, backPos));
+                        return true;
+                    }
+                }
+            }
+
+            Backtrack(rcd);
+            return false;
+        }
+
+        /// <summary>
+        /// 鸭子接口声明
+        /// </summary>
+        public bool PInterface()
+        {
+            var rcd = Record();
+            if (MetaKeyword("type"))
+            {
+                if (MetaName(out string duck_name))
+                {
+                    if (!MetaSymbol("{"))
+                        throw new KulaException.ParserException("{ ?");
+
+                    var node_list = new List<(string, string)>();
+                    while (!MetaSymbol("}"))
+                    {
+                        if (MetaType(out string item_name)
+                            && MetaSymbol(":")
+                            && MetaName(out string type_name))
+                        {
+                            node_list.Add((item_name, type_name));
+                            if (!MetaSymbol(","))
+                            {
+                                throw new KulaException.ParserException(", ?");
+                            }
+                        }
+
+                    }
+                    if (MetaSymbol(";"))
+                    {
+                        // 添加Type 不允许重复
+                        engineRoot.DuckTypeDict.Add(duck_name, new DuckType(duck_name, engineRoot, node_list));
                         return true;
                     }
                 }
@@ -653,7 +675,7 @@ namespace Kula.Core
         ///     for (k, v in )
         /// </summary>
         /// <returns></returns>
-        
+
         /*private bool PBlockFor()
         {
         }

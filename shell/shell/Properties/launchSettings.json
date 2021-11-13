@@ -1,7 +1,8 @@
 {
   "profiles": {
     "shell": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "--debug ..\\..\\Demo\\duck-type.kula"
     }
   }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 
-using Kula.Data;
 using Kula.Util;
 
 namespace Kula.Core
@@ -18,6 +17,8 @@ namespace Kula.Core
         {
             public static bool CNumber(char c) { return (c <= '9' && c >= '0') || c == '.'; }
             public static bool CNumberHead(char c) { return (c <= '9' && c >= '0') || c == '+' || c == '-'; }
+            public static bool CPlusMinus(char c) { return c == '+' || c == '-'; }
+            public static bool COperator(char c) { return CPlusMinus(c) || c == '*' || c == '/'; }
             public static bool CName(char c)
             { return (c <= 'z' && c >= 'a') || (c <= 'Z' && c >= 'A') || (c == '_') || (c <= '9' && c >= '0'); }
             public static bool CSpace(char c) { return (c == '\n' || c == '\t' || c == '\r' || c == ' '); }
@@ -60,6 +61,15 @@ namespace Kula.Core
                         {
                             state = LexTokenType.STRING;
                         }
+                        else if (Is.CPlusMinus(c))
+                        {
+                            tokenBuilder.Append(c);
+                            state = LexTokenType.NUMBERORNAME;
+                        }
+                        else if (Is.COperator(c))
+                        {
+                            tokenStream.Add(new LexToken(LexTokenType.NAME, c.ToString()));
+                        }
                         else if (Is.CNumberHead(c))
                         {
                             tokenBuilder.Append(c);
@@ -89,6 +99,7 @@ namespace Kula.Core
                                     {
                                         tokenBuilder.Append(sourceCode[i++]);
                                     }
+                                    --i;
                                 }
                                 break;
                             case LexTokenType.NUMBER:
@@ -96,6 +107,25 @@ namespace Kula.Core
                                     while (i < sourceCode.Length && Is.CNumber(sourceCode[i]))
                                     {
                                         tokenBuilder.Append(sourceCode[i++]);
+                                    }
+                                    --i;
+                                }
+                                break;
+                            case LexTokenType.NUMBERORNAME:
+                                {
+                                    if (Is.CNumber(sourceCode[i]))
+                                    {
+                                        while (i < sourceCode.Length && Is.CNumber(sourceCode[i]))
+                                        {
+                                            tokenBuilder.Append(sourceCode[i++]);
+                                        }
+                                        --i;
+                                        state = LexTokenType.NUMBER;
+                                    }
+                                    else
+                                    {
+                                        --i;
+                                        state = LexTokenType.NAME;
                                     }
                                 }
                                 break;
@@ -105,7 +135,6 @@ namespace Kula.Core
                                     {
                                         tokenBuilder.Append(sourceCode[i++]);
                                     }
-                                    ++i;
                                 }
                                 break;
                             default:
@@ -115,14 +144,13 @@ namespace Kula.Core
                         tokenStream.Add(new LexToken(state, tokenString));
                         state = LexTokenType.NULL;
                         tokenBuilder.Clear();
-                        --i;
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 tokenStream.Clear();
-                throw new KulaException.LexerException();
+                throw new KulaException.LexerException(e.Message);
             }
             if (isDebug) { DebugShow(); }
 

@@ -1,36 +1,93 @@
 ﻿using Kula;
+using Kula.Data;
+using Kula.Data.Function;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
 class Program
 {
-    private static readonly KulaEngine kulaEngine = new KulaEngine();
-    private static bool mode = false;
+    private static readonly KulaEngine kulaEngine = new();
 
     private delegate void ShellCommand();
-    private static readonly Dictionary<string, ShellCommand> ShellCommandDict = new Dictionary<string, ShellCommand>()
+    private static readonly Dictionary<string, ShellCommand> ShellCommandDict = new()
     {
-        {"", () => { } },
-        {"#debug", () => { mode = true; Console.WriteLine("Kula - Debug - Mode"); } },
-        {"#release", () => { mode = false; Console.WriteLine("Kula - Release - Mode");} },
-        {"#gomo", () => { Hello(); } },
-        {"#clear", () => { kulaEngine.Clear(); } },
+        ["#debug"] = () =>
+        {
+            kulaEngine.SetMode(0xffff);
+            Console.WriteLine("DEBUG-MODE");
+        },
+        ["#release"] = () =>
+        {
+            kulaEngine.SetMode(0);
+            Console.WriteLine("RELEASE-MODE");
+        },
+        ["#lexer"] = () =>
+        {
+            kulaEngine.UpdateMode(KulaEngine.Config.LEXER);
+            Console.WriteLine("LEXER " + (kulaEngine.CheckMode(KulaEngine.Config.LEXER) ? "on" : "off"));
+        },
+        ["#parser"] = () =>
+        {
+            kulaEngine.UpdateMode(KulaEngine.Config.PARSER);
+            Console.WriteLine("PARSER " + (kulaEngine.CheckMode(KulaEngine.Config.PARSER) ? "on" : "off"));
+        },
+        ["#stop-watch"] = () =>
+        {
+            kulaEngine.UpdateMode(KulaEngine.Config.STOP_WATCH);
+            Console.WriteLine("STOP-WATCH " + (kulaEngine.CheckMode(KulaEngine.Config.STOP_WATCH) ? "on" : "off"));
+        },
+        ["#value-stack"] = () =>
+        {
+            kulaEngine.UpdateMode(KulaEngine.Config.VALUE_STACK);
+            Console.WriteLine("VALUE-STACK " + (kulaEngine.CheckMode(KulaEngine.Config.VALUE_STACK) ? "on" : "off"));
+        },
+        ["#repl-echo"] = () =>
+        {
+            kulaEngine.UpdateMode(KulaEngine.Config.REPL_ECHO);
+            Console.WriteLine("REPL-ECHO " + (kulaEngine.CheckMode(KulaEngine.Config.REPL_ECHO) ? "on" : "off"));
+        },
+        ["#type-check"] = () => 
+        {
+            kulaEngine.UpdateMode(KulaEngine.Config.TYPE_CHECK);
+            Console.WriteLine("TYPE-CHECK " + (kulaEngine.CheckMode(KulaEngine.Config.TYPE_CHECK) ? "on" : "off"));
+        },
+        ["#gomo"] = () => { Hello(); },
+        ["#clear"] = () => { kulaEngine.Clear(); },
     };
 
     private delegate void ShellArgument();
-    private static readonly Dictionary<string, ShellArgument> ShellArgumentDict = new Dictionary<string, ShellArgument>()
+    private static readonly Dictionary<string, ShellArgument> ShellArgumentDict = new()
     {
-        {"--debug", () => { mode = true; } },
-        {"-d", () => { mode = true; } },
-
-        {"--release", () => { mode = false; } },
-        {"-r", () => { mode = false; } },
+        ["--debug"] = () =>
+        {
+            kulaEngine.SetMode(0xffff);
+            kulaEngine.UpdateMode(KulaEngine.Config.REPL_ECHO);
+        },
+        ["--release"] = () =>
+        {
+            kulaEngine.SetMode(0);
+        },
+        ["--stop-watch"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.STOP_WATCH); },
+        ["--value-stack"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.VALUE_STACK); },
+        ["--lexer"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.LEXER); },
+        ["--parser"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.PARSER); },
+        ["--type-check"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.TYPE_CHECK); },
     };
+
+    static Program()
+    {
+        ShellArgumentDict["-r"] = ShellArgumentDict["--release"];
+        ShellArgumentDict["-d"] = ShellArgumentDict["--debug"];
+    }
 
     private static void Repl()
     {
         string code;
+
+        // REPL 模式
+        kulaEngine.SetMode(KulaEngine.Config.REPL_ECHO);
+
         while (true)
         {
             Console.Write("\n>> ");
@@ -47,8 +104,8 @@ class Program
             {
                 try
                 {
-                    kulaEngine.Compile(code, "", mode);
-                    kulaEngine.Run("", mode);
+                    kulaEngine.Compile(code, "");
+                    kulaEngine.Run("");
                 }
                 catch (Exception e)
                 {
@@ -64,7 +121,7 @@ class Program
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
 
-        Console.WriteLine($"{KulaEngine.Version} (on {kulaEngine.FrameworkVersion})");
+        Console.WriteLine($"{KulaEngine.Version} (on {KulaEngine.FrameworkVersion})");
 
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("developed by @HanaYabuki on github.com");
@@ -82,16 +139,17 @@ class Program
 
     private static void CompileAndRun(string code)
     {
-        kulaEngine.Compile(code, "", mode);
-        kulaEngine.Run("", mode);
+        kulaEngine.Compile(code, "");
+        kulaEngine.Run("");
     }
 
     private static void Main(string[] args)
     {
         // 测试
-        kulaEngine.ExtendFunc["KULA_CALL"] = (args, engine) => {
-            return kulaEngine.Call(args[0], ((Kula.Data.Array)args[1]).Data);
-        };
+        kulaEngine.ExtendFunc["KULA_CALL"] = new SharpFunc((args, engine) =>
+        {
+            return kulaEngine.Call(args[0], ((Kula.Data.Container.Array)args[1]).Data);
+        });
 
         if (args.Length > 0)
         {

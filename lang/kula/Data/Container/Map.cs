@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Text;
-
 using Kula.Util;
+using Kula.Data.Function;
 
-namespace Kula.Data
+namespace Kula.Data.Container
 {
     /// <summary>
     /// Kula 中的 Map 结构
@@ -42,7 +42,7 @@ namespace Kula.Data
             builder.Append('{');
             foreach (KeyValuePair<string, object> kvp in Data)
             {
-                if (kvp.Value is FuncWithEnv || kvp.Value is BFunc) { }
+                if (kvp.Value is Func || kvp.Value is SharpFunc) { }
                 else
                 {
                     if (builder.Length != 1) builder.Append(',');

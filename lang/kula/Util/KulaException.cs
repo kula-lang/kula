@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kula.Data.Type;
+using System;
 
 namespace Kula.Util
 {
@@ -17,7 +18,7 @@ namespace Kula.Util
             /// <summary>
             /// （疑似不会出现
             /// </summary>
-            public LexerException() : base("Incomplete Code.") { }
+            public LexerException(string msg) : base($"Incomplete Code. => {msg}") { }
         }
 
         /// <summary>
@@ -29,8 +30,10 @@ namespace Kula.Util
             /// 语法错误
             /// </summary>
             public ParserException() : base("Syntax Error.") { }
+            public ParserException(string msg) : base("Syntax Error => " + msg) { }
+
         }
-        
+
         // 表面错误
 
         /// <summary>
@@ -42,8 +45,8 @@ namespace Kula.Util
             /// 使用前未初始化
             /// </summary>
             /// <param name="name"></param>
-            public VariableException(string name) 
-                : base("Use Variable Before Init. => " + name) { }
+            public VariableException(string name)
+                : base($"Use Variable Before Init. => {name}") { }
         }
 
         // Func Exception
@@ -57,8 +60,8 @@ namespace Kula.Util
             /// </summary>
             /// <param name="realType">传入的参数</param>
             /// <param name="needType">应为参数</param>
-            public ArgsTypeException(string realType, string needType) 
-                : base("Wrong Arguments Type. => need " + needType + " but " + realType + " is given"){ }
+            public ArgsTypeException(string realType, string needType)
+                : base($"Wrong Arguments Type. => need {needType} but {realType} is given") { }
         }
 
         /// <summary>
@@ -70,8 +73,8 @@ namespace Kula.Util
             /// 这不是函数
             /// </summary>
             /// <param name="funcName">疑似函数名</param>
-            public FuncUsingException(string funcName) 
-                : base("It is not a Func. => " + funcName) { }
+            public FuncUsingException(string funcName)
+                : base($"It is not a Func. => {funcName}") { }
         }
 
         /// <summary>
@@ -81,11 +84,13 @@ namespace Kula.Util
         {
             private static string TypeString(Type[] types)
             {
-                string @string = "";
-                foreach (var tp in types)
+                string @string = "(";
+                for (int i = 0; i < types.Length; ++i)
                 {
-                    @string += " " + tp.Name;
+                    var tp = types[i];
+                    @string += tp.Name + (i != types.Length - 1 ? ", " : "");
                 }
+                @string += ")";
                 return @string;
             }
 
@@ -93,7 +98,10 @@ namespace Kula.Util
             /// 函数参数个数错误
             /// </summary>
             public FuncArgumentException(Type[] types)
-                : base("Wrong Arguments Count. We need =>" + TypeString(types)) { }
+                : base($"Wrong Arguments Count. We need => {TypeString(types)}") { }
+
+            public FuncArgumentException(IType[] types)
+                : base($"Wrong Arguments Count. We need => {types}") { }
         }
 
         /// <summary>
@@ -104,7 +112,7 @@ namespace Kula.Util
             /// <summary>
             /// Kula 递归调用深度超出限制
             /// </summary>
-            public OverflowException() 
+            public OverflowException()
                 : base("Too deep recursion.") { }
         }
 
@@ -118,7 +126,7 @@ namespace Kula.Util
             /// Kula 虚拟机栈 下溢出
             /// 疑似函数使用错误
             /// </summary>
-            public VMUnderflowException() 
+            public VMUnderflowException()
                 : base("Wrong usage of Func?") { }
         }
 
@@ -134,8 +142,8 @@ namespace Kula.Util
             /// </summary>
             /// <param name="realType">传出的类型</param>
             /// <param name="needType">应为类型</param>
-            public ReturnValueException(string realType, string needType) 
-                : base("Wrong Return Value Type. => need " + needType + " but " + realType + " is given"){ }
+            public ReturnValueException(string realType, string needType)
+                : base($"Wrong Return Value Type. => need {needType} but {realType} is given") { }
         }
 
         // Array Exception
@@ -148,7 +156,7 @@ namespace Kula.Util
             /// <summary>
             /// 索引不为 Number
             /// </summary>
-            public ArrayTypeException() 
+            public ArrayTypeException()
                 : base("Wrong Type in Usage of Array.") { }
         }
 
@@ -162,7 +170,7 @@ namespace Kula.Util
             /// <summary>
             /// 键不为 Str
             /// </summary>
-            public MapTypeException() 
+            public MapTypeException()
                 : base("Wrong Type in Usage of Map.") { }
         }
 
@@ -177,8 +185,8 @@ namespace Kula.Util
             /// 该类型不为 Kula 支持的类型
             /// </summary>
             /// <param name="type">类型名</param>
-            public KTypeException(string type) 
-                : base("It can not be regarded as a Kula Type => " + type) { }
+            public KTypeException(string type)
+                : base($"It can not be regarded as a Kula Type => {type}") { }
         }
 
         // 自定义 异常信息
@@ -192,7 +200,7 @@ namespace Kula.Util
             /// 自定义异常
             /// </summary>
             /// <param name="msg"></param>
-            public UserException(string msg) 
+            public UserException(string msg)
                 : base(msg) { }
         }
     }

@@ -42,7 +42,7 @@ namespace Kula.Core
             { VMNodeType.CONKEY, ConsoleColor.Yellow },
             { VMNodeType.RETURN, ConsoleColor.DarkMagenta },
 
-            { VMNodeType.PIPE, ConsoleColor.Magenta },
+            // { VMNodeType.PIPE, ConsoleColor.Magenta },
         };
     }
 
@@ -63,6 +63,6 @@ namespace Kula.Core
 
         CONKEY,     // 右值索引
 
-        PIPE,       // 管道
+        // PIPE,       // 管道 待删除
     }
 }

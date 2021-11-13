@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-
-using Kula.Data;
+﻿using Kula.Data.Function;
 using Kula.Util;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using Kula.Data.Type;
 
 namespace Kula.Core
 {
@@ -13,9 +14,9 @@ namespace Kula.Core
         private readonly KulaEngine engine;
         private readonly Stack<object> envStack;
 
-        public FuncWithEnv Root { private get; set; }
+        public Func Root { private get; set; }
 
-        public FuncRuntime(FuncWithEnv root, KulaEngine engine)
+        public FuncRuntime(Func root, KulaEngine engine)
         {
             this.Root = root;
             this.engine = engine;
@@ -30,40 +31,33 @@ namespace Kula.Core
             this.envStack.Clear();
         }
 
-        /// <summary>
-        /// 函数调用
-        /// Release 模式运行
-        /// </summary>
-        /// <param name="arguments">函数调用的参数列表</param>
-        public object Run(object[] arguments)
+        private object RunSelf(object[] arguments = null)
         {
-            if ((arguments == null ? 0 : arguments.Length) != Root.Func.ArgNames.Count)
+            if ((arguments == null ? 0 : arguments.Length) != Root.Lambda.ArgNames.Count)
             {
-                throw new KulaException.FuncArgumentException(Root.Func.ArgTypes.ToArray());
+                throw new KulaException.FuncArgumentException(Root.Lambda.ArgTypes.ToArray());
             }
-            for (int i = Root.Func.ArgNames.Count - 1; i >= 0 && arguments != null; --i)
+            for (int i = Root.Lambda.ArgNames.Count - 1; i >= 0 && arguments != null; --i)
             {
                 object arg = arguments[i];
-                if (Root.Func.ArgTypes[i] != typeof(object) && arg.GetType() != Root.Func.ArgTypes[i])
+                if (Root.Lambda.ArgTypes[i] == RawType.Any && !Root.Lambda.ArgTypes[i].Check(arg))
                 {
-                    throw new KulaException.ArgsTypeException(arg.GetType().Name, Root.Func.ArgTypes[i].Name);
+                    throw new KulaException.ArgsTypeException(arg.GetType().Name, Root.Lambda.ArgTypes[i].ToString());
                 }
                 else
                 {
-                    varDict.Add(Root.Func.ArgNames[i], arg);
+                    varDict.Add(Root.Lambda.ArgNames[i], arg);
                 }
             }
 
             envStack.Clear();
 
-            // 本函数返回值
+            // 返回值
             object @return = null;
-            // 管道操作计数器
-            int pipe_counter = 0;
 
-            for (int i = 0; i < Root.Func.NodeStream.Count && @return == null; ++i)
+            for (int i = 0; i < Root.Lambda.NodeStream.Count && @return == null; ++i)
             {
-                var node = Root.Func.NodeStream[i];
+                var node = Root.Lambda.NodeStream[i];
                 try
                 {
                     switch (node.Type)
@@ -88,7 +82,7 @@ namespace Kula.Core
                         case VMNodeType.LAMBDA:
                             {
                                 object value = node.Value;
-                                envStack.Push(new FuncWithEnv((Func)value, this));
+                                envStack.Push(new Func((Lambda)value, this));
                             }
                             break;
 
@@ -133,9 +127,9 @@ namespace Kula.Core
                                 string node_value = node.Value as string;
 
                                 // 常量 查询
-                                if (BuiltinFunc.BVals.ContainsKey(node_value))
+                                if (SharpFunc.BVals.ContainsKey(node_value))
                                 {
-                                    envStack.Push(BuiltinFunc.BVals[node_value](engine));
+                                    envStack.Push(SharpFunc.BVals[node_value](engine));
                                     flag = true;
                                 }
                                 // 扩展函数 覆盖 内置函数
@@ -145,10 +139,10 @@ namespace Kula.Core
                                     envStack.Push(engine.ExtendFunc[node_value]);
                                 }
                                 // 内置函数 查询
-                                else if (BuiltinFunc.BFuncs.ContainsKey(node_value))
+                                else if (SharpFunc.SharpFuncs.ContainsKey(node_value))
                                 {
                                     flag = true;
-                                    envStack.Push(BuiltinFunc.BFuncs[node_value]);
+                                    envStack.Push(SharpFunc.SharpFuncs[node_value]);
                                 }
                                 // 链式查询
                                 while (flag == false && now_env != null)
@@ -172,28 +166,33 @@ namespace Kula.Core
                             {
                                 // 按 参数个数 获取 参数值
                                 // 管道操作下，改变参数个数
-                                object[] args = new object[(int)node.Value + pipe_counter];
-                                for (int k = args.Length - 1; k >= pipe_counter; --k)
+                                int node_value = (int)node.Value;
+
+                                int func_args_count = node_value & 0xffff;
+                                int func_pipes_count = node_value >> 16;
+
+                                object[] args = new object[func_args_count + func_pipes_count];
+                                for (int k = func_args_count + func_pipes_count - 1; k >= func_pipes_count; --k)
                                 {
                                     args[k] = envStack.Pop();
                                 }
                                 object func = envStack.Pop();
                                 // 管道操作下的剩余参数
-                                while (pipe_counter > 0)
+                                while (func_pipes_count > 0)
                                 {
-                                    args[pipe_counter - 1] = envStack.Pop();
-                                    --pipe_counter;
+                                    args[func_pipes_count - 1] = envStack.Pop();
+                                    --func_pipes_count;
                                 }
 
                                 // 函数正常调用
-                                if (func is BFunc builtin_func)
+                                if (func is Func func_wth_env)
                                 {
-                                    var tmp_return = builtin_func(args, engine);
+                                    var tmp_return = new FuncRuntime(func_wth_env, engine).Run(args, 0);
                                     if (tmp_return != null) { envStack.Push(tmp_return); }
                                 }
-                                else if (func is FuncWithEnv func_wth_env)
+                                else if (func is SharpFunc builtin_func)
                                 {
-                                    var tmp_return = new FuncRuntime(func_wth_env, engine).Run(args);
+                                    var tmp_return = builtin_func.Run(args, engine);
                                     if (tmp_return != null) { envStack.Push(tmp_return); }
                                 }
                                 else
@@ -226,9 +225,12 @@ namespace Kula.Core
                             {
                                 object return_val = envStack.Pop();
                                 if (return_val == null) { break; }
-                                if (Root.Func.ReturnType != typeof(object) && return_val.GetType() != Root.Func.ReturnType)
+                                if (Root.Lambda.ReturnType != RawType.Any && !Root.Lambda.ReturnType.Check(return_val))
                                 {
-                                    throw new KulaException.ReturnValueException(return_val.GetType().Name, Root.Func.ReturnType.Name);
+                                    throw new KulaException.ReturnValueException(
+                                        return_val.GetType().Name, 
+                                        Root.Lambda.ReturnType.ToString()
+                                        );
                                 }
                                 @return = return_val;
                             }
@@ -237,38 +239,55 @@ namespace Kula.Core
                         // 索引
                         case VMNodeType.CONKEY:
                             {
-                                object vector_key = envStack.Pop();
-                                object vector = envStack.Pop();
+                                object vk = envStack.Pop();
+                                object v = envStack.Pop();
 
-                                // 数组索引处理
-                                if ((char)node.Value == '[')
+                                // Map语法 索引处理
+                                if ((char)node.Value == '.')
                                 {
-                                    if (!(vector_key is float) || !(vector is Data.Array))
-                                    {
-                                        throw new KulaException.ArrayTypeException();
-                                    }
-                                    envStack.Push(
-                                        ((Data.Array)vector).Data
-                                            [(int)(float)vector_key]
-                                    );
-                                }
-
-                                // 表索引处理
-                                else if ((char)node.Value == '<')
-                                {
-                                    if (!(vector_key is string) || !(vector is Data.Map))
+                                    if (!(vk is string str_vector_key) || !(v is Data.Container.Map vector_map))
                                     {
                                         throw new KulaException.MapTypeException();
                                     }
-                                    envStack.Push(
-                                        ((Data.Map)vector).Data[(string)vector_key]
-                                    );
+                                    envStack.Push(vector_map.Data[str_vector_key]);
+                                }
+                                // 标准索引处理
+                                else if ((char)node.Value == '[')
+                                {
+                                    if ((v is Data.Container.Array vector_array))
+                                    {
+                                        if (vk is float vk_num)
+                                        {
+                                            envStack.Push(vector_array.Data[(int)vk_num]);
+                                        }
+                                        else
+                                        {
+                                            throw new KulaException.ArrayTypeException();
+                                        }
+                                    }
+                                    else if ((v is Data.Container.Map v_map))
+                                    {
+                                        if (vk is string vk_str)
+                                        {
+                                            envStack.Push(v_map.Data[vk_str]);
+                                        }
+                                        else
+                                        {
+                                            throw new KulaException.MapTypeException();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        throw new KulaException.KTypeException(v.GetType().Name);
+                                    }
                                 }
                             }
                             break;
+                        /*
                         case VMNodeType.PIPE:
                             ++pipe_counter;
                             break;
+                        */
                     }
                 }
                 catch (InvalidOperationException)
@@ -276,26 +295,45 @@ namespace Kula.Core
                     throw new KulaException.VMUnderflowException();
                 }
             }
-            if (@return == null && Root.Func.ReturnType != null)
+            if (@return == null && Root.Lambda.ReturnType != RawType.None)
             {
-                throw new KulaException.ReturnValueException("None", Root.Func.ReturnType.Name);
+                throw new KulaException.ReturnValueException("None", Root.Lambda.ReturnType.ToString());
             }
             return @return;
         }
 
         /// <summary>
-        /// Debug 模式运行
+        /// 运行
         /// </summary>
-        public void DebugRun()
+        public object Run(object[] arguments, int debug)
         {
-            Console.WriteLine("Output ->");
-            Run(null);
-            Show();
+            object @return;
+            if (KulaEngine.Config.Check(debug, KulaEngine.Config.STOP_WATCH))
+            {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                @return = RunSelf(arguments);
+                stopwatch.Stop();
+                Console.WriteLine("Timer ->\n\t" + stopwatch.Elapsed.Milliseconds + " ms.");
+            }
+            else
+            {
+                @return = RunSelf(arguments);
+            }
+            if (KulaEngine.Config.Check(debug, KulaEngine.Config.REPL_ECHO))
+            {
+                if (envStack.Count > 0)
+                {
+                    Console.WriteLine(envStack.Peek());
+                }
+            }
+            if (KulaEngine.Config.Check(debug, KulaEngine.Config.VALUE_STACK))
+            {
+                Show();
+            }
+            return @return;
         }
 
-        /// <summary>
-        /// Debug 模式下，输出实时编译信息
-        /// </summary>
         private void Show()
         {
             int cnt = 0;
@@ -307,7 +345,7 @@ namespace Kula.Core
                 {
                     tmp = "null";
                 }
-                else if (tmp.GetType() == typeof(string))
+                else if (RawType.Str.Check(tmp))
                 {
                     tmp = "\"" + tmp + "\"";
                 }

@@ -1,26 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 using Kula.Util;
 using Kula.Core;
-using System.Text;
+using Kula.Data.Type;
 
-namespace Kula.Data
+namespace Kula.Data.Function
 {
-    
-    class Func
+    class Lambda
     {
         public List<LexToken> TokenStream { get; }
         public List<VMNode> NodeStream { get; }
-        public List<Type> ArgTypes { get; }
+        public List<IType> ArgTypes { get; }
         public List<string> ArgNames { get; }
-        public Type ReturnType { get; set; }
+        public IType ReturnType { get; set; }
 
-        public Func(List<LexToken> tokenStream)
+        public Lambda(List<LexToken> tokenStream)
         {
             this.TokenStream = tokenStream;
 
-            this.ArgTypes = new List<Type>();
+            this.ArgTypes = new List<IType>();
             this.ArgNames = new List<string>();
             this.NodeStream = new List<VMNode>();
         }
@@ -29,6 +29,7 @@ namespace Kula.Data
 
         public override string ToString()
         {
+            /*
             if (@string == null)
             {
                 StringBuilder sb = new StringBuilder();
@@ -36,16 +37,16 @@ namespace Kula.Data
                 for (int i = 0; i < ArgTypes.Count; ++i)
                 {
                     if (i != 0)
-                    {
                         sb.Append(',');
-                    }
-                    sb.Append(ArgTypes[i].KTypeToString());
+                    sb.Append(ArgTypes[i].ToString());
                 }
                 sb.Append("):");
-                sb.Append(ReturnType.KTypeToString());
+                sb.Append(ReturnType.ToString());
                 @string = sb.ToString();
             }
             return @string;
+            */
+            return "tMp";
         }
     }
 }

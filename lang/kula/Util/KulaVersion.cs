@@ -17,18 +17,13 @@ namespace Kula.Util
             this.dateTime = dateTime;
         }
 
-        public string ToJson()
-        {
-            return "";
-        }
-
         public override string ToString()
         {
             return "Kula - " + name + " - " + number + " [" + dateTime.Year + "/" + dateTime.Month + "/" + dateTime.Day + "]";
         }
 
         // 版本信息
-        private static readonly KulaVersion version = new KulaVersion("Pre", "0.3.2", new DateTime(2021, 10, 22));
+        private static readonly KulaVersion version = new KulaVersion("Pre", "0.4.1", new DateTime(2021, 11, 10));
         public static KulaVersion Version { get => version; }
     }
 }
