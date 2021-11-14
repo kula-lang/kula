@@ -1,10 +1,7 @@
-﻿using System;
+﻿using Kula.Core;
+using Kula.Data.Type;
 using System.Collections.Generic;
 using System.Text;
-
-using Kula.Util;
-using Kula.Core;
-using Kula.Data.Type;
 
 namespace Kula.Data.Function
 {
@@ -12,16 +9,14 @@ namespace Kula.Data.Function
     {
         public List<LexToken> TokenStream { get; }
         public List<VMNode> NodeStream { get; }
-        public List<IType> ArgTypes { get; }
-        public List<string> ArgNames { get; }
+        public List<(string, IType)> ArgList { get; }
         public IType ReturnType { get; set; }
 
         public Lambda(List<LexToken> tokenStream)
         {
             this.TokenStream = tokenStream;
 
-            this.ArgTypes = new List<IType>();
-            this.ArgNames = new List<string>();
+            this.ArgList = new List<(string, IType)>();
             this.NodeStream = new List<VMNode>();
         }
 
@@ -29,24 +24,23 @@ namespace Kula.Data.Function
 
         public override string ToString()
         {
-            /*
+            if (ReturnType == null)
+                return "Uncompiled.";
             if (@string == null)
             {
                 StringBuilder sb = new StringBuilder();
                 sb.Append("func(");
-                for (int i = 0; i < ArgTypes.Count; ++i)
+                for (int i = 0; i < ArgList.Count; ++i)
                 {
                     if (i != 0)
                         sb.Append(',');
-                    sb.Append(ArgTypes[i].ToString());
+                    sb.Append(ArgList[i].Item2.ToString());
                 }
                 sb.Append("):");
                 sb.Append(ReturnType.ToString());
                 @string = sb.ToString();
             }
             return @string;
-            */
-            return "tMp";
         }
     }
 }

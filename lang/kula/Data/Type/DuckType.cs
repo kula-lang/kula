@@ -10,9 +10,18 @@ namespace Kula.Data.Type
         private readonly int hash;
         private readonly string name;
 
-        public DuckType(string name, KulaEngine root, IList<(string, string)> nodelist)
+        public DuckType(string name, KulaEngine root, IList<(string, IType)> nodelist)
         {
             hash = 0;
+
+            foreach (var item in nodelist)
+            {
+                pairs[item.Item1] = item.Item2;
+                hash = hash * 17 + item.Item1.GetHashCode() * 7 + item.Item2.GetHashCode();
+            }
+
+            this.name = name;
+            /**
             int len = nodelist.Count;
             var duck_type_dict = root.DuckTypeDict;
             for (int i = 0; i < len; ++i)
@@ -33,7 +42,7 @@ namespace Kula.Data.Type
                 }
                 hash = hash * 17 + kk.GetHashCode() * 7 + vv.GetHashCode();
             }
-            this.name = name;
+            */
         }
 
         public override int GetHashCode() { return hash; }
@@ -51,11 +60,6 @@ namespace Kula.Data.Type
             return true;
         }
 
-        System.Type IType.ToType { get => throw new System.NotImplementedException(); }
-
-        DuckType IType.ToDuck { get => this; }
-
-        bool IType.IsDuck { get => true; }
 
         public bool Check(object o) => o is Map o_map && CheckDuck(o_map);
 

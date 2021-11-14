@@ -21,25 +21,20 @@ namespace Kula.Data.Type
         public static readonly RawType Map = new RawType(typeof(Container.Map), "Map");
 
 
-        private RawType(System.Type type, string name) 
-        { 
+        private RawType(System.Type type, string name)
+        {
             this.type = type;
             this.@string = name;
             TypeDict[name] = this;
             InvertTypeDict[this] = name;
         }
 
-        public DuckType ToDuck { get => throw new NotImplementedException(); }
-
-        public System.Type ToType => type;
-
-        public bool IsDuck { get => false; }
-
         public bool Check(object o)
         {
             if (type == null) return false;
             return type == typeof(object) || o.GetType() == type;
         }
+
 
         public override string ToString() => @string;
     }

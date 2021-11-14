@@ -4,6 +4,7 @@ using Kula.Data.Type;
 using Kula.Util;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Kula.Data.Function
 {
@@ -49,7 +50,7 @@ namespace Kula.Data.Function
 
         public object Run(object[] args, KulaEngine engine)
         {
-            if (ToBeChecked || engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
+            if (ToBeChecked && engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
             {
                 ArgsCheckIType(args, Types);
             }
@@ -348,6 +349,31 @@ namespace Kula.Data.Function
                 flag = types[i].Check(args[i]);
             if (!flag)
                 throw new KulaException.FuncArgumentException(types);
+        }
+
+        private string @string;
+        public override string ToString()
+        {
+            if (@string == null)
+            {
+                StringBuilder sb = new StringBuilder("func(");
+                if (!ToBeChecked)
+                {
+                    sb.Append("...)");
+                }
+                else
+                {
+                    for(int i=0; i<Types.Length; ++i)
+                    {
+                        if (i != 0)
+                            sb.Append(',');
+                        sb.Append(Types[i].ToString());
+                    }
+                    sb.Append(")");
+                }
+                @string = sb.ToString();
+            }
+            return @string;
         }
     }
 }

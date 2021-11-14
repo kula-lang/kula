@@ -147,6 +147,7 @@ namespace Kula.Core
             return false;
         }
 
+        /*
         private bool MetaType(out string typeName)
         {
             var rcd = Record();
@@ -156,12 +157,65 @@ namespace Kula.Core
                 return false;
             }
             var token = aimLambda.TokenStream[pos++];
-            if (token.Type == LexTokenType.NAME /*&& TypeDict.ContainsKey(token.Value)*/)
+            if (token.Type == LexTokenType.NAME
+            //&& TypeDict.ContainsKey(token.Value))
             {
                 typeName = token.Value;
                 return true;
             }
             typeName = null;
+            Backtrack(rcd);
+            return false;
+        }
+        */
+
+        private bool PType(out IType type)
+        {
+            var rcd = Record();
+            if (MetaName(out string word_type_name) && !MetaSymbol("<"))
+            {
+                type = TypestrToType(word_type_name);
+                return true;
+            }
+            Backtrack(rcd);
+            
+            if (PFuncTypeExp(out IType func_type))
+            {
+                type = func_type;
+                return true;
+            }
+            type = null;
+            Backtrack(rcd);
+            return false;
+        }
+
+        private bool PFuncTypeExp(out IType funcType)
+        {
+            var rcd = Record();
+            if (MetaKeyword("Func") && MetaSymbol("<"))
+            {
+                List<IType> func_type_list = new List<IType>();
+                while (!MetaSymbol(">"))
+                {
+                    if (PType(out IType item_type))
+                        func_type_list.Add(item_type);
+                    else
+                    {
+                        throw new KulaException.KTypeException("What Happen in FuncTypeExpression?");
+                    }
+                    MetaSymbol(",");
+                }
+                if (MetaSymbol(":") && PType(out IType return_type))
+                {
+                    funcType = new FuncType(return_type, func_type_list);
+                    return true;
+                }
+                else
+                {
+                    throw new KulaException.KTypeException("FuncTypeExpression has no Return Type");
+                }
+            }
+            funcType = null;
             Backtrack(rcd);
             return false;
         }
@@ -191,21 +245,18 @@ namespace Kula.Core
                 {
                     if (PValAndType(out string val_name, out string type_name))
                     {
-                        aimLambda.ArgTypes.Add(TypestrToType(type_name));
-                        aimLambda.ArgNames.Add(val_name);
+                        aimLambda.ArgList.Add((val_name, TypestrToType(type_name)));
                         MetaSymbol(",");
                     }
                     else
-                    {
                         break;
-                    }
                 }
                 if (MetaSymbol(":"))
                 {
-                    if (MetaType(out string final_type_name))
+                    if (PType(out IType final_type))
                     {
                         // 记录类型
-                        aimLambda.ReturnType = TypestrToType(final_type_name);
+                        aimLambda.ReturnType = final_type;
                         return true;
                     }
                 }
@@ -223,7 +274,8 @@ namespace Kula.Core
             var rcd = Record();
             if (MetaName(out string token_value1)
                 && MetaSymbol(":")
-                && MetaName(out string token_value2))
+                && MetaName(out string token_value2)
+                && !MetaSymbol("<"))
             {
                 valName = token_value1;
                 typeName = token_value2;
@@ -264,7 +316,7 @@ namespace Kula.Core
             if (MetaSymbol(";")) { return true; }
             Backtrack(rcd);
 
-            if (PInterface()) { return true; }
+            if (PDuckType()) { return true; }
             Backtrack(rcd);
 
             if (PReturn() && MetaSymbol(";")) { return true; }
@@ -631,7 +683,7 @@ namespace Kula.Core
         /// <summary>
         /// 鸭子接口声明
         /// </summary>
-        public bool PInterface()
+        public bool PDuckType()
         {
             var rcd = Record();
             if (MetaKeyword("type"))
@@ -641,14 +693,14 @@ namespace Kula.Core
                     if (!MetaSymbol("{"))
                         throw new KulaException.ParserException("{ ?");
 
-                    var node_list = new List<(string, string)>();
+                    var node_list = new List<(string, IType)>();
                     while (!MetaSymbol("}"))
                     {
-                        if (MetaType(out string item_name)
+                        if (MetaName(out string item_name)
                             && MetaSymbol(":")
-                            && MetaName(out string type_name))
+                            && PType(out IType item_type))
                         {
-                            node_list.Add((item_name, type_name));
+                            node_list.Add((item_name, item_type));
                             if (!MetaSymbol(","))
                             {
                                 throw new KulaException.ParserException(", ?");
@@ -672,7 +724,7 @@ namespace Kula.Core
         /// <summary>
         /// for 遍历
         /// 格式如：
-        ///     for (k, v in )
+        ///     for (k, v in container)
         /// </summary>
         /// <returns></returns>
 

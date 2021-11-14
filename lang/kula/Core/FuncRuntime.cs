@@ -33,20 +33,25 @@ namespace Kula.Core
 
         private object RunSelf(object[] arguments = null)
         {
-            if ((arguments == null ? 0 : arguments.Length) != Root.Lambda.ArgNames.Count)
+            if ((arguments == null ? 0 : arguments.Length) != Root.Lambda.ArgList.Count)
             {
-                throw new KulaException.FuncArgumentException(Root.Lambda.ArgTypes.ToArray());
+                IType[] error_types = new IType[Root.Lambda.ArgList.Count];
+                for (int i=0; i<error_types.Length; ++i)
+                {
+                    error_types[i] = Root.Lambda.ArgList[i].Item2;
+                }
+                throw new KulaException.FuncArgumentException(error_types);
             }
-            for (int i = Root.Lambda.ArgNames.Count - 1; i >= 0 && arguments != null; --i)
+            for (int i = Root.Lambda.ArgList.Count - 1; i >= 0 && arguments != null; --i)
             {
                 object arg = arguments[i];
-                if (Root.Lambda.ArgTypes[i] == RawType.Any && !Root.Lambda.ArgTypes[i].Check(arg))
+                if (Root.Lambda.ArgList[i].Item2 != RawType.Any && !Root.Lambda.ArgList[i].Item2.Check(arg))
                 {
-                    throw new KulaException.ArgsTypeException(arg.GetType().Name, Root.Lambda.ArgTypes[i].ToString());
+                    throw new KulaException.ArgsTypeException(arg.GetType().Name, Root.Lambda.ArgList[i].ToString());
                 }
                 else
                 {
-                    varDict.Add(Root.Lambda.ArgNames[i], arg);
+                    varDict.Add(Root.Lambda.ArgList[i].Item1, arg);
                 }
             }
 
