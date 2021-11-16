@@ -1,8 +1,6 @@
-﻿using Kula.Data;
-using Kula.Data.Container;
-using Kula.Data.Function;
+﻿using Kula.Data.Function;
 using Kula.Data.Type;
-using Kula.Util;
+using Kula.Xception;
 using System;
 using System.Collections.Generic;
 
@@ -50,7 +48,7 @@ namespace Kula.Core
             if (pos != aimLambda.TokenStream.Count)
             {
                 if (isDebug) { DebugShow(); }
-                throw new KulaException.ParserException();
+                throw new ParserException("Wrong Main");
             }
             aimLambda.TokenStream.Clear();
             if (isDebug) { DebugShow(); }
@@ -91,7 +89,7 @@ namespace Kula.Core
             }
             aimLambda.NodeStream.Clear();
             aimLambda.TokenStream.Clear();
-            throw new KulaException.ParserException();
+            throw new ParserException("Wrong Lambda Expression");
         }
 
         /*
@@ -178,7 +176,7 @@ namespace Kula.Core
                 return true;
             }
             Backtrack(rcd);
-            
+
             if (PFuncTypeExp(out IType func_type))
             {
                 type = func_type;
@@ -201,7 +199,7 @@ namespace Kula.Core
                         func_type_list.Add(item_type);
                     else
                     {
-                        throw new KulaException.KTypeException("What Happen in FuncTypeExpression?");
+                        throw new KTypeException("What Happen in FuncTypeExpression?", "ItemType");
                     }
                     MetaSymbol(",");
                 }
@@ -212,7 +210,7 @@ namespace Kula.Core
                 }
                 else
                 {
-                    throw new KulaException.KTypeException("FuncTypeExpression has no Return Type");
+                    throw new KTypeException("FuncTypeExpression has no Return Type", "ReturnType");
                 }
             }
             funcType = null;
@@ -297,7 +295,7 @@ namespace Kula.Core
             {
                 return engineRoot.DuckTypeDict[str];
             }
-            throw new KulaException.KTypeException(str);
+            throw new KTypeException(str);
         }
 
         /// <summary>
@@ -691,7 +689,7 @@ namespace Kula.Core
                 if (MetaName(out string duck_name))
                 {
                     if (!MetaSymbol("{"))
-                        throw new KulaException.ParserException("{ ?");
+                        throw new ParserException("{ ?");
 
                     var node_list = new List<(string, IType)>();
                     while (!MetaSymbol("}"))
@@ -703,7 +701,7 @@ namespace Kula.Core
                             node_list.Add((item_name, item_type));
                             if (!MetaSymbol(","))
                             {
-                                throw new KulaException.ParserException(", ?");
+                                throw new ParserException(", ?");
                             }
                         }
 

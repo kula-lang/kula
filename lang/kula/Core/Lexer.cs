@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Kula.Xception;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
-
-using Kula.Util;
 
 namespace Kula.Core
 {
@@ -10,7 +10,7 @@ namespace Kula.Core
     {
         public static Lexer Instance { get; } = new Lexer();
 
-        private string sourceCode;
+        private StreamReader sourceCode;
         private List<LexToken> tokenStream;
 
         static class Is
@@ -22,28 +22,52 @@ namespace Kula.Core
             public static bool CName(char c)
             { return (c <= 'z' && c >= 'a') || (c <= 'Z' && c >= 'A') || (c == '_') || (c <= '9' && c >= '0'); }
             public static bool CSpace(char c) { return (c == '\n' || c == '\t' || c == '\r' || c == ' '); }
-            public static bool CNewLine(char c) { return c == '\n'; }
+            public static bool CEnter(char c) { return c == '\r'; }
             public static bool CSymbol(char c)
-            { 
-                return c == ';'     // 语句分隔符
-                    || c == ','     // 逗号分隔
-                    || c == '.'     // 点操作符
-                    || c == '|'     // 管道操作符
-                    || c == ':'     // 类型限定
-                    || c == '='     // 赋值符
-                    || CBracket(c); 
+            {
+                switch (c)
+                {
+                    case ';':       // 语句结束符
+                    case ',':       // 逗号分隔
+                    case '.':       // 点操作符
+                    case '|':       // 管道操作符
+                    case ':':       // 类型限定
+                    case '=':       // 赋值符
+                        return true;
+                    default:
+                        return CBracket(c);
+                }
             }
             public static bool CBracket(char c)
-            { return c == '(' || c == '{' || c == ')' || c == '}' || c == '[' || c == ']' || c == '<' || c == '>'; }
+            {
+                switch (c)
+                {
+                    case '(':
+                    case ')':
+                    case '{':
+                    case '}':
+                    case '<':
+                    case '>':
+                    case '[':
+                    case ']':
+                        return true;
+                    default:
+                        return false;
+                }
+            }
             public static bool CAnnotation(char c) { return c == '#'; }
             public static bool CQuote(char c) { return c == '\"' || c == '\''; }
         }
 
-        private Lexer() { sourceCode = ""; }
+        private Lexer() { }
 
-        public Lexer Read(string code) { sourceCode = code; return this; }
+        public Lexer Read(StreamReader code, bool isDebug) 
+        { 
+            sourceCode = code;
+            return Scan(isDebug);
+        }
 
-        public Lexer Scan(bool isDebug)
+        private Lexer Scan(bool isDebug)
         {
             tokenStream = new List<LexToken>();
             LexTokenType state = LexTokenType.NULL;
@@ -51,11 +75,12 @@ namespace Kula.Core
 
             try
             {
-                for (int i = 0; i <= sourceCode.Length; ++i)
+                while (!sourceCode.EndOfStream)
                 {
                     if (state == LexTokenType.NULL)
                     {
-                        char c = i == sourceCode.Length ? '\n' : sourceCode[i];
+                        // char c = sourceCode.EndOfStream ? '\n' : (char)sourceCode.Read();
+                        char c = (char)sourceCode.Read();
                         if (Is.CSpace(c)) { continue; }
                         else if (Is.CQuote(c))
                         {
@@ -64,7 +89,7 @@ namespace Kula.Core
                         else if (Is.CPlusMinus(c))
                         {
                             tokenBuilder.Append(c);
-                            state = LexTokenType.NUMBERORNAME;
+                            state = LexTokenType.NUMBER_OR_NAME;
                         }
                         else if (Is.COperator(c))
                         {
@@ -86,7 +111,8 @@ namespace Kula.Core
                         }
                         else if (Is.CAnnotation(c))
                         {
-                            while (i + 1 < sourceCode.Length && !Is.CNewLine(sourceCode[++i])) { }
+                            char cc = (char)sourceCode.Read();
+                            while (!Is.CEnter(cc)) { cc = (char)sourceCode.Read(); }
                         }
                     }
                     else
@@ -95,46 +121,45 @@ namespace Kula.Core
                         {
                             case LexTokenType.NAME:
                                 {
-                                    while (i < sourceCode.Length && Is.CName(sourceCode[i]))
+                                    while (Is.CName((char)sourceCode.Peek()))
                                     {
-                                        tokenBuilder.Append(sourceCode[i++]);
+                                        tokenBuilder.Append((char)sourceCode.Read());
                                     }
-                                    --i;
                                 }
                                 break;
                             case LexTokenType.NUMBER:
                                 {
-                                    while (i < sourceCode.Length && Is.CNumber(sourceCode[i]))
+                                    while (Is.CNumber((char)sourceCode.Peek()))
                                     {
-                                        tokenBuilder.Append(sourceCode[i++]);
+                                        tokenBuilder.Append((char)sourceCode.Read());
                                     }
-                                    --i;
                                 }
                                 break;
-                            case LexTokenType.NUMBERORNAME:
+                            case LexTokenType.NUMBER_OR_NAME:
                                 {
-                                    if (Is.CNumber(sourceCode[i]))
+                                    if (Is.CNumber((char)sourceCode.Peek()))
                                     {
-                                        while (i < sourceCode.Length && Is.CNumber(sourceCode[i]))
+                                        while (Is.CNumber((char)sourceCode.Peek()))
                                         {
-                                            tokenBuilder.Append(sourceCode[i++]);
+                                            tokenBuilder.Append((char)sourceCode.Read());
                                         }
-                                        --i;
                                         state = LexTokenType.NUMBER;
                                     }
                                     else
                                     {
-                                        --i;
                                         state = LexTokenType.NAME;
                                     }
                                 }
                                 break;
                             case LexTokenType.STRING:
                                 {
-                                    while (i < sourceCode.Length && !Is.CQuote(sourceCode[i]))
+                                    bool trans = false;
+                                    while (trans || !Is.CQuote((char)sourceCode.Peek()))
                                     {
-                                        tokenBuilder.Append(sourceCode[i++]);
+                                        trans = !trans && (char)sourceCode.Peek() == '\\';
+                                        tokenBuilder.Append((char)sourceCode.Read());
                                     }
+                                    sourceCode.Read();
                                 }
                                 break;
                             default:
@@ -150,7 +175,7 @@ namespace Kula.Core
             catch (Exception e)
             {
                 tokenStream.Clear();
-                throw new KulaException.LexerException(e.Message);
+                throw new LexerException(e.Message);
             }
             if (isDebug) { DebugShow(); }
 

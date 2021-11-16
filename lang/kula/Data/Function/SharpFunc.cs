@@ -2,6 +2,7 @@
 using Kula.Data.Container;
 using Kula.Data.Type;
 using Kula.Util;
+using Kula.Xception;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -74,12 +75,14 @@ namespace Kula.Data.Function
                 object arg = args[0];
                 if (arg == null)
                     return RawType.None.ToString();
-                foreach (IType type in RawType.TypeDict.Values)
+                foreach (RawType type in RawType.TypeDict.Values)
                 {
+                    if (type == RawType.Any)
+                        continue;
                     if (type.Check(arg))
                         return type.ToString();
                 }
-                return new KulaException.KTypeException(arg.GetType().Name);
+                return new KTypeException(arg.GetType().Name);
             }, RawType.Any),
 
             // Bool
@@ -91,7 +94,7 @@ namespace Kula.Data.Function
             ["not"] = new SharpFunc((args, engine) => (float)args[0] == 0f ? 1f : 0f, RawType.Num),
 
             // Throw
-            ["throw"] = new SharpFunc((args, engine) => throw new KulaException.UserException((string)args[0]), RawType.Str),
+            ["throw"] = new SharpFunc((args, engine) => throw new UserException((string)args[0]), RawType.Str),
 
             // Unpack
             ["unpack"] = new SharpFunc((args, engine) =>
@@ -117,83 +120,6 @@ namespace Kula.Data.Function
                                 engine.ExtendFunc[func.Key == "new" ? ("new" + bval.Key) : func.Key] = func_value;
                 return null;
             }),
-
-            /**
-
-            // Bool
-            ["eq"] = (args, engine) =>
-            {
-                return object.Equals(args[0], args[1]) ? 1f : 0f;
-            },
-            ["gt"] = (args, engine) =>
-            {
-                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
-                    ArgsCheck(args, typeof(float), typeof(float));
-                return ((float)args[0] > (float)args[1]) ? 1f : 0f;
-            },
-            ["lt"] = (args, engine) =>
-            {
-                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
-                    ArgsCheck(args, typeof(float), typeof(float));
-                return ((float)args[0] < (float)args[1]) ? 1f : 0f;
-            },
-            ["and"] = (args, engine) =>
-            {
-                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
-                    ArgsCheck(args, typeof(float), typeof(float));
-                bool flag = ((float)args[0] != 0) && ((float)args[1] != 0);
-                return flag ? 1f : 0f;
-            },
-            ["or"] = (args, engine) =>
-            {
-                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
-                    ArgsCheck(args, typeof(float), typeof(float));
-                bool flag = ((float)args[0] != 0) || ((float)args[1] != 0);
-                return flag ? 1f : 0f;
-            },
-            ["not"] = (args, engine) =>
-            {
-                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
-                    ArgsCheck(args, typeof(float));
-                return (float)args[0] == 0f ? 1f : 0f;
-            },
-
-            // Exception
-            ["throw"] = (args, engine) =>
-            {
-                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
-                    ArgsCheck(args, typeof(string));
-                throw new KulaException.UserException((string)args[0]);
-            },
-
-            // Back to Old Version
-            ["unpack"] = (args, engine) =>
-            {
-                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
-                    ArgsCheck(args, typeof(Map));
-                var map = ((Map)args[0]).Data;
-                string @namespace = (string)map["namespace"];
-
-                foreach (var kvp in map)
-                    if (kvp.Value is SharpLambda bfunc)
-                        if (kvp.Key == "new")
-                            engine.ExtendFunc["new" + @namespace] = bfunc;
-                        else
-                            engine.ExtendFunc[kvp.Key] = bfunc;
-                return null;
-            },
-            ["unpackAll"] = (args, engine) =>
-            {
-                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
-                    ArgsCheck(args);
-                foreach (var bval in BVals)
-                    if (bval.Value(engine) is Map name_space)
-                        foreach (var func in name_space.Data)
-                            if (func.Value is SharpLambda func_value)
-                                engine.ExtendFunc[func.Key == "new" ? ("new" + bval.Key) : func.Key] = func_value;
-                return null;
-            }
-            */
         };
 
         private static readonly Map
@@ -256,7 +182,7 @@ namespace Kula.Data.Function
             }, RawType.Str, RawType.Str);
             str.Data["charAt"] = new SharpFunc((args, engine) =>
             {
-                return ((string)args[0])[(int)args[1]].ToString();
+                return ((string)args[0])[(int)(float)args[1]].ToString();
             }, RawType.Str, RawType.Num);
 
             // ASCII
@@ -267,7 +193,7 @@ namespace Kula.Data.Function
             }, RawType.Num);
             ascii.Data["ctoa"] = new SharpFunc((args, engine) =>
             {
-                return (int)((string)args[0])[0];
+                return (float)(int)((string)args[0])[0];
             }, RawType.Str);
 
             // Array
@@ -348,7 +274,7 @@ namespace Kula.Data.Function
             for (int i = 0; i < args.Length && flag; ++i)
                 flag = types[i].Check(args[i]);
             if (!flag)
-                throw new KulaException.FuncArgumentException(types);
+                throw new FuncArgumentException("SharpFunc", types);
         }
 
         private string @string;

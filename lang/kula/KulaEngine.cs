@@ -1,9 +1,9 @@
 ﻿using Kula.Core;
-using Kula.Data;
 using Kula.Data.Container;
 using Kula.Data.Function;
 using Kula.Data.Type;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Kula
 {
@@ -64,7 +64,8 @@ namespace Kula
         /// </summary>
         public static string FrameworkVersion { get => ".NET Standard v2.0"; }
 
-        private readonly Dictionary<string, Func> byteCodeMap = new Dictionary<string, Func>();
+        private readonly IDictionary<string, Func> byteCodeDict = new Dictionary<string, Func>();
+        private readonly ISet<string> moduleSet = new HashSet<string>();
 
         /// <summary>
         /// 引擎数据域
@@ -91,23 +92,62 @@ namespace Kula
         /// </summary>
         public KulaEngine() { mainRuntime = new FuncRuntime(null, this); }
 
+        public void CompileFile(string sourcePath, string codeID)
+        {
+            lock (lock_this)
+            {
+                string root_path = Directory.GetParent(sourcePath).FullName.Replace("\\", "/");
+                using (StreamReader streamReader = 
+                    new StreamReader(
+                        new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read)))
+                {
+                    Module.Instance.SplitModule(streamReader, root_path, out IList<string> module_list);
+                    foreach (string module_item_path in module_list)
+                    {
+                        // System.Console.WriteLine(module_item_path);
+                        if (!moduleSet.Contains(module_item_path))
+                        {
+                            CompileFile(module_item_path, "$");
+                            Run("$");
+                            byteCodeDict.Remove("$");
+                            moduleSet.Add(module_item_path);
+                        }
+                    }
+
+                    var lex_tokens = Lexer.Instance.Read(streamReader, Config.Check(debug, Config.LEXER)).Out();
+                    Lambda main = new Lambda(lex_tokens);
+                    Func mainEnv = new Func(main, null);
+
+                    Parser.Instance.Parse(this, main, Config.Check(debug, Config.PARSER));
+
+                    byteCodeDict[codeID] = mainEnv;
+                }
+            }
+        }
+
         /// <summary>
         /// 编译生成字节码 存储到字节码集合
         /// </summary>
         /// <param name="sourceCode">源代码</param>
         /// <param name="codeID">字节码名称</param>
         /// <param name="isDebug">是否为Debug编译</param>
-        public void Compile(string sourceCode, string codeID)
+        public void CompileCode(string sourceCode, string codeID)
         {
             lock (lock_this)
             {
-                var lex_tokens = Lexer.Instance.Read(sourceCode).Scan(Config.Check(debug, Config.LEXER)).Out();
-                Lambda main = new Lambda(lex_tokens);
-                Func mainEnv = new Func(main, null);
+                using (StreamReader streamReader =
+                    new StreamReader(
+                        new MemoryStream(
+                            System.Text.Encoding.Default.GetBytes(sourceCode))))
+                {
+                    var lex_tokens = Lexer.Instance.Read(streamReader, Config.Check(debug, Config.LEXER)).Out();
+                    Lambda main = new Lambda(lex_tokens);
+                    Func mainEnv = new Func(main, null);
 
-                Parser.Instance.Parse(this, main, Config.Check(debug, Config.PARSER));
+                    Parser.Instance.Parse(this, main, Config.Check(debug, Config.PARSER));
 
-                byteCodeMap[codeID] = mainEnv;
+                    byteCodeDict[codeID] = mainEnv;
+                }
             }
         }
         private static readonly object lock_this = new object();
@@ -118,7 +158,7 @@ namespace Kula
         /// <param name="codeId">字节码名称</param>
         public void Run(string codeId)
         {
-            mainRuntime.Root = byteCodeMap[codeId];
+            mainRuntime.Root = byteCodeDict[codeId];
             mainRuntime.Run(null, debug);
         }
 

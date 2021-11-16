@@ -22,7 +22,7 @@ namespace Kula.Data.Type
             if (o is Func o_func)
             {
                 Lambda lambda = o_func.Lambda;
-                if (lambda.ReturnType == ReturnType)
+                if (ReturnType.CheckType(lambda.ReturnType))
                 {
                     if (lambda.ArgList.Count == TypeList.Count)
                     {
@@ -30,7 +30,7 @@ namespace Kula.Data.Type
                         bool flag = true;
                         for (int i=0; i<len && flag; ++i)
                         {
-                            flag = TypeList[i] == lambda.ArgList[i].Item2;
+                            flag = TypeList[i].CheckType(lambda.ArgList[i].Item2);
                         }
                         return flag;
                     }
@@ -39,6 +39,24 @@ namespace Kula.Data.Type
             }
             else
                 return false;
+        }
+
+        public bool CheckType(IType type)
+        {
+            if (type is FuncType o_func)
+            {
+                if (o_func.ReturnType.CheckType(ReturnType) && o_func.TypeList.Count == TypeList.Count)
+                {
+                    int len = TypeList.Count;
+                    bool flag = true;
+                    for (int i = 0; i < len && flag; ++i)
+                    {
+                        flag = o_func.TypeList[i].CheckType(TypeList[i]);
+                    }
+                    return flag;
+                }
+            }
+            return false;
         }
 
         public override int GetHashCode()
@@ -51,23 +69,6 @@ namespace Kula.Data.Type
             return hash;
         }
 
-        public override bool Equals(object obj)
-        {
-            if (obj is FuncType o_func)
-            {
-                if (o_func.ReturnType == ReturnType && o_func.TypeList.Count == TypeList.Count)
-                {
-                    int len = TypeList.Count;
-                    bool flag = true;
-                    for(int i=0; i<len && flag; ++i)
-                    {
-                        flag = o_func.TypeList[i] == TypeList[i];
-                    }
-                    return flag;
-                }
-            }
-            return false;
-        }
 
         public override string ToString()
         {
@@ -80,7 +81,7 @@ namespace Kula.Data.Type
             }
             sb.Append("):");
             sb.Append(ReturnType.ToString());
-            return base.ToString();
+            return sb.ToString();
         }
     }
 }

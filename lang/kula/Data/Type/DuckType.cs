@@ -63,6 +63,8 @@ namespace Kula.Data.Type
 
         public bool Check(object o) => o is Map o_map && CheckDuck(o_map);
 
+        public bool CheckType(IType type) => type == this;
+
         public override string ToString() => name;
     }
 }

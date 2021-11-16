@@ -1,7 +1,8 @@
 {
   "profiles": {
     "shell": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "--release D:\\GitHub\\kula-lang\\Kula\\shell\\shell\\bin\\demo\\hello.kula"
     }
   }
 }

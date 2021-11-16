@@ -42,14 +42,8 @@ namespace Kula.Data.Container
             builder.Append('{');
             foreach (KeyValuePair<string, object> kvp in Data)
             {
-                if (kvp.Value is Func || kvp.Value is SharpFunc) { }
-                else
-                {
-                    if (builder.Length != 1) builder.Append(',');
-                    builder.Append(
-                        '\"' + kvp.Key + '\"' + ':' + kvp.Value.KToString()
-                    );
-                }
+                if (builder.Length != 1) builder.Append(',');
+                builder.Append($"\"{kvp.Key}\":{kvp.Value.KToString()}");
             }
             builder.Append('}');
             return builder.ToString();

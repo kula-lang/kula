@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Kula.Data.Type;
+using Kula.Xception;
 
 namespace Kula.Core
 {
@@ -31,7 +32,7 @@ namespace Kula.Core
             this.envStack.Clear();
         }
 
-        private object RunSelf(object[] arguments = null)
+        private object RunSelf(object[] arguments)
         {
             if ((arguments == null ? 0 : arguments.Length) != Root.Lambda.ArgList.Count)
             {
@@ -40,14 +41,14 @@ namespace Kula.Core
                 {
                     error_types[i] = Root.Lambda.ArgList[i].Item2;
                 }
-                throw new KulaException.FuncArgumentException(error_types);
+                throw new FuncArgumentException("Func-Runtime", error_types);
             }
             for (int i = Root.Lambda.ArgList.Count - 1; i >= 0 && arguments != null; --i)
             {
                 object arg = arguments[i];
                 if (Root.Lambda.ArgList[i].Item2 != RawType.Any && !Root.Lambda.ArgList[i].Item2.Check(arg))
                 {
-                    throw new KulaException.ArgsTypeException(arg.GetType().Name, Root.Lambda.ArgList[i].ToString());
+                    throw new ArgsTypeException(arg.GetType().Name, Root.Lambda.ArgList[i].ToString());
                 }
                 else
                 {
@@ -161,7 +162,7 @@ namespace Kula.Core
                                 }
                                 if (!flag)
                                 {
-                                    throw new KulaException.VariableException(node_value);
+                                    throw new VariableException(node_value);
                                 }
                             }
                             break;
@@ -182,6 +183,7 @@ namespace Kula.Core
                                     args[k] = envStack.Pop();
                                 }
                                 object func = envStack.Pop();
+
                                 // 管道操作下的剩余参数
                                 while (func_pipes_count > 0)
                                 {
@@ -202,7 +204,7 @@ namespace Kula.Core
                                 }
                                 else
                                 {
-                                    throw new KulaException.FuncUsingException(func.ToString());
+                                    throw new FuncUsingException(func.ToString());
                                 }
                             }
                             break;
@@ -232,8 +234,8 @@ namespace Kula.Core
                                 if (return_val == null) { break; }
                                 if (Root.Lambda.ReturnType != RawType.Any && !Root.Lambda.ReturnType.Check(return_val))
                                 {
-                                    throw new KulaException.ReturnValueException(
-                                        return_val.GetType().Name, 
+                                    throw new ReturnValueException(
+                                        return_val.ToString(), 
                                         Root.Lambda.ReturnType.ToString()
                                         );
                                 }
@@ -252,14 +254,14 @@ namespace Kula.Core
                                 {
                                     if (!(vk is string str_vector_key) || !(v is Data.Container.Map vector_map))
                                     {
-                                        throw new KulaException.MapTypeException();
+                                        throw new MapTypeException(vk.ToString());
                                     }
                                     envStack.Push(vector_map.Data[str_vector_key]);
                                 }
                                 // 标准索引处理
                                 else if ((char)node.Value == '[')
                                 {
-                                    if ((v is Data.Container.Array vector_array))
+                                    if (v is Data.Container.Array vector_array)
                                     {
                                         if (vk is float vk_num)
                                         {
@@ -267,10 +269,10 @@ namespace Kula.Core
                                         }
                                         else
                                         {
-                                            throw new KulaException.ArrayTypeException();
+                                            throw new ArrayTypeException();
                                         }
                                     }
-                                    else if ((v is Data.Container.Map v_map))
+                                    else if (v is Data.Container.Map v_map)
                                     {
                                         if (vk is string vk_str)
                                         {
@@ -278,12 +280,12 @@ namespace Kula.Core
                                         }
                                         else
                                         {
-                                            throw new KulaException.MapTypeException();
+                                            throw new MapTypeException(vk.ToString());
                                         }
                                     }
                                     else
                                     {
-                                        throw new KulaException.KTypeException(v.GetType().Name);
+                                        throw new KTypeException(v.GetType().Name);
                                     }
                                 }
                             }
@@ -297,12 +299,12 @@ namespace Kula.Core
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new KulaException.VMUnderflowException();
+                    throw new VMUnderflowException();
                 }
             }
             if (@return == null && Root.Lambda.ReturnType != RawType.None)
             {
-                throw new KulaException.ReturnValueException("None", Root.Lambda.ReturnType.ToString());
+                throw new ReturnValueException("None", Root.Lambda.ReturnType.ToString());
             }
             return @return;
         }

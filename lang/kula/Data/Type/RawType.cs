@@ -35,6 +35,10 @@ namespace Kula.Data.Type
             return type == typeof(object) || o.GetType() == type;
         }
 
+        public bool CheckType(IType type)
+        {
+            return (this == type) || (this.type == typeof(Function.Func) && type is FuncType);
+        }
 
         public override string ToString() => @string;
     }

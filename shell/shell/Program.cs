@@ -1,9 +1,10 @@
-﻿using Kula;
-using Kula.Data;
+﻿#define KULA_DEBUG
+
+using Kula;
 using Kula.Data.Function;
 using System;
 using System.Collections.Generic;
-using System.IO;
+
 
 class Program
 {
@@ -47,7 +48,7 @@ class Program
             kulaEngine.UpdateMode(KulaEngine.Config.REPL_ECHO);
             Console.WriteLine("REPL-ECHO " + (kulaEngine.CheckMode(KulaEngine.Config.REPL_ECHO) ? "on" : "off"));
         },
-        ["#type-check"] = () => 
+        ["#type-check"] = () =>
         {
             kulaEngine.UpdateMode(KulaEngine.Config.TYPE_CHECK);
             Console.WriteLine("TYPE-CHECK " + (kulaEngine.CheckMode(KulaEngine.Config.TYPE_CHECK) ? "on" : "off"));
@@ -104,7 +105,7 @@ class Program
             {
                 try
                 {
-                    kulaEngine.Compile(code, "");
+                    kulaEngine.CompileCode(code, "");
                     kulaEngine.Run("");
                 }
                 catch (Exception e)
@@ -137,12 +138,6 @@ class Program
         Console.ResetColor();
     }
 
-    private static void CompileAndRun(string code)
-    {
-        kulaEngine.Compile(code, "");
-        kulaEngine.Run("");
-    }
-
     private static void Main(string[] args)
     {
         // 测试
@@ -162,18 +157,25 @@ class Program
                 }
                 else
                 {
+#if KULA_DEBUG
+                    kulaEngine.CompileFile(arg, "");
+                    kulaEngine.Run("");
+#else
                     try
                     {
-                        code = File.ReadAllText(arg);
-                        CompileAndRun(code);
+                        kulaEngine.CompileFile(arg, "");
+                        kulaEngine.Run("");
+                        // code = File.ReadAllText(arg);
+                        // CompileAndRun(code);
                     }
                     catch (Exception e)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(e);
+                        Console.WriteLine(e.Message);
                         Console.ResetColor();
                         return;
                     }
+#endif
                 }
             }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 
 using Kula.Core;
+using Kula.Data.Function;
 using Kula.Data.Type;
 
 namespace Kula.Util
@@ -18,7 +19,7 @@ namespace Kula.Util
         /// <returns>类JSON格式字符串</returns>
         public static string KToString(this object _this)
         {
-            if (_this == null)
+            if (_this == null || _this is SharpFunc || _this is Func)
                 return "null";
             else if (_this is string)
                 return "\"" + _this + "\"";

@@ -40,12 +40,8 @@ namespace Kula.Data.Container
             builder.Append('[');
             for (int i = 0; i < Data.Length; ++i)
             {
-                if (Data[i] is Func || Data[i] is SharpFunc) { }
-                else
-                {
-                    if (builder.Length != 1) { builder.Append(','); }
-                    builder.Append(Data[i].KToString());
-                }
+                if (builder.Length != 1) { builder.Append(','); }
+                builder.Append(Data[i].KToString());
             }
             builder.Append(']');
             return builder.ToString();
