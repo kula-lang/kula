@@ -1,10 +1,9 @@
 ﻿using Kula.Data.Function;
-using Kula.Util;
+using Kula.Data.Type;
+using Kula.Xception;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Kula.Data.Type;
-using Kula.Xception;
 
 namespace Kula.Core
 {
@@ -34,25 +33,39 @@ namespace Kula.Core
 
         private object RunSelf(object[] arguments)
         {
+            // 参数数目不等
             if ((arguments == null ? 0 : arguments.Length) != Root.Lambda.ArgList.Count)
             {
-                IType[] error_types = new IType[Root.Lambda.ArgList.Count];
-                for (int i=0; i<error_types.Length; ++i)
+                // 校验类型
+                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
                 {
-                    error_types[i] = Root.Lambda.ArgList[i].Item2;
+                    IType[] error_types = new IType[Root.Lambda.ArgList.Count];
+                    for (int i = 0; i < error_types.Length; ++i)
+                    {
+                        error_types[i] = Root.Lambda.ArgList[i].Item2;
+                    }
+                    throw new FuncArgumentException("Func-Runtime", error_types, Root.Lambda.ArgList.Count);
                 }
-                throw new FuncArgumentException("Func-Runtime", error_types);
+                // 无需校验类型，只检查参数个数
+                else
+                {
+                    throw new FuncArgumentException("Func-Runtime-Without-TypeCheck", new IType[0], Root.Lambda.ArgList.Count);
+                }
             }
+
             for (int i = Root.Lambda.ArgList.Count - 1; i >= 0 && arguments != null; --i)
             {
                 object arg = arguments[i];
-                if (Root.Lambda.ArgList[i].Item2 != RawType.Any && !Root.Lambda.ArgList[i].Item2.Check(arg))
+                // 类型校验
+                if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK)
+                    && Root.Lambda.ArgList[i].Item2 != RawType.Any 
+                    && !Root.Lambda.ArgList[i].Item2.Check(arg))
                 {
                     throw new ArgsTypeException(arg.GetType().Name, Root.Lambda.ArgList[i].ToString());
                 }
                 else
                 {
-                    varDict.Add(Root.Lambda.ArgList[i].Item1, arg);
+                    varDict[Root.Lambda.ArgList[i].Item1] = arg;
                 }
             }
 
@@ -64,242 +77,250 @@ namespace Kula.Core
             for (int i = 0; i < Root.Lambda.NodeStream.Count && @return == null; ++i)
             {
                 var node = Root.Lambda.NodeStream[i];
-                try
+                switch (node.Type)
                 {
-                    switch (node.Type)
-                    {
-                        // 取值
-                        case VMNodeType.VALUE:
-                            {
-                                envStack.Push(node.Value);
-                            }
-                            break;
+                    // 取值
+                    case VMNodeType.VALUE:
+                        {
+                            envStack.Push(node.Value);
+                        }
+                        break;
 
-                        // 取值-字符串
-                        case VMNodeType.STRING:
-                            {
-                                string val = (string)node.Value;
-                                val = System.Text.RegularExpressions.Regex.Unescape(val);
-                                envStack.Push(val);
-                            }
-                            break;
+                    // 取值-字符串
+                    case VMNodeType.STRING:
+                        {
+                            string val = (string)node.Value;
+                            val = System.Text.RegularExpressions.Regex.Unescape(val);
+                            envStack.Push(val);
+                        }
+                        break;
 
-                        // 取值-匿名函数
-                        case VMNodeType.LAMBDA:
-                            {
-                                object value = node.Value;
-                                envStack.Push(new Func((Lambda)value, this));
-                            }
-                            break;
+                    // 取值-匿名函数
+                    case VMNodeType.LAMBDA:
+                        {
+                            object value = node.Value;
+                            envStack.Push(new Func((Lambda)value, this));
+                        }
+                        break;
 
-                        // 赋值
-                        case VMNodeType.LET:
-                            {
-                                bool flag = false;
-                                FuncRuntime now_env = this;
+                    // 赋值
+                    case VMNodeType.LET:
+                        {
+                            bool flag = false;
+                            FuncRuntime now_env = this;
 
-                                while (flag == false && now_env != null)
+                            while (flag == false && now_env != null)
+                            {
+                                if (now_env.varDict.ContainsKey((string)node.Value))
                                 {
-                                    if (now_env.varDict.ContainsKey((string)node.Value))
-                                    {
-                                        now_env.varDict[(string)node.Value] = envStack.Pop();
-                                        envStack.Clear();
-                                        flag = true;
-                                    }
-                                    now_env = now_env.Root.Runtime;
-                                }
-                                if (!flag)
-                                {
-                                    varDict[(string)node.Value] = envStack.Pop();
+                                    if (envStack.Count == 0)
+                                        throw new VMUnderflowException($"when assign to {(string)node.Value}");
+                                    now_env.varDict[(string)node.Value] = envStack.Pop();
                                     envStack.Clear();
+                                    flag = true;
                                 }
+                                now_env = now_env.Root.Runtime;
                             }
-                            break;
-
-                        // 声明赋值 （原地
-                        case VMNodeType.VAR:
+                            if (!flag)
                             {
-                                this.varDict[(string)node.Value] = envStack.Pop();
+                                if (envStack.Count == 0)
+                                    throw new VMUnderflowException($"when declare {(string)node.Value}");
+                                varDict[(string)node.Value] = envStack.Pop();
                                 envStack.Clear();
                             }
-                            break;
+                        }
+                        break;
 
-                        // 按名寻址
-                        case VMNodeType.NAME:
+                    // 声明赋值 （原地
+                    case VMNodeType.VAR:
+                        {
+                            if (envStack.Count == 0)
+                                throw new VMUnderflowException($"when explicitly declare {(string)node.Value}");
+                            this.varDict[(string)node.Value] = envStack.Pop();
+                            envStack.Clear();
+                        }
+                        break;
+
+                    // 按名寻址
+                    case VMNodeType.NAME:
+                        {
+                            bool flag = false;
+                            FuncRuntime now_env = this;
+
+                            string node_value = node.Value as string;
+
+                            // 常量 查询
+                            if (SharpFunc.SharpVals.ContainsKey(node_value))
                             {
-                                bool flag = false;
-                                FuncRuntime now_env = this;
-
-                                string node_value = node.Value as string;
-
-                                // 常量 查询
-                                if (SharpFunc.BVals.ContainsKey(node_value))
+                                envStack.Push(SharpFunc.SharpVals[node_value](engine));
+                                flag = true;
+                            }
+                            // 扩展函数 覆盖 内置函数
+                            else if (engine.ExtendFunc.ContainsKey(node_value))
+                            {
+                                flag = true;
+                                envStack.Push(engine.ExtendFunc[node_value]);
+                            }
+                            // 内置函数 查询
+                            else if (SharpFunc.SharpFuncs.ContainsKey(node_value))
+                            {
+                                flag = true;
+                                envStack.Push(SharpFunc.SharpFuncs[node_value]);
+                            }
+                            // 链式查询
+                            while (flag == false && now_env != null)
+                            {
+                                if (now_env.varDict.ContainsKey(node_value))
                                 {
-                                    envStack.Push(SharpFunc.BVals[node_value](engine));
+                                    envStack.Push(now_env.varDict[node_value]);
                                     flag = true;
                                 }
-                                // 扩展函数 覆盖 内置函数
-                                else if (engine.ExtendFunc.ContainsKey(node_value))
-                                {
-                                    flag = true;
-                                    envStack.Push(engine.ExtendFunc[node_value]);
-                                }
-                                // 内置函数 查询
-                                else if (SharpFunc.SharpFuncs.ContainsKey(node_value))
-                                {
-                                    flag = true;
-                                    envStack.Push(SharpFunc.SharpFuncs[node_value]);
-                                }
-                                // 链式查询
-                                while (flag == false && now_env != null)
-                                {
-                                    if (now_env.varDict.ContainsKey(node_value))
-                                    {
-                                        envStack.Push(now_env.varDict[node_value]);
-                                        flag = true;
-                                    }
-                                    now_env = now_env.Root.Runtime;
-                                }
-                                if (!flag)
-                                {
-                                    throw new VariableException(node_value);
-                                }
+                                now_env = now_env.Root.Runtime;
                             }
-                            break;
-
-                        // 寻找函数
-                        case VMNodeType.FUNC:
+                            if (!flag)
                             {
-                                // 按 参数个数 获取 参数值
-                                // 管道操作下，改变参数个数
-                                int node_value = (int)node.Value;
-
-                                int func_args_count = node_value & 0xffff;
-                                int func_pipes_count = node_value >> 16;
-
-                                object[] args = new object[func_args_count + func_pipes_count];
-                                for (int k = func_args_count + func_pipes_count - 1; k >= func_pipes_count; --k)
-                                {
-                                    args[k] = envStack.Pop();
-                                }
-                                object func = envStack.Pop();
-
-                                // 管道操作下的剩余参数
-                                while (func_pipes_count > 0)
-                                {
-                                    args[func_pipes_count - 1] = envStack.Pop();
-                                    --func_pipes_count;
-                                }
-
-                                // 函数正常调用
-                                if (func is Func func_wth_env)
-                                {
-                                    var tmp_return = new FuncRuntime(func_wth_env, engine).Run(args, 0);
-                                    if (tmp_return != null) { envStack.Push(tmp_return); }
-                                }
-                                else if (func is SharpFunc builtin_func)
-                                {
-                                    var tmp_return = builtin_func.Run(args, engine);
-                                    if (tmp_return != null) { envStack.Push(tmp_return); }
-                                }
-                                else
-                                {
-                                    throw new FuncUsingException(func.ToString());
-                                }
+                                throw new VariableException(node_value);
                             }
-                            break;
+                        }
+                        break;
 
-                        // 条件跳转：0
-                        case VMNodeType.IFGOTO:
+                    // 寻找函数
+                    case VMNodeType.FUNC:
+                        {
+                            // 按 参数个数 获取 参数值
+                            // 管道操作下，改变参数个数
+                            int node_value = (int)node.Value;
+
+                            int func_args_count = node_value & 0xffff;
+                            int func_pipes_count = node_value >> 16;
+
+                            object[] args = new object[func_args_count + func_pipes_count];
+                            for (int k = func_args_count + func_pipes_count - 1; k >= func_pipes_count; --k)
                             {
-                                float arg = (float)envStack.Pop();
-                                if (arg == 0)
-                                {
-                                    i = (int)node.Value - 1;
-                                }
+                                if (envStack.Count == 0)
+                                    throw new VMUnderflowException("Wrong usage of Arguments");
+                                args[k] = envStack.Pop();
                             }
-                            break;
+                            if (envStack.Count == 0)
+                                throw new VMUnderflowException("Wrong usage of Func");
+                            object func = envStack.Pop();
 
-                        // 无条件跳转
-                        case VMNodeType.GOTO:
+                            // 管道操作下的剩余参数
+                            while (func_pipes_count > 0)
+                            {
+                                if (envStack.Count == 0)
+                                    throw new VMUnderflowException("Wrong usage of pipe Arguments");
+                                args[func_pipes_count - 1] = envStack.Pop();
+                                --func_pipes_count;
+                            }
+
+                            // 函数正常调用
+                            if (func is Func func_wth_env)
+                            {
+                                var tmp_return = new FuncRuntime(func_wth_env, engine).Run(args, 0);
+                                if (tmp_return != null) { envStack.Push(tmp_return); }
+                            }
+                            else if (func is SharpFunc builtin_func)
+                            {
+                                var tmp_return = builtin_func.Run(args, engine);
+                                if (tmp_return != null) { envStack.Push(tmp_return); }
+                            }
+                            else
+                            {
+                                throw new FuncUsingException(func.ToString());
+                            }
+                        }
+                        break;
+
+                    // 条件跳转：0
+                    case VMNodeType.IFGOTO:
+                        {
+                            if (envStack.Count == 0)
+                                throw new VMUnderflowException("Wrong usage of IF");
+                            float arg = (float)envStack.Pop();
+                            if (arg == 0)
                             {
                                 i = (int)node.Value - 1;
                             }
-                            break;
+                        }
+                        break;
 
-                        // 返回值
-                        case VMNodeType.RETURN:
+                    // 无条件跳转
+                    case VMNodeType.GOTO:
+                        {
+                            i = (int)node.Value - 1;
+                        }
+                        break;
+
+                    // 返回值
+                    case VMNodeType.RETURN:
+                        {
+                            if (envStack.Count == 0)
+                                throw new VMUnderflowException("No return value");
+                            object return_val = envStack.Pop();
+                            if (return_val == null) { break; }
+                            if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK) 
+                                && Root.Lambda.ReturnType != RawType.Any 
+                                && !Root.Lambda.ReturnType.Check(return_val))
                             {
-                                object return_val = envStack.Pop();
-                                if (return_val == null) { break; }
-                                if (Root.Lambda.ReturnType != RawType.Any && !Root.Lambda.ReturnType.Check(return_val))
-                                {
-                                    throw new ReturnValueException(
-                                        return_val.ToString(), 
-                                        Root.Lambda.ReturnType.ToString()
-                                        );
-                                }
-                                @return = return_val;
+                                throw new ReturnValueException(
+                                    return_val.ToString(),
+                                    Root.Lambda.ReturnType.ToString()
+                                    );
                             }
-                            break;
+                            @return = return_val;
+                        }
+                        break;
 
-                        // 索引
-                        case VMNodeType.CONKEY:
+                    // 索引
+                    case VMNodeType.CONKEY:
+                        {
+                            if (envStack.Count < 1)
+                                throw new VMUnderflowException("Wrong usage of operator[]");
+                            object vk = envStack.Pop();
+                            object v = envStack.Pop();
+
+                            // Map语法 索引处理
+                            if ((char)node.Value == '.')
                             {
-                                object vk = envStack.Pop();
-                                object v = envStack.Pop();
-
-                                // Map语法 索引处理
-                                if ((char)node.Value == '.')
+                                if (!(vk is string str_vector_key) || !(v is Data.Container.Map vector_map))
                                 {
-                                    if (!(vk is string str_vector_key) || !(v is Data.Container.Map vector_map))
-                                    {
-                                        throw new MapTypeException(vk.ToString());
-                                    }
-                                    envStack.Push(vector_map.Data[str_vector_key]);
+                                    throw new MapTypeException(vk.ToString());
                                 }
-                                // 标准索引处理
-                                else if ((char)node.Value == '[')
+                                envStack.Push(vector_map.Data[str_vector_key]);
+                            }
+                            // 标准索引处理
+                            else if ((char)node.Value == '[')
+                            {
+                                if (v is Data.Container.Array vector_array)
                                 {
-                                    if (v is Data.Container.Array vector_array)
+                                    if (vk is float vk_num)
                                     {
-                                        if (vk is float vk_num)
-                                        {
-                                            envStack.Push(vector_array.Data[(int)vk_num]);
-                                        }
-                                        else
-                                        {
-                                            throw new ArrayTypeException();
-                                        }
-                                    }
-                                    else if (v is Data.Container.Map v_map)
-                                    {
-                                        if (vk is string vk_str)
-                                        {
-                                            envStack.Push(v_map.Data[vk_str]);
-                                        }
-                                        else
-                                        {
-                                            throw new MapTypeException(vk.ToString());
-                                        }
+                                        envStack.Push(vector_array.Data[(int)vk_num]);
                                     }
                                     else
                                     {
-                                        throw new KTypeException(v.GetType().Name);
+                                        throw new ArrayTypeException();
                                     }
                                 }
+                                else if (v is Data.Container.Map v_map)
+                                {
+                                    if (vk is string vk_str)
+                                    {
+                                        envStack.Push(v_map.Data[vk_str]);
+                                    }
+                                    else
+                                    {
+                                        throw new MapTypeException(vk.ToString());
+                                    }
+                                }
+                                else
+                                {
+                                    throw new KTypeException(v.GetType().Name);
+                                }
                             }
-                            break;
-                        /*
-                        case VMNodeType.PIPE:
-                            ++pipe_counter;
-                            break;
-                        */
-                    }
-                }
-                catch (InvalidOperationException)
-                {
-                    throw new VMUnderflowException();
+                        }
+                        break;
                 }
             }
             if (@return == null && Root.Lambda.ReturnType != RawType.None)

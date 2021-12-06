@@ -73,8 +73,6 @@ namespace Kula.Core
             LexTokenType state = LexTokenType.NULL;
             StringBuilder tokenBuilder = new StringBuilder();
 
-            try
-            {
                 while (!sourceCode.EndOfStream)
                 {
                     if (state == LexTokenType.NULL)
@@ -156,7 +154,9 @@ namespace Kula.Core
                                     bool trans = false;
                                     while (trans || !Is.CQuote((char)sourceCode.Peek()))
                                     {
-                                        trans = !trans && (char)sourceCode.Peek() == '\\';
+                                        if (sourceCode.EndOfStream)
+                                            throw new LexerException("string overflow");
+                                    trans = !trans && (char)sourceCode.Peek() == '\\';
                                         tokenBuilder.Append((char)sourceCode.Read());
                                     }
                                     sourceCode.Read();
@@ -171,12 +171,6 @@ namespace Kula.Core
                         tokenBuilder.Clear();
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                tokenStream.Clear();
-                throw new LexerException(e.Message);
-            }
             if (isDebug) { DebugShow(); }
 
             sourceCode = null;

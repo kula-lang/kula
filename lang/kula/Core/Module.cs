@@ -25,7 +25,7 @@ namespace Kula.Core
                 }
                 else
                 {
-                    throw new LexerException("Wrong Import Format.");
+                    throw new LexerException($"Wrong Import Format => `{line}`");
                 }
             }
 

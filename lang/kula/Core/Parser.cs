@@ -145,28 +145,6 @@ namespace Kula.Core
             return false;
         }
 
-        /*
-        private bool MetaType(out string typeName)
-        {
-            var rcd = Record();
-            if (pos >= aimLambda.TokenStream.Count)
-            {
-                typeName = null;
-                return false;
-            }
-            var token = aimLambda.TokenStream[pos++];
-            if (token.Type == LexTokenType.NAME
-            //&& TypeDict.ContainsKey(token.Value))
-            {
-                typeName = token.Value;
-                return true;
-            }
-            typeName = null;
-            Backtrack(rcd);
-            return false;
-        }
-        */
-
         private bool PType(out IType type)
         {
             var rcd = Record();

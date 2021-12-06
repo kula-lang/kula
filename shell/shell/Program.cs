@@ -10,99 +10,48 @@ class Program
 {
     private static readonly KulaEngine kulaEngine = new();
 
-    private delegate void ShellCommand();
-    private static readonly Dictionary<string, ShellCommand> ShellCommandDict = new()
+    private delegate void ShellCommand(bool flag);
+
+    private static readonly Dictionary<string, ShellCommand> ShellCommands = new()
     {
-        ["#debug"] = () =>
-        {
-            kulaEngine.SetMode(0xffff);
-            Console.WriteLine("DEBUG-MODE");
-        },
-        ["#release"] = () =>
-        {
-            kulaEngine.SetMode(0);
-            Console.WriteLine("RELEASE-MODE");
-        },
-        ["#lexer"] = () =>
-        {
-            kulaEngine.UpdateMode(KulaEngine.Config.LEXER);
-            Console.WriteLine("LEXER " + (kulaEngine.CheckMode(KulaEngine.Config.LEXER) ? "on" : "off"));
-        },
-        ["#parser"] = () =>
-        {
-            kulaEngine.UpdateMode(KulaEngine.Config.PARSER);
-            Console.WriteLine("PARSER " + (kulaEngine.CheckMode(KulaEngine.Config.PARSER) ? "on" : "off"));
-        },
-        ["#stop-watch"] = () =>
-        {
-            kulaEngine.UpdateMode(KulaEngine.Config.STOP_WATCH);
-            Console.WriteLine("STOP-WATCH " + (kulaEngine.CheckMode(KulaEngine.Config.STOP_WATCH) ? "on" : "off"));
-        },
-        ["#value-stack"] = () =>
-        {
-            kulaEngine.UpdateMode(KulaEngine.Config.VALUE_STACK);
-            Console.WriteLine("VALUE-STACK " + (kulaEngine.CheckMode(KulaEngine.Config.VALUE_STACK) ? "on" : "off"));
-        },
-        ["#repl-echo"] = () =>
-        {
-            kulaEngine.UpdateMode(KulaEngine.Config.REPL_ECHO);
-            Console.WriteLine("REPL-ECHO " + (kulaEngine.CheckMode(KulaEngine.Config.REPL_ECHO) ? "on" : "off"));
-        },
-        ["#type-check"] = () =>
-        {
-            kulaEngine.UpdateMode(KulaEngine.Config.TYPE_CHECK);
-            Console.WriteLine("TYPE-CHECK " + (kulaEngine.CheckMode(KulaEngine.Config.TYPE_CHECK) ? "on" : "off"));
-        },
-        ["#gomo"] = () => { Hello(); },
-        ["#clear"] = () => { kulaEngine.Clear(); },
+        ["debug"] = (flag) => { kulaEngine.SetMode(flag ? 0xffff : 0x0); },
+        ["lexer"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.LEXER); },
+        ["parser"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.PARSER); },
+        ["stop-watch"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.STOP_WATCH); },
+        ["value-stack"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.VALUE_STACK); },
+        ["repl-echo"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.REPL_ECHO); },
+        ["type-check"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.TYPE_CHECK); },
+        ["gomo"] = (_) => { Hello(); },
+        ["clear"] = (_) => { kulaEngine.Clear(); },
     };
 
-    private delegate void ShellArgument();
-    private static readonly Dictionary<string, ShellArgument> ShellArgumentDict = new()
-    {
-        ["--debug"] = () =>
-        {
-            kulaEngine.SetMode(0xffff);
-            kulaEngine.UpdateMode(KulaEngine.Config.REPL_ECHO);
-        },
-        ["--release"] = () =>
-        {
-            kulaEngine.SetMode(0);
-        },
-        ["--stop-watch"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.STOP_WATCH); },
-        ["--value-stack"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.VALUE_STACK); },
-        ["--lexer"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.LEXER); },
-        ["--parser"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.PARSER); },
-        ["--type-check"] = () => { kulaEngine.UpdateMode(KulaEngine.Config.TYPE_CHECK); },
-    };
-
-    static Program()
-    {
-        ShellArgumentDict["-r"] = ShellArgumentDict["--release"];
-        ShellArgumentDict["-d"] = ShellArgumentDict["--debug"];
-    }
+    static Program() { }
 
     private static void Repl()
     {
         string code;
 
-        // REPL 模式
-        kulaEngine.SetMode(KulaEngine.Config.REPL_ECHO);
+        // REPL 模式，默认打开回显和类型检查
+        kulaEngine.UpdateMode(true, KulaEngine.Config.REPL_ECHO, KulaEngine.Config.TYPE_CHECK);
 
         while (true)
         {
             Console.Write("\n>> ");
-            code = Console.ReadLine();
+            code = Console.ReadLine(); // 可以在此拓展REPL
             if (code == null || code == "#exit")
             {
                 break;
             }
-            else if (ShellCommandDict.ContainsKey(code))
+            else if (code.StartsWith("#"))
             {
-                ShellCommandDict[code]();
+                RunCommand(code.Replace("#", "").Replace(" ", ""), true);
             }
             else
             {
+#if KULA_DEBUG
+                kulaEngine.CompileCode(code, "");
+                kulaEngine.Run("");
+#else
                 try
                 {
                     kulaEngine.CompileCode(code, "");
@@ -114,6 +63,7 @@ class Program
                     Console.WriteLine(e.GetType().ToString() + ":\n" + e.Message);
                     Console.ResetColor();
                 }
+#endif
             }
         }
     }
@@ -138,6 +88,30 @@ class Program
         Console.ResetColor();
     }
 
+    private static void RunCommand(string command, bool show)
+    {
+        string[] console_command = command.Split('=', ' ');
+        if (ShellCommands.ContainsKey(console_command[0]))
+        {
+            bool console_flag = true;
+            if (console_command.Length > 1)
+            {
+                string console_command_flag = console_command[1];
+                if (console_command_flag == "false" || console_command_flag == "off" || console_command_flag == "0")
+                {
+                    console_flag = false;
+                }
+            }
+            if (show)
+                Console.WriteLine($"{console_command[0]} = {(console_flag ? "on" : "off")}");
+            ShellCommands[console_command[0]](console_flag);
+        }
+        else
+        {
+            throw new Kula.Xception.CommandException(console_command[0]);
+        }
+    }
+
     private static void Main(string[] args)
     {
         // 测试
@@ -148,12 +122,11 @@ class Program
 
         if (args.Length > 0)
         {
-            string code;
             foreach (string arg in args)
             {
-                if (arg.StartsWith("-") && ShellArgumentDict.ContainsKey(arg))
+                if (arg.StartsWith("--"))
                 {
-                    ShellArgumentDict[arg]();
+                    RunCommand(arg.Replace("--", ""), false);
                 }
                 else
                 {

@@ -91,8 +91,11 @@ namespace Kula.Xception
         /// <summary>
         /// 函数参数个数错误
         /// </summary>
+        public FuncArgumentException(string msg, IType[] types, int size)
+            : base($"Wrong Arguments Count on {msg}. We need {size} arg(s) => {TypeString(types)}") { }
+
         public FuncArgumentException(string msg, IType[] types)
-            : base($"Wrong Arguments Count on {msg}. We need => {TypeString(types)}") { }
+            : base($"Wrong Arguments Types in {msg}. We need => {TypeString(types)}") { }
     }
 
     /// <summary>
@@ -117,8 +120,8 @@ namespace Kula.Xception
         /// Kula 虚拟机栈 下溢出
         /// 疑似函数使用错误
         /// </summary>
-        public VMUnderflowException()
-            : base("Wrong usage of Func?") { }
+        public VMUnderflowException(string msg)
+            : base($"VM Underflow => {msg}") { }
     }
 
     // Lambda
@@ -187,6 +190,13 @@ namespace Kula.Xception
         public KTypeException(string msg, string type)
             : base($"{msg} => {type}") { }
     }
+
+    public class CommandException : Exception
+    {
+        public CommandException(string msg)
+            : base($"No such command name => {msg}") { }
+    }
+
 
     // 自定义 异常信息
 

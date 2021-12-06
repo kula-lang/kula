@@ -51,9 +51,9 @@ namespace Kula.Data.Function
 
         public object Run(object[] args, KulaEngine engine)
         {
-            if (ToBeChecked && engine.CheckMode(KulaEngine.Config.TYPE_CHECK))
+            if (ToBeChecked)
             {
-                ArgsCheckIType(args, Types);
+                ArgsCheckIType(args, engine.CheckMode(KulaEngine.Config.TYPE_CHECK), Types);
             }
             return Lambda(args, engine);
         }
@@ -100,12 +100,11 @@ namespace Kula.Data.Function
             ["unpack"] = new SharpFunc((args, engine) =>
             {
                 var map = ((Map)args[0]).Data;
-                string @namespace = (string)map["namespace"];
 
                 foreach (var kvp in map)
                     if (kvp.Value is SharpFunc bfunc)
                         if (kvp.Key == "new")
-                            engine.ExtendFunc["new" + @namespace] = bfunc;
+                            engine.ExtendFunc["new" + (string)map["namespace"]] = bfunc;
                         else
                             engine.ExtendFunc[kvp.Key] = bfunc;
                 return null;
@@ -113,8 +112,8 @@ namespace Kula.Data.Function
 
             ["unpackAll"] = new SharpFunc((args, engine) =>
             {
-                foreach (var bval in BVals)
-                    if (bval.Value(engine) is Map name_space)
+                foreach (var bval in SharpVals)
+                    if (bval.Value(engine) is Map name_space && name_space.Data.ContainsKey("namespace"))
                         foreach (var func in name_space.Data)
                             if (func.Value is SharpFunc func_value)
                                 engine.ExtendFunc[func.Key == "new" ? ("new" + bval.Key) : func.Key] = func_value;
@@ -170,7 +169,11 @@ namespace Kula.Data.Function
                 var ret = args[0] is SharpFunc ? RawType.InvertTypeDict[RawType.SharpFunc] : args[0].ToString();
                 return ret;
             }, RawType.Any);
-            str.Data["parseNum"] = new SharpFunc((args, engine) => float.Parse((string)args[0]), RawType.Str);
+            str.Data["parseNum"] = new SharpFunc((args, engine) => {
+                if (float.TryParse((string)args[0], out float ret))
+                    return ret;
+                return (string)args[0];
+            }, RawType.Str);
             str.Data["len"] = new SharpFunc((args, engine) => (float)((string)args[0]).Length, RawType.Str);
             str.Data["cut"] = new SharpFunc((args, engine) =>
             {
@@ -251,16 +254,16 @@ namespace Kula.Data.Function
         /// <summary>
         /// Kula 内部变量表
         /// </summary>
-        public static Dictionary<string, SharpValue> BVals { get; } = new Dictionary<string, SharpValue>()
+        public static Dictionary<string, SharpValue> SharpVals { get; } = new Dictionary<string, SharpValue>()
         {
-            ["null"] = (_engine) => null,
+            ["null"] = (_) => null,
             ["dataMap"] = (_engine) => _engine.DataMap,
-            ["Math"] = (_engine) => math,
-            ["Map"] = (engine) => map,
-            ["Array"] = (engine) => array,
-            ["Str"] = (engine) => str,
-            ["Shell"] = (engine) => shell,
-            ["ASCII"] = (engine) => ascii,
+            ["Math"] = (_) => math,
+            ["Map"] = (_) => map,
+            ["Array"] = (_) => array,
+            ["Str"] = (_) => str,
+            ["Shell"] = (_) => shell,
+            ["ASCII"] = (_) => ascii,
         };
 
         /// <summary>
@@ -268,13 +271,18 @@ namespace Kula.Data.Function
         /// </summary>
         /// <param name="args">参数数组</param>
         /// <param name="types">类型数组</param>
-        public static void ArgsCheckIType(object[] args, params IType[] types)
+        public static void ArgsCheckIType(object[] args, bool needCheck, IType[] types)
         {
-            bool flag = args.Length == (types == null ? 0 : types.Length);
-            for (int i = 0; i < args.Length && flag; ++i)
-                flag = types[i].Check(args[i]);
+            bool flag = args.Length == (types == null ? 0 : types.Length); 
             if (!flag)
-                throw new FuncArgumentException("SharpFunc", types);
+                throw new FuncArgumentException("SharpFunc", types, types.Length);
+            if (needCheck)
+            {
+                for (int i = 0; i < args.Length && flag; ++i)
+                    flag = types[i].Check(args[i]);
+                if (!flag)
+                    throw new FuncArgumentException("SharpFunc", types);
+            }
         }
 
         private string @string;

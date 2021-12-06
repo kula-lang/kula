@@ -175,24 +175,24 @@ namespace Kula
         /// <returns>返回值</returns>
         public object Call(object func, object[] arguments)
         {
-            Func fwe = func as Func;
-            if (fwe is Func)
-            {
+            if (func is Func fwe)
                 return new FuncRuntime(fwe, this).Run(arguments, 0);
-            }
-            else
-            {
-                return null;
-            }
+            throw new Xception.FuncUsingException("Wrong Usage of 'Call'");
         }
 
         /// <summary>
         /// 更新 Debug 属性
         /// </summary>
         /// <param name="debugValue">Debug参数</param>
-        public void UpdateMode(int debugValue)
+        public void UpdateMode(bool flag, params int[] debugValue)
         {
-            this.debug ^= debugValue;
+            foreach(int i in debugValue)
+            {
+                if (flag)
+                    this.debug |= i;
+                else
+                    this.debug &= ~i;
+            }
         }
 
         /// <summary>
