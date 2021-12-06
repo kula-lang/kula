@@ -1,4 +1,4 @@
-﻿#define KULA_DEBUG
+﻿// #define KULA_DEBUG
 
 using Kula;
 using Kula.Data.Function;
