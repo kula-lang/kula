@@ -54,6 +54,11 @@ namespace Kula
             }
         }
 
+        /// <summary>
+        /// 检查当前 引擎状态参数
+        /// </summary>
+        /// <param name="debugValue">待检查项</param>
+        /// <returns></returns>
         public bool CheckMode(int debugValue) => (debug & debugValue) == debugValue;
 
         private readonly FuncRuntime mainRuntime;
@@ -65,7 +70,7 @@ namespace Kula
         public static string FrameworkVersion { get => ".NET Standard v2.0"; }
 
         private readonly IDictionary<string, Func> byteCodeDict = new Dictionary<string, Func>();
-        private readonly ISet<string> moduleSet = new HashSet<string>();
+        private readonly ISet<string> moduleIgnoreSet = new HashSet<string>();
 
         /// <summary>
         /// 引擎数据域
@@ -85,17 +90,27 @@ namespace Kula
         /// <summary>
         /// 接口集合
         /// </summary>
-        public Dictionary<string, DuckType> DuckTypeDict { get; } = new Dictionary<string, DuckType>();
+        internal Dictionary<string, DuckType> DuckTypeDict { get; } = new Dictionary<string, DuckType>();
 
         /// <summary>
         /// 构造函数，生成空运行时
         /// </summary>
-        public KulaEngine() { mainRuntime = new FuncRuntime(null, this); }
+        public KulaEngine() 
+        {
+            mainRuntime = new FuncRuntime(null, this);
+            // envRuntime = new FuncRuntime(null, this);
+            debug = Config.TYPE_CHECK;
+        }
 
         public void CompileFile(string sourcePath, string codeID)
         {
             lock (lock_this)
             {
+                if (!File.Exists(sourcePath))
+                {
+                    throw new System.Exception($"File Not Found => {sourcePath}");
+                }
+                moduleIgnoreSet.Add(sourcePath.Replace("\\", "/"));
                 string root_path = Directory.GetParent(sourcePath).FullName.Replace("\\", "/");
                 using (StreamReader streamReader = 
                     new StreamReader(
@@ -105,22 +120,22 @@ namespace Kula
                     foreach (string module_item_path in module_list)
                     {
                         // System.Console.WriteLine(module_item_path);
-                        if (!moduleSet.Contains(module_item_path))
+                        if (!moduleIgnoreSet.Contains(module_item_path))
                         {
+                            moduleIgnoreSet.Add(module_item_path);
                             CompileFile(module_item_path, "$");
                             Run("$");
                             byteCodeDict.Remove("$");
-                            moduleSet.Add(module_item_path);
                         }
                     }
 
-                    var lex_tokens = Lexer.Instance.Read(streamReader, Config.Check(debug, Config.LEXER)).Out();
-                    Lambda main = new Lambda(lex_tokens);
-                    Func mainEnv = new Func(main, null);
+                    var lex_tokens = Lexer.Instance.Read(streamReader, Config.Check(debug, Config.LEXER), module_list.Count).Out();
+                    Lambda main_lambda = new Lambda(lex_tokens);
+                    Func main_func = new Func(main_lambda, null);
 
-                    Parser.Instance.Parse(this, main, Config.Check(debug, Config.PARSER));
+                    Parser.Instance.Parse(this, main_lambda, Config.Check(debug, Config.PARSER));
 
-                    byteCodeDict[codeID] = mainEnv;
+                    byteCodeDict[codeID] = main_func;
                 }
             }
         }
@@ -140,13 +155,13 @@ namespace Kula
                         new MemoryStream(
                             System.Text.Encoding.Default.GetBytes(sourceCode))))
                 {
-                    var lex_tokens = Lexer.Instance.Read(streamReader, Config.Check(debug, Config.LEXER)).Out();
-                    Lambda main = new Lambda(lex_tokens);
-                    Func mainEnv = new Func(main, null);
+                    var lex_tokens = Lexer.Instance.Read(streamReader, Config.Check(debug, Config.LEXER), 0).Out();
+                    Lambda main_lambda = new Lambda(lex_tokens);
+                    Func main_func = new Func(main_lambda, null);
 
-                    Parser.Instance.Parse(this, main, Config.Check(debug, Config.PARSER));
+                    Parser.Instance.Parse(this, main_lambda, Config.Check(debug, Config.PARSER));
 
-                    byteCodeDict[codeID] = mainEnv;
+                    byteCodeDict[codeID] = main_func;
                 }
             }
         }
@@ -160,6 +175,19 @@ namespace Kula
         {
             mainRuntime.Root = byteCodeDict[codeId];
             mainRuntime.Run(null, debug);
+        }
+
+        internal void Inject(KulaEngine anotherEngine)
+        {
+            mainRuntime.Inject(anotherEngine.mainRuntime);
+            foreach (var kv in anotherEngine.ExtendFunc)
+            {
+                ExtendFunc[kv.Key] = kv.Value;
+            }
+            foreach (var kv in anotherEngine.DuckTypeDict)
+            {
+                DuckTypeDict[kv.Key] = kv.Value;
+            }
         }
 
         /// <summary>

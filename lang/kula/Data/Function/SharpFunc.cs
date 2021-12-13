@@ -119,6 +119,22 @@ namespace Kula.Data.Function
                                 engine.ExtendFunc[func.Key == "new" ? ("new" + bval.Key) : func.Key] = func_value;
                 return null;
             }),
+
+            ["eval"] = new SharpFunc((args, engine) =>
+            {
+                string code = (string)args[0];
+
+                KulaEngine sub_engine = new KulaEngine();
+                sub_engine.Inject(engine);
+
+                sub_engine.CompileCode(code, "");
+                sub_engine.Run("");
+
+                engine.Inject(sub_engine);
+
+                return (float)-1f;
+
+            }, RawType.Str),
         };
 
         private static readonly Map

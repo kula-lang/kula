@@ -61,116 +61,126 @@ namespace Kula.Core
 
         private Lexer() { }
 
-        public Lexer Read(StreamReader code, bool isDebug) 
-        { 
+        public Lexer Read(StreamReader code, bool isDebug, int lineNumber)
+        {
             sourceCode = code;
-            return Scan(isDebug);
+            return Scan(isDebug, lineNumber);
         }
 
-        private Lexer Scan(bool isDebug)
+        private Lexer Scan(bool isDebug, int lineNumber)
         {
             tokenStream = new List<LexToken>();
             LexTokenType state = LexTokenType.NULL;
             StringBuilder tokenBuilder = new StringBuilder();
 
-                while (!sourceCode.EndOfStream)
+            while (!sourceCode.EndOfStream)
+            {
+                if (state == LexTokenType.NULL)
                 {
-                    if (state == LexTokenType.NULL)
+                    // char c = sourceCode.EndOfStream ? '\n' : (char)sourceCode.Read();
+                    char c = (char)sourceCode.Read();
+                    if (c == '\n')
                     {
-                        // char c = sourceCode.EndOfStream ? '\n' : (char)sourceCode.Read();
-                        char c = (char)sourceCode.Read();
-                        if (Is.CSpace(c)) { continue; }
-                        else if (Is.CQuote(c))
-                        {
-                            state = LexTokenType.STRING;
-                        }
-                        else if (Is.CPlusMinus(c))
-                        {
-                            tokenBuilder.Append(c);
-                            state = LexTokenType.NUMBER_OR_NAME;
-                        }
-                        else if (Is.COperator(c))
-                        {
-                            tokenStream.Add(new LexToken(LexTokenType.NAME, c.ToString()));
-                        }
-                        else if (Is.CNumberHead(c))
-                        {
-                            tokenBuilder.Append(c);
-                            state = LexTokenType.NUMBER;
-                        }
-                        else if (Is.CName(c))
-                        {
-                            tokenBuilder.Append(c);
-                            state = LexTokenType.NAME;
-                        }
-                        else if (Is.CSymbol(c))
-                        {
-                            tokenStream.Add(new LexToken(LexTokenType.SYMBOL, c.ToString()));
-                        }
-                        else if (Is.CAnnotation(c))
-                        {
-                            char cc = (char)sourceCode.Read();
-                            while (!Is.CEnter(cc)) { cc = (char)sourceCode.Read(); }
-                        }
+                        ++lineNumber;
                     }
-                    else
+
+                    if (Is.CSpace(c)) { continue; }
+                    else if (Is.CQuote(c))
                     {
-                        switch (state)
-                        {
-                            case LexTokenType.NAME:
+                        state = LexTokenType.STRING;
+                    }
+                    else if (Is.CPlusMinus(c))
+                    {
+                        tokenBuilder.Append(c);
+                        state = LexTokenType.NUMBER_OR_NAME;
+                    }
+                    else if (Is.COperator(c))
+                    {
+                        tokenStream.Add(new LexToken(LexTokenType.NAME, c.ToString(), lineNumber));
+                    }
+                    else if (Is.CNumberHead(c))
+                    {
+                        tokenBuilder.Append(c);
+                        state = LexTokenType.NUMBER;
+                    }
+                    else if (Is.CName(c))
+                    {
+                        tokenBuilder.Append(c);
+                        state = LexTokenType.NAME;
+                    }
+                    else if (Is.CSymbol(c))
+                    {
+                        tokenStream.Add(new LexToken(LexTokenType.SYMBOL, c.ToString(), lineNumber));
+                    }
+                    else if (Is.CAnnotation(c))
+                    {
+                        char cc = (char)sourceCode.Read();
+                        while (!Is.CEnter(cc)) { cc = (char)sourceCode.Read(); }
+                        ++lineNumber;
+                    }
+                }
+                else
+                {
+                    switch (state)
+                    {
+                        case LexTokenType.NAME:
+                            {
+                                while (Is.CName((char)sourceCode.Peek()))
                                 {
-                                    while (Is.CName((char)sourceCode.Peek()))
-                                    {
-                                        tokenBuilder.Append((char)sourceCode.Read());
-                                    }
+                                    tokenBuilder.Append((char)sourceCode.Read());
                                 }
-                                break;
-                            case LexTokenType.NUMBER:
+                            }
+                            break;
+                        case LexTokenType.NUMBER:
+                            {
+                                while (Is.CNumber((char)sourceCode.Peek()))
+                                {
+                                    tokenBuilder.Append((char)sourceCode.Read());
+                                }
+                            }
+                            break;
+                        case LexTokenType.NUMBER_OR_NAME:
+                            {
+                                if (Is.CNumber((char)sourceCode.Peek()))
                                 {
                                     while (Is.CNumber((char)sourceCode.Peek()))
                                     {
                                         tokenBuilder.Append((char)sourceCode.Read());
                                     }
+                                    state = LexTokenType.NUMBER;
                                 }
-                                break;
-                            case LexTokenType.NUMBER_OR_NAME:
+                                else
                                 {
-                                    if (Is.CNumber((char)sourceCode.Peek()))
-                                    {
-                                        while (Is.CNumber((char)sourceCode.Peek()))
-                                        {
-                                            tokenBuilder.Append((char)sourceCode.Read());
-                                        }
-                                        state = LexTokenType.NUMBER;
-                                    }
-                                    else
-                                    {
-                                        state = LexTokenType.NAME;
-                                    }
+                                    state = LexTokenType.NAME;
                                 }
-                                break;
-                            case LexTokenType.STRING:
+                            }
+                            break;
+                        case LexTokenType.STRING:
+                            {
+                                bool trans = false;
+                                while (trans || !Is.CQuote((char)sourceCode.Peek()))
                                 {
-                                    bool trans = false;
-                                    while (trans || !Is.CQuote((char)sourceCode.Peek()))
-                                    {
-                                        if (sourceCode.EndOfStream)
-                                            throw new LexerException("string overflow");
+                                    if (sourceCode.Peek() == '\n')
+                                        lineNumber++;
+
+                                    if (sourceCode.EndOfStream)
+                                        throw new LexerException("Incomplete string");
+
                                     trans = !trans && (char)sourceCode.Peek() == '\\';
-                                        tokenBuilder.Append((char)sourceCode.Read());
-                                    }
-                                    sourceCode.Read();
+                                    tokenBuilder.Append((char)sourceCode.Read());
                                 }
-                                break;
-                            default:
-                                break;
-                        }
-                        string tokenString = tokenBuilder.ToString();
-                        tokenStream.Add(new LexToken(state, tokenString));
-                        state = LexTokenType.NULL;
-                        tokenBuilder.Clear();
+                                sourceCode.Read();
+                            }
+                            break;
+                        default:
+                            break;
                     }
+                    string tokenString = tokenBuilder.ToString();
+                    tokenStream.Add(new LexToken(state, tokenString, lineNumber));
+                    state = LexTokenType.NULL;
+                    tokenBuilder.Clear();
                 }
+            }
             if (isDebug) { DebugShow(); }
 
             sourceCode = null;

@@ -14,7 +14,7 @@ namespace Kula.Core
         private readonly KulaEngine engine;
         private readonly Stack<object> envStack;
 
-        public Func Root { private get; set; }
+        public Func Root { get; set; }
 
         public FuncRuntime(Func root, KulaEngine engine)
         {
@@ -58,7 +58,7 @@ namespace Kula.Core
                 object arg = arguments[i];
                 // 类型校验
                 if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK)
-                    && Root.Lambda.ArgList[i].Item2 != RawType.Any 
+                    && Root.Lambda.ArgList[i].Item2 != RawType.Any
                     && !Root.Lambda.ArgList[i].Item2.Check(arg))
                 {
                     throw new ArgsTypeException(arg.GetType().Name, Root.Lambda.ArgList[i].ToString());
@@ -69,25 +69,25 @@ namespace Kula.Core
                 }
             }
 
-            envStack.Clear();
+            // envStack.Clear();
 
             // 返回值
             object @return = null;
 
-            for (int i = 0; i < Root.Lambda.NodeStream.Count && @return == null; ++i)
+            for (int i = 0; i < Root.Lambda.CodeStream.Count && @return == null; ++i)
             {
-                var node = Root.Lambda.NodeStream[i];
+                var node = Root.Lambda.CodeStream[i];
                 switch (node.Type)
                 {
                     // 取值
-                    case VMNodeType.VALUE:
+                    case ByteCodeType.VALUE:
                         {
                             envStack.Push(node.Value);
                         }
                         break;
 
                     // 取值-字符串
-                    case VMNodeType.STRING:
+                    case ByteCodeType.STRING:
                         {
                             string val = (string)node.Value;
                             val = System.Text.RegularExpressions.Regex.Unescape(val);
@@ -96,7 +96,7 @@ namespace Kula.Core
                         break;
 
                     // 取值-匿名函数
-                    case VMNodeType.LAMBDA:
+                    case ByteCodeType.LAMBDA:
                         {
                             object value = node.Value;
                             envStack.Push(new Func((Lambda)value, this));
@@ -104,7 +104,7 @@ namespace Kula.Core
                         break;
 
                     // 赋值
-                    case VMNodeType.LET:
+                    case ByteCodeType.SET:
                         {
                             bool flag = false;
                             FuncRuntime now_env = this;
@@ -132,7 +132,7 @@ namespace Kula.Core
                         break;
 
                     // 声明赋值 （原地
-                    case VMNodeType.VAR:
+                    case ByteCodeType.VAR:
                         {
                             if (envStack.Count == 0)
                                 throw new VMUnderflowException($"when explicitly declare {(string)node.Value}");
@@ -142,7 +142,7 @@ namespace Kula.Core
                         break;
 
                     // 按名寻址
-                    case VMNodeType.NAME:
+                    case ByteCodeType.NAME:
                         {
                             bool flag = false;
                             FuncRuntime now_env = this;
@@ -185,7 +185,7 @@ namespace Kula.Core
                         break;
 
                     // 寻找函数
-                    case VMNodeType.FUNC:
+                    case ByteCodeType.FUNC:
                         {
                             // 按 参数个数 获取 参数值
                             // 管道操作下，改变参数个数
@@ -209,7 +209,7 @@ namespace Kula.Core
                             while (func_pipes_count > 0)
                             {
                                 if (envStack.Count == 0)
-                                    throw new VMUnderflowException("Wrong usage of pipe Arguments");
+                                    throw new VMUnderflowException("Wrong usage of Pipe Arguments");
                                 args[func_pipes_count - 1] = envStack.Pop();
                                 --func_pipes_count;
                             }
@@ -233,7 +233,7 @@ namespace Kula.Core
                         break;
 
                     // 条件跳转：0
-                    case VMNodeType.IFGOTO:
+                    case ByteCodeType.IFGOTO:
                         {
                             if (envStack.Count == 0)
                                 throw new VMUnderflowException("Wrong usage of IF");
@@ -246,36 +246,33 @@ namespace Kula.Core
                         break;
 
                     // 无条件跳转
-                    case VMNodeType.GOTO:
+                    case ByteCodeType.GOTO:
                         {
                             i = (int)node.Value - 1;
                         }
                         break;
 
                     // 返回值
-                    case VMNodeType.RETURN:
+                    case ByteCodeType.RETURN:
                         {
                             if (envStack.Count == 0)
                                 throw new VMUnderflowException("No return value");
                             object return_val = envStack.Pop();
                             if (return_val == null) { break; }
-                            if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK) 
-                                && Root.Lambda.ReturnType != RawType.Any 
+                            if (engine.CheckMode(KulaEngine.Config.TYPE_CHECK)
+                                && Root.Lambda.ReturnType != RawType.Any
                                 && !Root.Lambda.ReturnType.Check(return_val))
                             {
-                                throw new ReturnValueException(
-                                    return_val.ToString(),
-                                    Root.Lambda.ReturnType.ToString()
-                                    );
+                                throw new ReturnValueException(return_val.ToString(), Root.Lambda.ReturnType.ToString());
                             }
                             @return = return_val;
                         }
                         break;
 
                     // 索引
-                    case VMNodeType.CONKEY:
+                    case ByteCodeType.CONKEY:
                         {
-                            if (envStack.Count < 1)
+                            if (envStack.Count == 0)
                                 throw new VMUnderflowException("Wrong usage of operator[]");
                             object vk = envStack.Pop();
                             object v = envStack.Pop();
@@ -296,7 +293,16 @@ namespace Kula.Core
                                 {
                                     if (vk is float vk_num)
                                     {
-                                        envStack.Push(vector_array.Data[(int)vk_num]);
+                                        int vector_array_size = vector_array.Data.Length;
+                                        int vk_pos = (int)vk_num;
+                                        if (vk_pos >= 0 && vk_pos < vector_array_size)
+                                        {
+                                            envStack.Push(vector_array.Data[vk_pos]);
+                                        }
+                                        else
+                                        {
+                                            throw new ContainerException(vk_pos, vector_array_size);
+                                        }
                                     }
                                     else
                                     {
@@ -307,7 +313,14 @@ namespace Kula.Core
                                 {
                                     if (vk is string vk_str)
                                     {
-                                        envStack.Push(v_map.Data[vk_str]);
+                                        if (v_map.Data.ContainsKey(vk_str))
+                                        {
+                                            envStack.Push(v_map.Data[vk_str]);
+                                        }
+                                        else
+                                        {
+                                            throw new ContainerException(vk_str);
+                                        }
                                     }
                                     else
                                     {
@@ -333,7 +346,7 @@ namespace Kula.Core
         /// <summary>
         /// 运行
         /// </summary>
-        public object Run(object[] arguments, int debug)
+        public object Run(object[] arguments, FuncRuntime reinject, int debug)
         {
             object @return;
             if (KulaEngine.Config.Check(debug, KulaEngine.Config.STOP_WATCH))
@@ -359,7 +372,16 @@ namespace Kula.Core
             {
                 Show();
             }
+
+            if (reinject != null)
+                reinject.Inject(this);
+
             return @return;
+        }
+
+        public object Run(object[] arguments, int debug)
+        {
+            return Run(arguments, null, debug);
         }
 
         private void Show()
@@ -380,6 +402,14 @@ namespace Kula.Core
                 Console.WriteLine("\tVM-Stack {" + cnt++ + "} : " + tmp);
             }
             Console.ResetColor();
+        }
+
+        public void Inject(FuncRuntime anotherRuntime)
+        {
+            foreach (var kv in anotherRuntime.varDict)
+            {
+                this.varDict[kv.Key] = kv.Value;
+            }
         }
     }
 }

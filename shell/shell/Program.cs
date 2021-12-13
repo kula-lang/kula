@@ -9,6 +9,7 @@ using System.Collections.Generic;
 class Program
 {
     private static readonly KulaEngine kulaEngine = new();
+    private static readonly Repl repl = new();
 
     private delegate void ShellCommand(bool flag);
 
@@ -21,14 +22,75 @@ class Program
         ["value-stack"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.VALUE_STACK); },
         ["repl-echo"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.REPL_ECHO); },
         ["type-check"] = (flag) => { kulaEngine.UpdateMode(flag, KulaEngine.Config.TYPE_CHECK); },
-        ["gomo"] = (_) => { Hello(); },
+        ["gomo"] = (_) => { Gomo(); },
         ["clear"] = (_) => { kulaEngine.Clear(); },
     };
 
     static Program() { }
 
+    private static void Main(string[] args)
+    {
+        // 测试 Call
+        kulaEngine.ExtendFunc["KULA_CALL"] = new SharpFunc((args, engine) =>
+        {
+            return kulaEngine.Call(args[0], ((Kula.Data.Container.Array)args[1]).Data);
+        });
+
+        if (args.Length > 0)
+        {
+            EnvRun(args);
+        }
+        else
+        {
+            Repl();
+        }
+    }
+
+    private static void EnvRun(string[] args)
+    {
+        string code_path = null;
+        foreach (string arg in args)
+        {
+            if (arg.StartsWith("--"))
+            {
+                RunCommand(arg.Replace("--", ""), false);
+            }
+            else
+            {
+                code_path = arg;
+            }
+        }
+
+        if (code_path == null)
+        {
+            Repl();
+        }
+        else
+        {
+#if KULA_DEBUG
+            kulaEngine.CompileFile(code_path, "");
+            kulaEngine.Run("");
+#else
+            try
+            {
+                kulaEngine.CompileFile(code_path, "");
+                kulaEngine.Run("");
+            }
+            catch (Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine(e.Message);
+                Console.ResetColor();
+                return;
+            }
+#endif
+        }
+    }
+
     private static void Repl()
     {
+        Gomo();
+
         string code;
 
         // REPL 模式，默认打开回显和类型检查
@@ -36,15 +98,16 @@ class Program
 
         while (true)
         {
-            Console.Write("\n>> ");
-            code = Console.ReadLine(); // 可以在此拓展REPL
-            if (code == null || code == "#exit")
+            // Console.Write("\n>> ");
+            // code = Console.ReadLine(); // 可以在此拓展REPL
+            code = repl.ReadCode();
+            if (code == null || code == "#exit\n")
             {
                 break;
             }
             else if (code.StartsWith("#"))
             {
-                RunCommand(code.Replace("#", "").Replace(" ", ""), true);
+                RunCommand(code.Replace("#", "").Replace(" ", "").Replace("\n", ""), true);
             }
             else
             {
@@ -60,7 +123,7 @@ class Program
                 catch (Exception e)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e.GetType().ToString() + ":\n" + e.Message);
+                    Console.Error.WriteLine(e.GetType().ToString() + ":\n" + e.Message);
                     Console.ResetColor();
                 }
 #endif
@@ -68,7 +131,7 @@ class Program
         }
     }
 
-    private static void Hello()
+    private static void Gomo()
     {
         Console.ForegroundColor = ConsoleColor.Magenta;
 
@@ -103,60 +166,17 @@ class Program
                 }
             }
             if (show)
+            {
                 Console.WriteLine($"{console_command[0]} = {(console_flag ? "on" : "off")}");
+            }
             ShellCommands[console_command[0]](console_flag);
         }
         else
         {
-            throw new Kula.Xception.CommandException(console_command[0]);
-        }
-    }
-
-    private static void Main(string[] args)
-    {
-        // 测试
-        kulaEngine.ExtendFunc["KULA_CALL"] = new SharpFunc((args, engine) =>
-        {
-            return kulaEngine.Call(args[0], ((Kula.Data.Container.Array)args[1]).Data);
-        });
-
-        if (args.Length > 0)
-        {
-            foreach (string arg in args)
+            if (!show)
             {
-                if (arg.StartsWith("--"))
-                {
-                    RunCommand(arg.Replace("--", ""), false);
-                }
-                else
-                {
-#if KULA_DEBUG
-                    kulaEngine.CompileFile(arg, "");
-                    kulaEngine.Run("");
-#else
-                    try
-                    {
-                        kulaEngine.CompileFile(arg, "");
-                        kulaEngine.Run("");
-                        // code = File.ReadAllText(arg);
-                        // CompileAndRun(code);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(e.Message);
-                        Console.ResetColor();
-                        return;
-                    }
-#endif
-                }
+                throw new Kula.Xception.CommandException(console_command[0]);
             }
-
-        }
-        else
-        {
-            Hello();
-            Repl();
         }
     }
 }

@@ -18,6 +18,9 @@
     <AssemblyName>kula_lib</AssemblyName>
     <RootNamespace>Kula</RootNamespace>
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <PackageProjectUrl>https://github.com/kula-lang</PackageProjectUrl>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Util\ConsoleUtility.cs" />

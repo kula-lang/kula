@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Kula.Data.Type
 {
-    public class DuckType : IType
+    internal class DuckType : IType
     {
         private readonly Dictionary<string, IType> pairs = new Dictionary<string, IType>();
         private readonly int hash;

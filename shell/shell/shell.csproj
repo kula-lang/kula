@@ -12,6 +12,7 @@
     <StartupObject>
     </StartupObject>
     <ApplicationIcon />
+    <RootNamespace>Shell</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>x64</PlatformTarget>

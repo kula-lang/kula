@@ -18,7 +18,10 @@ namespace Kula.Data.Container
         /// 构造函数 生成 Kula 中的 Array
         /// </summary>
         /// <param name="size"></param>
-        public Array(int size) { this.Data = new object[size]; }
+        public Array(int size) 
+        { 
+            this.Data = new object[size]; 
+        }
 
         /// <summary>
         /// 构造函数 使用 传入的源数组 构建 Kula 数组

@@ -7,22 +7,18 @@ namespace Kula.Core
     {
         public string Value { get; }
         public LexTokenType Type { get; }
+        public int LineNum { get; }
 
-        public LexToken(LexTokenType type, string value)
+        public LexToken(LexTokenType type, string value, int lineNum)
         {
             this.Type = type;
             this.Value = value;
+            this.LineNum = lineNum;
         }
 
         public override string ToString()
         {
-            string str_type = Type.ToString();
-            return ""
-                    + "< "
-                    + str_type.PadRight(9)
-                    + "| "
-                    + Value.PadRight(18)
-                    + " >";
+            return $"< {Type,-9} | {Value,-18} | {LineNum,-6} >";
         }
 
 

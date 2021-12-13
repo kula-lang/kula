@@ -8,7 +8,7 @@ namespace Kula.Data.Function
     class Lambda
     {
         public List<LexToken> TokenStream { get; }
-        public List<VMNode> NodeStream { get; }
+        public List<ByteCode> CodeStream { get; }
         public List<(string, IType)> ArgList { get; }
         public IType ReturnType { get; set; }
 
@@ -17,7 +17,7 @@ namespace Kula.Data.Function
             this.TokenStream = tokenStream;
 
             this.ArgList = new List<(string, IType)>();
-            this.NodeStream = new List<VMNode>();
+            this.CodeStream = new List<ByteCode>();
         }
 
         private string @string = null;
