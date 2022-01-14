@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Kula.Data.Type
 {
-    internal class FuncType : IType
+    public class FuncType : IType
     {
         public IType ReturnType { get; private set; }
 

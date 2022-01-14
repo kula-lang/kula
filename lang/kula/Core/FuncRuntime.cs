@@ -289,15 +289,15 @@ namespace Kula.Core
                             // 标准索引处理
                             else if ((char)node.Value == '[')
                             {
-                                if (v is Data.Container.Array vector_array)
+                                if (v is Data.Container.Array v_array)
                                 {
                                     if (vk is float vk_num)
                                     {
-                                        int vector_array_size = vector_array.Data.Length;
+                                        int vector_array_size = v_array.Data.Length;
                                         int vk_pos = (int)vk_num;
                                         if (vk_pos >= 0 && vk_pos < vector_array_size)
                                         {
-                                            envStack.Push(vector_array.Data[vk_pos]);
+                                            envStack.Push(v_array.Data[vk_pos]);
                                         }
                                         else
                                         {

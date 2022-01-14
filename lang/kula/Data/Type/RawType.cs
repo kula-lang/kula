@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Kula.Data.Type
 {
-    internal class RawType : IType
+    public class RawType : IType
     {
         private readonly System.Type type;
         private readonly string @string;

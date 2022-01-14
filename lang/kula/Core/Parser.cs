@@ -97,8 +97,13 @@ namespace Kula.Core
         /*
          *  以下部分涉及到一个硬核的手写递归下降语法分析器
          *  经过反复设计和重写，为了保证代码的可读，设计规范如下
+         *  
+         *  解析函数：
          *  Meta 系列函数：  元分析，只单独分析单个Token，显式操作TokenSteam。必要时返回对应类型的值，做回溯处理。
          *  Parse 系列函数： 结构式分析，只调用Meta或递归，不显式操作TokenSteam，做回溯处理。
+         *  
+         *  Parse 错误定位原则：
+         *  1. 由于不设计 Lexer 上的关键字，允许关键字作为名字出现，所以 在块级语法分析中，只对闭合位置的错误做处理
          */
 
         private bool MKeyword(string kword)
@@ -121,9 +126,10 @@ namespace Kula.Core
             var rcd = Record();
             if (pos >= aimLambda.TokenStream.Count) return false;
             var token = aimLambda.TokenStream[pos++];
+
             if (token.Type == LexTokenType.SYMBOL && token.Value == sym)
             {
-                lineNumber = Math.Max(token.LineNum, lineNumber);
+                lineNumber = token.LineNum;
                 return true;
             }
             Backtrack(rcd);
@@ -142,7 +148,7 @@ namespace Kula.Core
             if (token.Type == LexTokenType.NAME)
             {
                 name = token.Value;
-                lineNumber = Math.Max(token.LineNum, lineNumber);
+                lineNumber = token.LineNum;
                 return true;
             }
             name = null;
@@ -159,10 +165,25 @@ namespace Kula.Core
             if (token.Type == LexTokenType.NUMBER)
             {
                 aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.VALUE, float.Parse(token.Value)));
-                lineNumber = Math.Max(token.LineNum, lineNumber);
+                lineNumber = token.LineNum;
                 return true;
             }
             pos = _pos; return false;
+        }
+
+        Dictionary<string, string> stringSet = new Dictionary<string, string>();
+
+        private string ConvertConstString(string @string)
+        {
+            if (stringSet.ContainsKey(@string))
+            {
+                return stringSet[@string];
+            }
+            else
+            {
+                stringSet[@string] = @string;
+                return @string;
+            }
         }
 
         private bool MConstString()
@@ -173,8 +194,9 @@ namespace Kula.Core
             var token = aimLambda.TokenStream[pos++];
             if (token.Type == LexTokenType.STRING)
             {
-                aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.STRING, token.Value));
-                lineNumber = Math.Max(token.LineNum, lineNumber);
+                aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.STRING,
+                                                      ConvertConstString(token.Value)));
+                lineNumber = token.LineNum;
                 return true;
             }
             pos = _pos; return false;
@@ -201,6 +223,19 @@ namespace Kula.Core
         /**
          * 这个往下都是正常的递归下降分析
          */
+
+        private bool PDescribe()
+        {
+            var rcd = Record();
+
+            if (MSymbol(":")) return true;
+            Backtrack(rcd);
+
+            if (MSymbol("=") && MSymbol(">")) return true;
+            Backtrack(rcd);
+
+            return false;
+        }
 
         private bool PType(out IType type)
         {
@@ -236,22 +271,18 @@ namespace Kula.Core
                     }
                     else
                     {
-                        throw new KTypeException("What Happen in FuncTypeExpression?", "ItemType");
+                        throw new ParserException("Unparsable FuncTypeExpression on ItemType", lineNumber);
                     }
-
-                    if (!MSymbol(","))
-                    {
-                        throw new ParserException("Missing ',' ", lineNumber);
-                    }
+                    MSymbol(",");
                 }
-                if (MSymbol(":") && PType(out IType return_type))
+                if (PDescribe() && PType(out IType return_type))
                 {
                     funcType = new FuncType(return_type, func_type_list);
                     return true;
                 }
                 else
                 {
-                    throw new KTypeException("FuncTypeExpression has no Return Type", "ReturnType");
+                    throw new ParserException("Missing ReturnType in FuncTypeExpression", lineNumber);
                 }
             }
             funcType = null;
@@ -269,19 +300,19 @@ namespace Kula.Core
 
             if (MKeyword("func") && MSymbol("("))
             {
-                while (!MSymbol(")"))
+                for (; ; )
                 {
-                    if (PValAndType(out string val_name, out string type_name))
-                    {
-                        aimLambda.ArgList.Add((val_name, TypestrToType(type_name)));
-                        MSymbol(",");
-                    }
-                    else
+                    if (MSymbol(")"))
                     {
                         break;
                     }
+                    if (PValAndType(out string val_name, out IType val_type))
+                    {
+                        aimLambda.ArgList.Add((val_name, val_type));
+                        MSymbol(",");
+                    }
                 }
-                if (MSymbol(":"))
+                if (PDescribe())
                 {
                     if (PType(out IType final_type))
                     {
@@ -303,22 +334,22 @@ namespace Kula.Core
         /// <summary>
         /// 值:类型 对
         /// </summary>
-        private bool PValAndType(out string valName, out string typeName)
+        private bool PValAndType(out string valName, out IType valType)
         {
             var rcd = Record();
             if (MName(out string token_value1)
                 && MSymbol(":")
-                && MName(out string token_value2)
+                && PType(out IType token_value2)
                 && !MSymbol("<"))
             {
                 valName = token_value1;
-                typeName = token_value2;
+                valType = token_value2;
                 return true;
             }
 
             Backtrack(rcd);
             valName = null;
-            typeName = null;
+            valType = null;
             return false;
         }
         private IType TypestrToType(string str)
@@ -331,7 +362,7 @@ namespace Kula.Core
             {
                 return engineRoot.DuckTypeDict[str];
             }
-            throw new KTypeException(str);
+            throw new ParserException($"It can not be regarded as a Kula Type => {str}", lineNumber);
         }
 
         /// <summary>
@@ -479,7 +510,7 @@ namespace Kula.Core
                 }
                 else
                 {
-                    throw new ParserException("Missing '(' in usage of Function.", lineNumber);
+                    throw new ParserException("Missing ')' in usage of Function.", lineNumber);
                 }
             }
 
@@ -519,7 +550,7 @@ namespace Kula.Core
             var token = aimLambda.TokenStream[pos++];
             if (token.Type == LexTokenType.NAME)
             {
-                aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.NAME, token.Value));
+                aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.NAME, ConvertConstString(token.Value)));
                 return true;
             }
             pos = _pos;
@@ -537,7 +568,7 @@ namespace Kula.Core
             // .key 语法糖
             if (MSymbol(".") && MName(out string token_key))
             {
-                aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.STRING, token_key));
+                aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.STRING, ConvertConstString(token_key)));
                 aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.CONKEY, '.'));
                 return true;
             }
@@ -645,6 +676,10 @@ namespace Kula.Core
                             {
                                 aimLambda.CodeStream[else_id] = new ByteCode(ByteCodeType.GOTO, aimLambda.CodeStream.Count);
                             }
+                            else
+                            {
+                                throw new ParserException("Missing '}' end of if-block.", lineNumber);
+                            }
                         }
                         else
                         {
@@ -652,6 +687,10 @@ namespace Kula.Core
                             Backtrack(else_rcd);
                         }
                         return true;
+                    }
+                    else
+                    {
+                        throw new ParserException("Missing '{' in if-block.", lineNumber);
                     }
                 }
             }
@@ -747,6 +786,9 @@ namespace Kula.Core
             Backtrack(rcd);
             return false;
         }
+
+
+
 
         /// <summary>
         /// for 遍历

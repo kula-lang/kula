@@ -115,7 +115,7 @@ namespace Kula.Core
                     else if (Is.CAnnotation(c))
                     {
                         char cc = (char)sourceCode.Read();
-                        while (!Is.CEnter(cc)) { cc = (char)sourceCode.Read(); }
+                        while (!Is.CEnter(cc) && !sourceCode.EndOfStream) { cc = (char)sourceCode.Read(); }
                         ++lineNumber;
                     }
                 }

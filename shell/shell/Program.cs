@@ -2,10 +2,17 @@
 
 using Kula;
 using Kula.Data.Function;
+using Kula.Data.Type;
 using System;
 using System.Collections.Generic;
 
-
+/**
+ * 这里偷偷开一个 TODO-LIST 嘿嘿
+ * 
+ * 1. 数据结构初始化构造器语法
+ * 2. 语法树？
+ * 3. 文档
+ */
 class Program
 {
     private static readonly KulaEngine kulaEngine = new();
@@ -31,10 +38,9 @@ class Program
     private static void Main(string[] args)
     {
         // 测试 Call
-        kulaEngine.ExtendFunc["KULA_CALL"] = new SharpFunc((args, engine) =>
-        {
+        kulaEngine.ExtendFunc["KULA_CALL"] = new SharpFunc((args, engine) => {
             return kulaEngine.Call(args[0], ((Kula.Data.Container.Array)args[1]).Data);
-        });
+        }, RawType.Func, RawType.Array);
 
         if (args.Length > 0)
         {
@@ -53,7 +59,17 @@ class Program
         {
             if (arg.StartsWith("--"))
             {
-                RunCommand(arg.Replace("--", ""), false);
+                try
+                {
+                    RunCommand(arg.Replace("--", ""), false);
+                }
+                catch (Kula.Xception.CommandException e)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Error.WriteLine(e.Message);
+                    Console.ResetColor();
+                    return;
+                }
             }
             else
             {

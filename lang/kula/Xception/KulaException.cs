@@ -198,14 +198,6 @@ namespace Kula.Xception
         /// <param name="type">类型名</param>
         public KTypeException(string type)
             : base($"It can not be regarded as a Kula Type => {type}") { }
-        
-        /// <summary>
-        /// 该类型不为 Kula 类型，并且伴有难以描述的错误
-        /// </summary>
-        /// <param name="msg">错误信息</param>
-        /// <param name="type">类型名</param>
-        public KTypeException(string msg, string type)
-            : base($"{msg} => {type}") { }
     }
 
     public class CommandException : KulaException
