@@ -75,7 +75,7 @@ namespace Kula
         /// <summary>
         /// 引擎数据域
         /// </summary>
-        public Map DataMap { get; } = new Map();
+        public Map Engine { get; } = new Map();
 
         /// <summary>
         /// 获取当前 Kula 版本号字符串

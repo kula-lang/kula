@@ -273,7 +273,7 @@ namespace Kula.Data.Function
         public static Dictionary<string, SharpValue> SharpVals { get; } = new Dictionary<string, SharpValue>()
         {
             ["null"] = (_) => null,
-            ["dataMap"] = (_engine) => _engine.DataMap,
+            ["engine"] = (_engine) => _engine.Engine,
             ["Math"] = (_) => math,
             ["Map"] = (_) => map,
             ["Array"] = (_) => array,

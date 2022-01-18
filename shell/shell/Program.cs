@@ -9,9 +9,10 @@ using System.Collections.Generic;
 /**
  * 这里偷偷开一个 TODO-LIST 嘿嘿
  * 
- * 1. 数据结构初始化构造器语法
- * 2. 语法树？
- * 3. 文档
+ * 数据结构初始化构造器语法
+ * 不定长参数
+ * 语法树？
+ * 文档
  */
 class Program
 {
