@@ -23,7 +23,7 @@ namespace Kula.Util
         }
 
         // 版本信息
-        private static readonly KulaVersion version = new KulaVersion("Pre", "0.4.1", new DateTime(2021, 11, 10));
+        private static readonly KulaVersion version = new KulaVersion("Pre", "0.4.2", new DateTime(2022, 1, 18));
         public static KulaVersion Version { get => version; }
     }
 }
