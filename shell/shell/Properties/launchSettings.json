@@ -2,7 +2,7 @@
   "profiles": {
     "shell": {
       "commandName": "Project",
-      "commandLineArgs": "--debug=1 C:\\Users\\18471\\Desktop\\rubbish\\kula-test\\bugfix.kula"
+      "commandLineArgs": "--debug=1"
     }
   }
 }
