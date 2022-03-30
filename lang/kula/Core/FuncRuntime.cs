@@ -334,6 +334,32 @@ namespace Kula.Core
                             }
                         }
                         break;
+                    case ByteCodeType.MAKE_ARR:
+                        {
+                            int size = (int)node.Value;
+                            Data.Container.Array array = new Data.Container.Array(size);
+                            while (size > 0)
+                            {
+                                --size;
+                                array.Data[size] = envStack.Pop();
+                            }
+                            envStack.Push(array);
+                        }
+                        break;
+                    case ByteCodeType.MAKE_MAP:
+                        {
+                            int size = (int)node.Value;
+                            Data.Container.Map map = new Data.Container.Map();
+                            while (size > 0)
+                            {
+                                --size;
+                                object map_value = envStack.Pop();
+                                object map_key = envStack.Pop();
+                                map.Data[(string)map_key] = map_value;
+                            }
+                            envStack.Push(map);
+                        }
+                        break;
                 }
             }
             if (@return == null && Root.Lambda.ReturnType != RawType.None)

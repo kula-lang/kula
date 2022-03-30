@@ -5,7 +5,7 @@
 
 ## 简介
 Kula 是一个轻量解释型动态语言。      
-这是由 [*Hana Yabuki (AKA. 会唱歌的花枝丸)*](https://hanayabuki.github.com) 个人开发的，自拟标准的 **玩具语言**。    
+这是由 [*Hana Yabuki (AKA. 会唱歌的花枝丸)*](https://github.com/HanaYabuki) 个人开发的，自拟标准的 **玩具语言**。    
 它可以基于 Microsoft .NET 5 框架 (或以上) 运行在 Windows 系统 (以及通过 .NET 框架在其他操作系统) 的计算机上。 
 
 Kula 语言诞生于 2021 年 5 月 下旬，并且正在高速的发展之中。    
@@ -16,7 +16,7 @@ Kula 语言诞生于 2021 年 5 月 下旬，并且正在高速的发展之中�
   * 环境易部署，可独立存在，也可嵌入其他 C# 项目
   * 和 C# 双向交互，可由 C# 实现高度的扩展性
   * 模块化编码，支持动态引用其他原生库
-  * [优雅美观的官方文档](https://kula-lang.github.io/Kula-Guide/) 
+  * [优雅美观的官方文档](https://kula-lang.github.io/) 
 
 * 语言本身
   * 基础语法形似主流语言
@@ -28,17 +28,21 @@ Kula 语言诞生于 2021 年 5 月 下旬，并且正在高速的发展之中�
   * 支持灵活的对象强类型校验和高阶类型校验
 
 
-## [官方帮助文档 *( 点我跳转 )*](https://kula-lang.github.io/Kula-Guide/)
+## [官方帮助文档 *( 点我跳转 )*](https://kula-lang.github.io/)
 > 单独的使用 Kula 语言不需要太多的前置知识，可以不学习 C#。    
 > 但是 Kula 语言只有和 C#共同使用才能发挥其最大的作用！
 
 ## 伴生项目
 * [Kula - Diana : Kula 语言的 VSCode 插件](https://github.com/kula-lang/Kula-Diana)
-* [Kula - Guide : Kula 语言的 完全帮助文档](https://github.com/kula-lang/Kula-Guide)
+* [Kula - Guide : Kula 语言的 完全帮助文档](https://github.com/kula-lang/kula.github.io)
 
 ------
 
 ## 更新日志
+
+### 2022-3
+- 3-21
+  * **添加新语法 `make<Type>`**，支持了构造标准数据容器的表达式语法。
 
 ### 2022-1
 - 1-15
