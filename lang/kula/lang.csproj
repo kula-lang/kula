@@ -1,33 +1,28 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <OutputType>Library</OutputType>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DocumentationFile>bin\Release\kula.xml</DocumentationFile>
-    <RegisterForComInterop>false</RegisterForComInterop>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-    <ApplicationIcon />
-    <Win32Resource />
-    <Authors>HanaYabuki</Authors>
-    <AssemblyName>kula_lib</AssemblyName>
-    <RootNamespace>Kula</RootNamespace>
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <PackageProjectUrl>https://github.com/kula-lang</PackageProjectUrl>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="Util\ConsoleUtility.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.3.246501">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-  </ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<OutputType>Library</OutputType>
+		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+		<DocumentationFile>bin\Release\kula.xml</DocumentationFile>
+		<RegisterForComInterop>false</RegisterForComInterop>
+		<PlatformTarget>x64</PlatformTarget>
+	</PropertyGroup>
+	<PropertyGroup>
+		<StartupObject/>
+		<ApplicationIcon/>
+		<Win32Resource/>
+		<Authors>HanaYabuki</Authors>
+		<AssemblyName>kula_lib</AssemblyName>
+		<RootNamespace>Kula</RootNamespace>
+		<EnableNETAnalyzers>false</EnableNETAnalyzers>
+		<PackageProjectUrl>https://github.com/kula-lang</PackageProjectUrl>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Remove="Util\ConsoleUtility.cs"/>
+	</ItemGroup>
 </Project>
