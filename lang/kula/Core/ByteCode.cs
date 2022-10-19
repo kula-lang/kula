@@ -38,7 +38,8 @@ namespace Kula.Core
             { ByteCodeType.CONKEY, ConsoleColor.Yellow },
             { ByteCodeType.RETURN, ConsoleColor.DarkMagenta },
 
-            // { VMNodeType.PIPE, ConsoleColor.Magenta },
+            { ByteCodeType.MAKE_ARR, ConsoleColor.DarkGreen },
+            { ByteCodeType.MAKE_MAP, ConsoleColor.DarkGreen },
         };
     }
 
@@ -58,5 +59,8 @@ namespace Kula.Core
         RETURN,     // 返回值
 
         CONKEY,     // 右值索引
+
+        MAKE_ARR,   // 构造 数组
+        MAKE_MAP,   // 构造 集合
     }
 }

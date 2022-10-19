@@ -445,6 +445,9 @@ namespace Kula.Core
             if (PLambdaBody()) { return true; }
             Backtrack(rcd);
 
+            if (PMake()) { return true; }
+            Backtrack(rcd);
+
             // Using Lambda
             if (PFuncBras()) { return true; }
             Backtrack(rcd);
@@ -452,22 +455,17 @@ namespace Kula.Core
             // PIPE
             if (MSymbol("|"))
             {
-                // aimFunc.NodeStream.Add(new VMNode(VMNodeType.PIPE, "|"));
                 ++pipes;
                 return true;
             }
             Backtrack(rcd);
 
-            if (PRightVar()) { return true; }
-            Backtrack(rcd);
-
             if (PRightIndex()) { return true; }
             Backtrack(rcd);
 
-            /*
-            if (PRightKey()) { return true; }
+            if (PRightVar()) { return true; }
             Backtrack(rcd);
-            */
+
 
             return false;
         }
@@ -787,7 +785,60 @@ namespace Kula.Core
             return false;
         }
 
+        /// <summary>
+        /// make 语法，用于构建内置数据结构
+        /// </summary>
+        public bool PMake()
+        {
+            var rcd = Record();
+            if (MKeyword("make") && MSymbol("<") && MName(out string type_name) && MSymbol(">") && MSymbol("{"))
+            {
+                if (type_name == "Array")
+                {
+                    int size = 0;
+                    while (PValue())
+                    {
+                        ++size;
+                        MSymbol(",");
+                    }
 
+                    if (MSymbol("}"))
+                    {
+                        aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.MAKE_ARR, size));
+                        return true;
+                    }
+                    else
+                    {
+                        throw new ParserException("Missing '}' end of Build Array.", lineNumber);
+                    }
+                }
+                else if (type_name == "Map")
+                {
+                    int size = 0;
+                    while (PValue() && MSymbol(":") && PValue())
+                    {
+                        ++size;
+                        MSymbol(",");
+                    }
+
+                    if (MSymbol("}"))
+                    {
+                        aimLambda.CodeStream.Add(new ByteCode(ByteCodeType.MAKE_MAP, size));
+                        return true;
+                    }
+                    else
+                    {
+                        throw new ParserException("Missing '}' end of Build Map", lineNumber);
+                    }
+                }
+                else
+                {
+                    throw new ParserException($"'{type_name}' is Not suitable for 'make' syntax.", lineNumber);
+                }
+            }
+            Backtrack(rcd);
+            return false;
+        }
 
 
         /// <summary>

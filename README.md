@@ -4,6 +4,7 @@
 ![Kula_Daiamondo](https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fhbimg.b0.upaiyun.com%2F59af30fb8e979539fe816369c6dd37b06a3ee9a984f42-4G7yBG_fw658&refer=http%3A%2F%2Fhbimg.b0.upaiyun.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1624933443&t=32e57f6dcb44de881f052a290ea0eddc)
 
 ## 简介
+
 Kula 是一个轻量解释型动态语言。  
 这是由 [*Hana Yabuki (AKA. 会唱歌的花枝丸)*](https://github.com/HanaYabuki) 个人开发的，自拟标准的 **玩具语言**。  
 它可以基于 .NET 6 框架运行在支持 .NET 的操作系统上。
@@ -29,7 +30,8 @@ Kula 语言诞生于 2021 年 5 月 下旬，并且正在高速的发展之中�
 
 
 ## [官方帮助文档 *( 点我跳转 )*](https://kula-lang.github.io/)
-> 单独的使用 Kula 语言不需要太多的前置知识，可以不学习 C#。  
+
+> 单独的使用 Kula 语言不需要太多的前置知识，可以不学习 C#。
 > 但是 Kula 语言只有和 C#共同使用才能发挥其最大的作用！
 
 ## 伴生项目
@@ -39,6 +41,14 @@ Kula 语言诞生于 2021 年 5 月 下旬，并且正在高速的发展之中�
 ------
 
 ## 更新日志
+
+### 2022-10
+- 10-19
+  * 迁移到 .NET 6.0 LTS 版本，替换已经结束支持的 .NET 5.0。
+
+### 2022-3
+- 3-21
+  * **添加新语法 `make<Type>`**，支持了构造标准数据容器的表达式语法。
 
 ### 2022-1
 - 1-15
