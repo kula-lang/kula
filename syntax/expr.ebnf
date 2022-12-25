@@ -1,0 +1,28 @@
+expression  ::= assignment ;
+
+assignment  ::= ( call "." ) ? IDENTIFIER "=" assignment
+            |   logicOr 
+            ;
+
+logicOr     ::= logicAnd ( "or" logicAnd ) * ;
+
+logicAnd    ::= equality ( "and" equality ) * ;
+
+equality    ::= comparison ( ( "!=" | "==" ) comparison ) * ;
+
+comparison  ::= term ( ( ">" | ">=" | "<" | "<=" ) term ) * ;
+
+term        ::= factor ( ( "-" | "+" ) factor ) * ;
+
+factor      ::= unary ( ( "*" | "/" ) unary ) * ;
+
+unary       ::= ( "!" | "-" ) unary | call ;
+
+call        ::= primary ( "(" arguments ? ")" | "." IDENTIFIER ) * ;
+
+type        ::= IDENTIFIER ( "<" type ">" ) ? ;
+
+primary     ::= "true" | "false" | "nil" | "this" 
+            |   NUMBER | STRING | IDENTIFIER | "(" expression ")" ;
+
+function    ::= "func" "(" ( IDENTIFIER ( ":" IDENTIFIER ) ? ) ")" "=>" IDENTIFIER block ;

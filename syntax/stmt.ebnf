@@ -1,0 +1,29 @@
+declaration ::= varDecl
+            |   statement
+            ;
+
+varDecl     ::= IDENTIFIER ":=" expression ";"
+            ;
+        
+statement   ::= exprStmt
+            |   ifStmt
+            |   whileStmt
+            |   printStmt
+            |   returnStmt
+            |   forStmt
+            |   block
+            ;
+
+exprStmt    ::= expression ;
+
+ifStmt      ::= "if" "(" expression ")" statement ( "else" statement ) ? ;
+
+whileStmt   ::= "while" "(" expression ")" statement ;
+
+printStmt   ::= "print" statement ;
+
+returnStmt  ::= "return" statement ;
+
+forStmt     ::= "for" "(" ( declaration | ";" ) expression? ";" expression? ")" statement ;
+
+block       ::= "{" declaration* "}" ;
