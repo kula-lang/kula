@@ -3,6 +3,7 @@ namespace Kula.Core.Ast;
 abstract class Expr {
     public interface Visitor<R> {
         R VisitCall(Call expr);
+        R VisitGet(Get expr);
         R VisitLiteral(Literal expr);
         R VisitUnary(Unary expr);
         R VisitBinary(Binary expr);
@@ -24,6 +25,20 @@ abstract class Expr {
         
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitCall(this);
+        }
+    }
+
+    public class Get : Expr {
+        public readonly Expr dict;
+        public readonly Expr key;
+
+        public Get(Expr dict, Expr key) {
+            this.dict = dict;
+            this.key = key;
+        }
+
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitGet(this);
         }
     }
 
@@ -112,11 +127,13 @@ abstract class Expr {
     }
 
     public class Function : Expr {
-        public readonly List<(Token, Token)> parameters;
+        public readonly List<(Token, Ast.Type)> parameters;
+        public readonly Token returnType;
         public readonly List<Stmt> body;
 
-        public Function(List<(Token, Token)> parameters, List<Stmt> body) {
+        public Function(List<(Token, Ast.Type)> parameters, Token returnType, List<Stmt> body) {
             this.parameters = parameters;
+            this.returnType = returnType;
             this.body = body;
         }
 

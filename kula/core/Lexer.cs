@@ -13,10 +13,18 @@ struct Token {
         this.line = line;
     }
 
+    public static Token MakeTemp(string lexeme) {
+        return new Token(TokenType.IDENTIFIER, lexeme, null, -1);
+    }
+
+    public static Token MakeTemp(TokenType type, string lexeme) {
+        return new Token(type, lexeme, null, -1);
+    }
+
     public override string ToString() {
         return
-            $"[line {line.ToString().PadRight(4)}: {type.ToString().PadRight(12)}]: {lexeme.PadRight(12)}"
-            + (literial == null ? "" : $" => {literial}");
+            $"[ line {line.ToString().PadRight(4)}: {type.ToString().PadRight(12)} ] => [ {lexeme.PadRight(12)} ]"
+            + (literial == null ? "" : $" => [ {literial} ]");
     }
 }
 
@@ -36,7 +44,7 @@ enum TokenType {
 
     // Keyword
     AND, CLASS, ELSE, FALSE, FUNC, FOR, IF, NULL,
-    OR, PRINT, RETURN, THIS, TRUE, WHILE,
+    OR, PRINT, RETURN, TRUE, TYPE, WHILE,
 
     // EOF
     EOF
@@ -66,9 +74,9 @@ class Lexer {
         {"or", TokenType.OR},
         {"print", TokenType.PRINT},
         {"return", TokenType.RETURN},
-        {"this", TokenType.THIS},
         {"true", TokenType.TRUE},
-        {"while", TokenType.WHILE},
+        {"type", TokenType.TYPE},
+        {"while", TokenType.WHILE}
     };
 
     public List<Token> ScanTokens(KulaEngine kula, string source) {

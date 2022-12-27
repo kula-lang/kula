@@ -1,4 +1,3 @@
-using System.Text;
 using Kula.Core.Ast;
 
 namespace Kula.Core;
@@ -16,6 +15,14 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
         return stmt.Accept(this);
     }
 
+    string Stmt.Visitor<string>.VisitTypeDefine(Stmt.TypeDefine stmt) {
+        return $"(interface {stmt.name.lexeme})";
+    }
+
+    string Expr.Visitor<string>.VisitGet(Expr.Get expr) {
+        return $"(get {print(expr.dict)} {print(expr.key)})";
+    }
+
     string Expr.Visitor<string>.VisitAssign(Expr.Assign expr) {
         return $"(assign {expr.@operator.lexeme} {print(expr.left)} {print(expr.right)})";
     }
@@ -26,8 +33,8 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
 
     string Stmt.Visitor<string>.VisitBlock(Stmt.Block stmt) {
         List<string> items = new List<string>();
-        foreach (Stmt statement in stmt.statements) {
-            items.Add(print(stmt));
+        foreach (Stmt istmt in stmt.statements) {
+            items.Add(print(istmt));
         }
         return $"(block {string.Join(' ', items)})";
     }
@@ -82,5 +89,13 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
 
     string Stmt.Visitor<string>.VisitWhile(Stmt.While stmt) {
         return $"(while {print(stmt.condition)} {print(stmt.branch)})";
+    }
+
+    string Stmt.Visitor<string>.VisitPrint(Stmt.Print stmt) {
+        List<string> items = new List<string>();
+        foreach (Expr iexpr in stmt.items) {
+            items.Add(print(iexpr));
+        }
+        return $"(print {string.Join(' ', items)})";
     }
 }

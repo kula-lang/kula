@@ -1,28 +1,28 @@
 expression  ::= assignment ;
 
-assignment  ::= ( call "." ) ? IDENTIFIER "=" assignment
+assignment  ::= ( call "." ) ? IDENTIFIER ( "=" ) assignment
             |   logicOr 
             ;
 
-logicOr     ::= logicAnd ( "or" logicAnd ) * ;
+logicOr     ::= logicAnd ("or" logicAnd)* ;
 
-logicAnd    ::= equality ( "and" equality ) * ;
+logicAnd    ::= equality ("and" equality)* ;
 
-equality    ::= comparison ( ( "!=" | "==" ) comparison ) * ;
+equality    ::= comparison (("!=" | "==") comparison)* ;
 
-comparison  ::= term ( ( ">" | ">=" | "<" | "<=" ) term ) * ;
+comparison  ::= term ((">" | ">=" | "<" | "<=") term)* ;
 
-term        ::= factor ( ( "-" | "+" ) factor ) * ;
+term        ::= factor (( "-" | "+" ) factor)* ;
 
-factor      ::= unary ( ( "*" | "/" ) unary ) * ;
+factor      ::= unary (( "*" | "/" ) unary)* ;
 
-unary       ::= ( "!" | "-" ) unary | call ;
+unary       ::= ("!" | "-") unary | call ;
 
-call        ::= primary ( "(" arguments ? ")" | "." IDENTIFIER ) * ;
+call        ::= primary ("(" arguments ? ")" | "." IDENTIFIER)* ;
 
-type        ::= IDENTIFIER ( "<" type ">" ) ? ;
+type        ::= IDENTIFIER ("<" type ">")? ;
 
 primary     ::= "true" | "false" | "nil" | "this" 
             |   NUMBER | STRING | IDENTIFIER | "(" expression ")" ;
 
-function    ::= "func" "(" ( IDENTIFIER ( ":" IDENTIFIER ) ? ) ")" "=>" IDENTIFIER block ;
+function    ::= "func" "(" (IDENTIFIER (":" type)?) ")" "=>" type block ;

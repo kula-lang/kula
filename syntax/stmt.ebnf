@@ -24,6 +24,6 @@ printStmt   ::= "print" statement ;
 
 returnStmt  ::= "return" statement ;
 
-forStmt     ::= "for" "(" ( declaration | ";" ) expression? ";" expression? ")" statement ;
+forStmt     ::= "for" "(" (declaration | ";") expression? ";" expression? ")" statement ;
 
 block       ::= "{" declaration* "}" ;

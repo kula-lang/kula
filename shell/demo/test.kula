@@ -1,2 +1,5 @@
-a = 114*(514+1919/810);
-return a;
+func id(x) {
+    return self;
+}
+
+print id, id(1);

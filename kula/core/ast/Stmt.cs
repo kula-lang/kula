@@ -2,13 +2,28 @@ namespace Kula.Core.Ast;
 
 abstract class Stmt {
     public interface Visitor<R> {
+        R VisitTypeDefine(TypeDefine stmt);
         R VisitExpression(Expression stmt);
         R VisitReturn(Return stmt);
+        R VisitPrint(Print stmt);
         R VisitBlock(Block stmt);
         R VisitWhile(While stmt);
         R VisitIf(If stmt);
     }
     public abstract R Accept<R>(Visitor<R> visitor);
+    
+    public class TypeDefine : Stmt {
+        public Token name;
+        public List<(Token, Type)> items;
+        public TypeDefine(Token name, List<(Token, Type)> items) {
+            this.items = items;
+            this.name = name;
+        }
+
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitTypeDefine(this);
+        }
+    }
 
     public class Expression : Stmt {
         public readonly Expr expression;
@@ -19,6 +34,18 @@ abstract class Stmt {
 
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitExpression(this);
+        }
+    }
+
+    public class Print : Stmt {
+        public readonly List<Expr> items;
+
+        public Print(List<Expr> items) {
+            this.items = items;
+        }
+
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitPrint(this);
         }
     }
 
@@ -49,7 +76,7 @@ abstract class Stmt {
     public class While : Stmt {
         public readonly Expr condition;
         public readonly Stmt branch;
-        
+
         public While(Expr condition, Stmt branch) {
             this.condition = condition;
             this.branch = branch;
