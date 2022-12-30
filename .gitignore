@@ -350,5 +350,4 @@ MigrationBackup/
 .ionide/
 
 # VSCode
-.VSCode
-omnisharp.json
+.vscode

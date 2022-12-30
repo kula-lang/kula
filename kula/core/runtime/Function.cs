@@ -5,20 +5,29 @@ namespace Kula.Core.Runtime;
 class Function : ICallable {
     private readonly Expr.Function defination;
     private readonly Interpreter interpreter;
+    private readonly Environment parent;
+    private object? @this;
 
-    public Function(Expr.Function expr, Interpreter interpreter) {
+    public Function(Expr.Function expr, Interpreter interpreter, Environment parent) {
         this.defination = expr;
         this.interpreter = interpreter;
+        this.parent = parent;
     }
 
     public int Arity => defination.parameters.Count;
 
     object? ICallable.Call(List<object?> arguments) {
-        Runtime.Environment environment = new Runtime.Environment(interpreter.environment);
+        Runtime.Environment environment = new Runtime.Environment(parent);
 
         environment.Define(Token.MakeTemp("self"), this);
-        for (int i=0; i<Arity; ++i) {
-            environment.Define(defination.parameters[i].Item1, arguments[i]);
+        if (@this is not null) {
+            environment.Define(Token.MakeTemp("this"), @this);
+            Unbind();
+        }
+
+        int size = Arity >= 0 ? Arity : arguments.Count;
+        for (int i = 0; i < size; ++i) {
+            environment.Define(defination.parameters[i], arguments[i]);
         }
 
         try {
@@ -32,11 +41,14 @@ class Function : ICallable {
     }
 
     public override string ToString() {
-        List<string> items = new List<string>();
-        foreach (var name_type in defination.parameters) {
-            Ast.Type type = name_type.Item2;
-            items.Add(type?.ToString() ?? "None");
-        }
-        return $"<{string.Join(',', items)}:{defination.returnType.lexeme}>";
+        return "<Function>";
+    }
+
+    public void Bind<T>(T? @this) {
+        this.@this = @this;
+    }
+
+    public void Unbind() {
+        this.@this = null;
     }
 }

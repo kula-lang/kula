@@ -1,9 +1,8 @@
-declaration ::= varDecl
+declaration ::= funcDecl
             |   statement
             ;
 
-varDecl     ::= IDENTIFIER ":=" expression ";"
-            ;
+funcDecl    ::= "func" IDENTIFIER lambda ;
         
 statement   ::= exprStmt
             |   ifStmt
@@ -16,7 +15,7 @@ statement   ::= exprStmt
 
 exprStmt    ::= expression ;
 
-ifStmt      ::= "if" "(" expression ")" statement ( "else" statement ) ? ;
+ifStmt      ::= "if" "(" expression ")" statement ("else" statement)? ;
 
 whileStmt   ::= "while" "(" expression ")" statement ;
 
@@ -24,6 +23,6 @@ printStmt   ::= "print" statement ;
 
 returnStmt  ::= "return" statement ;
 
-forStmt     ::= "for" "(" (declaration | ";") expression? ";" expression? ")" statement ;
+forStmt     ::= "for" "(" (exprStmt | ";") expression? ";" expression? ")" statement ;
 
 block       ::= "{" declaration* "}" ;

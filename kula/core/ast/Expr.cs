@@ -17,24 +17,28 @@ abstract class Expr {
     public class Call : Expr {
         public readonly Expr callee;
         public readonly List<Expr> arguments;
-        
-        public Call(Expr callee, List<Expr> arguments) {
+        public readonly Token paren;
+
+        public Call(Expr callee, List<Expr> arguments, Token paren) {
             this.callee = callee;
             this.arguments = arguments;
+            this.paren = paren;
         }
-        
+
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitCall(this);
         }
     }
 
     public class Get : Expr {
-        public readonly Expr dict;
+        public readonly Token @operator;
+        public readonly Expr container;
         public readonly Expr key;
 
-        public Get(Expr dict, Expr key) {
-            this.dict = dict;
+        public Get(Expr container, Expr key, Token @operator) {
+            this.container = container;
             this.key = key;
+            this.@operator = @operator;
         }
 
         public override R Accept<R>(Visitor<R> visitor) {
@@ -44,11 +48,11 @@ abstract class Expr {
 
     public class Literal : Expr {
         public readonly object? value;
-        
+
         public Literal(object? value) {
             this.value = value;
         }
-        
+
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitLiteral(this);
         }
@@ -57,12 +61,12 @@ abstract class Expr {
     public class Unary : Expr {
         public readonly Token @operator;
         public readonly Expr right;
-        
+
         public Unary(Token @operator, Expr right) {
             this.@operator = @operator;
             this.right = right;
         }
-        
+
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitUnary(this);
         }
@@ -71,13 +75,13 @@ abstract class Expr {
     public class Binary : Expr {
         public readonly Token @operator;
         public readonly Expr left, right;
-        
+
         public Binary(Token @operator, Expr left, Expr right) {
             this.@operator = @operator;
             this.left = left;
             this.right = right;
         }
-        
+
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitBinary(this);
         }
@@ -86,13 +90,13 @@ abstract class Expr {
     public class Logical : Expr {
         public readonly Token @operator;
         public readonly Expr left, right;
-        
+
         public Logical(Token @operator, Expr left, Expr right) {
             this.@operator = @operator;
             this.left = left;
             this.right = right;
         }
-        
+
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitLogical(this);
         }
@@ -100,7 +104,7 @@ abstract class Expr {
 
     public class Variable : Expr {
         public readonly Token name;
-        
+
         public Variable(Token name) {
             this.name = name;
         }
@@ -127,13 +131,11 @@ abstract class Expr {
     }
 
     public class Function : Expr {
-        public readonly List<(Token, Ast.Type)> parameters;
-        public readonly Token returnType;
+        public readonly List<Token> parameters;
         public readonly List<Stmt> body;
 
-        public Function(List<(Token, Ast.Type)> parameters, Token returnType, List<Stmt> body) {
+        public Function(List<Token> parameters, List<Stmt> body) {
             this.parameters = parameters;
-            this.returnType = returnType;
             this.body = body;
         }
 

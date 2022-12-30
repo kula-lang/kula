@@ -1,6 +1,7 @@
-expression  ::= assignment ;
+expression  ::= assignment
+            ;
 
-assignment  ::= ( call "." ) ? IDENTIFIER ( "=" ) assignment
+assignment  ::= (call ".")? IDENTIFIER ("=" | ":=") assignment
             |   logicOr 
             ;
 
@@ -23,6 +24,11 @@ call        ::= primary ("(" arguments ? ")" | "." IDENTIFIER)* ;
 type        ::= IDENTIFIER ("<" type ">")? ;
 
 primary     ::= "true" | "false" | "nil" | "this" 
-            |   NUMBER | STRING | IDENTIFIER | "(" expression ")" ;
+            |   NUMBER | STRING | IDENTIFIER 
+            |   "(" expression ")" 
+            |   function
+            ;
 
-function    ::= "func" "(" (IDENTIFIER (":" type)?) ")" "=>" type block ;
+function    ::= "func" lambda ;
+
+lambda      ::= "(" (IDENTIFIER (":" type)?) ")" ("=>" type)? block ;

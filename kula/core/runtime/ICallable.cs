@@ -1,6 +1,8 @@
 namespace Kula.Core.Runtime;
 
-public interface ICallable {
+interface ICallable {
     int Arity { get; }
     object? Call(List<object?> arguments);
+    void Bind<T>(T? @this);
+    void Unbind();
 }

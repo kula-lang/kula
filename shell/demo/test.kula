@@ -1,5 +1,9 @@
-func id(x) {
-    return self;
+str := "hello_world";
+arr := Array();
+
+for (i := 0; i < str.length(); i = i + 1) {
+    print str.at(i);
+    arr.insert(0, str.at(i));
 }
 
-print id, id(1);
+print arr;

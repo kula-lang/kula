@@ -55,7 +55,12 @@ public class KulaEngine {
     }
 
     internal void RuntimeError(RuntimeError runtimeError) {
-        Console.Error.WriteLine($"Runtime Error At [line {runtimeError.name.line}]:");
+        if (runtimeError.name is not null) {
+            Console.Error.WriteLine($"Runtime Error At [line {runtimeError.name?.line}]:");
+        }
+        else {
+            Console.Error.WriteLine($"Runtime Error:");
+        }
         Console.Error.WriteLine(runtimeError.Message);
         hadRuntimeError = true;
     }

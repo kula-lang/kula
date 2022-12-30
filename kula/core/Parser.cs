@@ -14,9 +14,6 @@ class Parser {
         if (Match(TokenType.FUNC)) {
             return FunctionDeclaration();
         }
-        else if (Match(TokenType.TYPE)) {
-            return TypeDefine();
-        }
         return Statement();
     }
 
@@ -66,7 +63,7 @@ class Parser {
     }
 
     private Stmt ForStatement() {
-        Consume(TokenType.LEFT_PAREN, "Expect '(' before for condition.");
+        Consume(TokenType.LEFT_PAREN, "Expect '(' before 'for' condition.");
         Stmt? initializer;
         if (Match(TokenType.SEMICOLON)) {
             initializer = null;
@@ -79,13 +76,13 @@ class Parser {
         if (!Check(TokenType.SEMICOLON)) {
             condition = Expression();
         }
-        Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+        Consume(TokenType.SEMICOLON, "Expect ';' after 'for' condition.");
 
         Expr? increment = null;
         if (!Check(TokenType.RIGHT_PAREN)) {
             increment = Expression();
         }
-        Consume(TokenType.RIGHT_PAREN, "Expect ')' after for condition.");
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after 'for' condition.");
 
         Stmt body = Statement();
 
@@ -256,10 +253,10 @@ class Parser {
                 expr = FinishCall(expr);
             }
             else if (Match(TokenType.DOT)) {
-                expr = DotGet(expr);
+                expr = DotGet(expr, Previous());
             }
             else if (Match(TokenType.LEFT_SQUARE)) {
-                expr = SquareGet(expr);
+                expr = SquareGet(expr, Previous());
             }
             else {
                 break;
@@ -277,21 +274,21 @@ class Parser {
             }
             while (Match(TokenType.COMMA));
         }
-        Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+        Token paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
 
-        return new Expr.Call(callee, arguments);
+        return new Expr.Call(callee, arguments, paren);
     }
 
-    private Expr DotGet(Expr dict) {
+    private Expr DotGet(Expr dict, Token dot) {
         Token key = Consume(TokenType.IDENTIFIER, "Expect identifier after dot.");
-        return new Expr.Get(dict, new Expr.Literal(key.lexeme));
+        return new Expr.Get(dict, new Expr.Literal(key.lexeme), dot);
     }
 
-    private Expr SquareGet(Expr dict) {
+    private Expr SquareGet(Expr dict, Token square) {
         Expr key = Expression();
         Consume(TokenType.RIGHT_SQUARE, "Expect ']' after dict key.");
 
-        return new Expr.Get(dict, key);
+        return new Expr.Get(dict, key, square);
     }
 
     private Expr Primary() {
@@ -326,37 +323,20 @@ class Parser {
     private Expr LambdaDeclaration() {
         Consume(TokenType.LEFT_PAREN, "Expect '(' before function parameters.");
 
-        List<(Token, Ast.Type)> parameters = new List<(Token, Ast.Type)>();
+        List<Token> parameters = new List<Token>();
         if (!Check(TokenType.RIGHT_PAREN)) {
             do {
                 Token param_name = Consume(TokenType.IDENTIFIER, "Expect parameters name.");
-                Ast.Type param_type;
-                if (Match(TokenType.COLON)) {
-                    param_type = Type();
-                }
-                else {
-                    param_type = new Ast.Type.Literal(
-                        Token.MakeTemp("Any"));
-                }
-
-                parameters.Add((param_name, param_type));
+                parameters.Add(param_name);
             }
             while (Match(TokenType.COMMA));
         }
         Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
 
-        Token return_type;
-        if (Match(TokenType.ARROW)) {
-            return_type = Consume(TokenType.IDENTIFIER, "Expect return type name.");
-        }
-        else {
-            return_type = Token.MakeTemp("None");
-        }
-
         Consume(TokenType.LEFT_BRACE, "Expect '{' before function body.");
         List<Stmt> body = Block();
 
-        return new Expr.Function(parameters, return_type, body);
+        return new Expr.Function(parameters, body);
     }
 
     private List<Stmt> Block() {
@@ -368,50 +348,6 @@ class Parser {
 
         Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
         return statements;
-    }
-
-    private Stmt TypeDefine() {
-        Token name = Consume(TokenType.IDENTIFIER, "Expect type name.");
-        Consume(TokenType.LEFT_BRACE, "Expect '{' before type defination.");
-
-        List<(Token, Ast.Type)> interfaces = new List<(Token, Ast.Type)>();
-        if (!Check(TokenType.RIGHT_BRACE)) {
-            do {
-                Token item_name = Consume(TokenType.IDENTIFIER, "Expect item name in type defination.");
-                Consume(TokenType.COLON, "Expect ':' in type defination item.");
-                Ast.Type item_type = Type();
-            }
-            while (Match(TokenType.COMMA));
-        }
-
-        Consume(TokenType.RIGHT_BRACE, "Expect '}' after type defination.");
-
-        return new Stmt.TypeDefine(name, interfaces);
-    }
-
-    private Ast.Type Type() {
-        if (Match(TokenType.LESS)) {
-            return TypeExpression();
-        }
-        Token name = Consume(TokenType.IDENTIFIER, "Expect type name.");
-        return new Ast.Type.Literal(name);
-    }
-
-    private Ast.Type TypeExpression() {
-        List<Ast.Type> parameters = new List<Ast.Type>();
-        if (!Check(TokenType.COLON)) {
-            do {
-                parameters.Add(Type());
-            }
-            while (Match(TokenType.COMMA));
-        }
-
-        Consume(TokenType.COLON, "Expect ':' before return type.");
-        
-        Ast.Type return_type = Type();
-        Consume(TokenType.GREATER, "Expect '>' after type expression.");
-
-        return new Ast.Type.TypeExpr(parameters, return_type);
     }
 
     public List<Stmt> Parse(KulaEngine kula, List<Token> tokens) {

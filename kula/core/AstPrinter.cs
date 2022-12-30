@@ -15,12 +15,8 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
         return stmt.Accept(this);
     }
 
-    string Stmt.Visitor<string>.VisitTypeDefine(Stmt.TypeDefine stmt) {
-        return $"(interface {stmt.name.lexeme})";
-    }
-
     string Expr.Visitor<string>.VisitGet(Expr.Get expr) {
-        return $"(get {print(expr.dict)} {print(expr.key)})";
+        return $"(get {print(expr.container)} {print(expr.key)})";
     }
 
     string Expr.Visitor<string>.VisitAssign(Expr.Assign expr) {
@@ -44,7 +40,7 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
         foreach (Expr iexpr in expr.arguments) {
             items.Add(iexpr.Accept(this));
         }
-        return $"({print(expr.callee)} {string.Join(' ', items)})";
+        return $"({print(expr.callee)}{(items.Count == 0 ? "" : " ")}{string.Join(' ', items)})";
     }
 
     string Stmt.Visitor<string>.VisitExpression(Stmt.Expression stmt) {
@@ -52,13 +48,22 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
     }
 
     string Expr.Visitor<string>.VisitFunction(Expr.Function expr) {
-        return "<Lambda>";
+        List<string> parameters = new List<string>();
+        foreach (Token token in expr.parameters) {
+            parameters.Add(token.lexeme);
+        }
+
+        List<string> block = new List<string>();
+        foreach (Stmt statement in expr.body) {
+            block.Add(print(statement));
+        }
+        return $"(lambda ({string.Join(' ', parameters)}) {string.Join(' ', block)})";
     }
 
     string Stmt.Visitor<string>.VisitIf(Stmt.If stmt) {
         return
             $"(if {print(stmt.condition)} {print(stmt.thenBranch)}"
-            + (stmt.elseBranch == null ? "" : (" " + print(stmt.elseBranch)))
+            + (stmt.elseBranch is null ? "" : (" " + print(stmt.elseBranch)))
             + ")";
     }
 
@@ -76,7 +81,7 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
     }
 
     string Stmt.Visitor<string>.VisitReturn(Stmt.Return stmt) {
-        return stmt.value == null ? "return" : $"(return {print(stmt.value)})";
+        return stmt.value is null ? "(return)" : $"(return {print(stmt.value)})";
     }
 
     string Expr.Visitor<string>.VisitUnary(Expr.Unary expr) {

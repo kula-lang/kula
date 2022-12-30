@@ -1,14 +1,30 @@
 using Kula.Core.Ast;
 using Kula.Core.Runtime;
+using Kula.Core.Container;
 
 namespace Kula.Core;
 
-class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
+class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
     internal readonly Runtime.Environment globals;
     internal Runtime.Environment environment;
     private KulaEngine? kula;
 
     public static readonly Interpreter Instance = new Interpreter();
+    private readonly Dictionary<Expr.Function, Function> functionDict = new Dictionary<Expr.Function, Function>();
+
+    private Interpreter() {
+        this.globals = new Runtime.Environment();
+        this.environment = this.globals;
+
+        foreach (var kv in StandardLibrary.global_functions) {
+            globals.Define(Token.MakeTemp(kv.Key), kv.Value);
+        }
+
+        globals.Define(Token.MakeTemp("__string_proto__"), StandardLibrary.string_proto);
+        globals.Define(Token.MakeTemp("__array_proto__"), StandardLibrary.array_proto);
+        globals.Define(Token.MakeTemp("__number_proto__"), StandardLibrary.number_proto);
+        globals.Define(Token.MakeTemp("__object_proto__"), StandardLibrary.object_proto);
+    }
 
     public void Interpret(KulaEngine kula, List<Stmt> stmts) {
         this.kula = kula;
@@ -20,39 +36,12 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
         }
     }
 
-    private Interpreter() {
-        this.globals = new Runtime.Environment();
-        this.environment = this.globals;
-    }
-
     private object? Evaluate(Expr expr) {
         return expr.Accept(this);
     }
 
     private void Execute(Stmt stmt) {
         stmt.Accept(this);
-    }
-
-    private string Stringify(object? @object) {
-        if (@object is bool object_bool) {
-            return object_bool.ToString().ToLower();
-        }
-        else if (@object is double object_double) {
-            return object_double.ToString();
-        }
-
-        return @object!.ToString() ?? "null";
-    }
-
-    private bool IsTruly(object? @object) {
-        if (@object is null) {
-            return false;
-        }
-        if (@object is bool object_bool) {
-            return object_bool;
-        }
-
-        return true;
     }
 
     object? Expr.Visitor<object?>.VisitAssign(Expr.Assign expr) {
@@ -69,7 +58,28 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
             }
         }
         else if (expr.left is Expr.Get get) {
-            // TODO
+            object? container = Evaluate(get.container);
+            object? key = Evaluate(get.key);
+
+            if (container is Container.Object container_dict) {
+                if (key is string key_string) {
+                    container_dict.Set(key_string, value);
+                }
+                else {
+                    throw new RuntimeError(get.@operator, "Index of 'Dict' can only be 'String'.");
+                }
+            }
+            else if (container is Container.Array container_array) {
+                if (key is double key_double) {
+                    container_array.Set(key_double, value);
+                }
+                else {
+                    throw new RuntimeError(get.@operator, "Index of 'Array' can only be 'Number'.");
+                }
+            }
+            else {
+                throw new RuntimeError(get.@operator, "Only 'Object' have properties.");
+            }
         }
 
         return value;
@@ -86,6 +96,12 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
             else {
                 throw new RuntimeError(@operator, "Operands must be 2 numbers or 2 strings.");
             }
+        }
+        else if (@operator.type == TokenType.EQUAL_EQUAL) {
+            return object.Equals(left, right);
+        }
+        else if (@operator.type == TokenType.BANG_EQUAL) {
+            return !object.Equals(left, right);
         }
         else {
             if (left is double left_double && right is double right_double) {
@@ -119,28 +135,42 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
     }
 
     int Stmt.Visitor<int>.VisitBlock(Stmt.Block stmt) {
-        ExecuteBlock(stmt.statements, new Runtime.Environment());
+        ExecuteBlock(stmt.statements, new Runtime.Environment(environment));
         return 0;
     }
 
     internal void ExecuteBlock(List<Stmt> statements, Runtime.Environment environment) {
         Runtime.Environment previous = this.environment;
 
-        this.environment = environment;
-        foreach (Stmt statement in statements) {
-            Execute(statement);
+        try {
+            this.environment = environment;
+            foreach (Stmt statement in statements) {
+                Execute(statement);
+            }
         }
-
-        this.environment = previous;
+        finally {
+            this.environment = previous;
+        }
     }
 
     object? Expr.Visitor<object?>.VisitCall(Expr.Call expr) {
-        object? callee = Evaluate(expr.callee);
+        object? callee;
+
+        // 'this' binding
+        if (expr.callee is Expr.Get expr_get) {
+            EvalGet(expr_get, out object? container, out object? key, out object? value);
+            if (value is ICallable value_function) {
+                value_function.Bind(container);
+            }
+            callee = value;
+        }
+        else {
+            callee = Evaluate(expr.callee);
+        }
+
         if (callee is ICallable function) {
-            if (function.Arity != expr.arguments.Count) {
-                throw new RuntimeError(
-                    new Token(TokenType.ARROW, "=>", null, -1), 
-                    $"Need {function.Arity} argument(s) but {expr.arguments.Count} is given.");
+            if (function.Arity >= 0 && function.Arity != expr.arguments.Count) {
+                throw new RuntimeError($"Need {function.Arity} argument(s) but {expr.arguments.Count} is given.");
             }
 
             List<object?> arguments = new List<object?>();
@@ -151,7 +181,7 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
             return function.Call(arguments);
         }
         else {
-            throw new RuntimeError(new Token(TokenType.ARROW, "=>", null, -1), "Can only call functions.");
+            throw new RuntimeError("Can only call functions.");
         }
     }
 
@@ -161,16 +191,57 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
     }
 
     object? Expr.Visitor<object?>.VisitFunction(Expr.Function expr) {
-        return new Function(expr, this);
+        if (!functionDict.ContainsKey(expr)) {
+            functionDict[expr] = new Function(expr, this, environment);
+        }
+        return functionDict[expr];
     }
 
     object? Expr.Visitor<object?>.VisitGet(Expr.Get expr) {
         // TODO
-        throw new NotImplementedException();
+        EvalGet(expr, out object? container, out object? key, out object? value);
+        return value;
+    }
+
+    void EvalGet(Expr.Get expr, out object? container, out object? key, out object? value) {
+        container = Evaluate(expr.container);
+        key = Evaluate(expr.key);
+
+        if (container is Container.Object dict) {
+            if (key is string key_string) {
+                value = dict.Get(key_string);
+                return;
+            }
+            throw new RuntimeError(expr.@operator, "Index of 'Dict' can only be 'String'.");
+        }
+        else if (container is Container.Array array) {
+            if (key is Double key_double) {
+                value = array.Get(key_double);
+                return;
+            }
+            else if (key is string key_string) {
+                value = StandardLibrary.array_proto.Get(key_string);
+                return;
+            }
+            throw new RuntimeError(expr.@operator, "Index of 'Array' can only be 'Number'.");
+        }
+        else if (container is String string_proto) {
+            if (key is string key_string) {
+                value = StandardLibrary.string_proto.Get(key_string);
+                return;
+            }
+        }
+        else if (container is double number_proto) {
+            if (key is string key_string) {
+                value = StandardLibrary.number_proto.Get(key_string);
+                return;
+            }
+        }
+        throw new RuntimeError(expr.@operator, "Only 'Object' have properties.");
     }
 
     int Stmt.Visitor<int>.VisitIf(Stmt.If stmt) {
-        if (IsTruly(Evaluate(stmt.condition))) {
+        if (StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
             Execute(stmt.thenBranch);
         }
         else if (stmt.elseBranch is not null) {
@@ -186,7 +257,7 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
     object? Expr.Visitor<object?>.VisitLogical(Expr.Logical expr) {
         object? left = Evaluate(expr.left);
 
-        if ((expr.@operator.type == TokenType.OR) == IsTruly(left)) {
+        if ((expr.@operator.type == TokenType.OR) == StandardLibrary.Booleanify(left)) {
             return left;
         }
 
@@ -197,7 +268,7 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
         List<string> items = new List<string>();
 
         foreach (Expr iexpr in stmt.items) {
-            items.Add(Stringify(Evaluate(iexpr)));
+            items.Add(StandardLibrary.Stringify(Evaluate(iexpr)));
         }
 
         kula!.Print(string.Join(' ', items));
@@ -206,10 +277,6 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
 
     int Stmt.Visitor<int>.VisitReturn(Stmt.Return stmt) {
         throw new Return(stmt.value is null ? null : Evaluate(stmt.value));
-    }
-
-    int Stmt.Visitor<int>.VisitTypeDefine(Stmt.TypeDefine stmt) {
-        return 0;
     }
 
     private object? EvalUnary(Token @operator, Expr expr) {
@@ -222,9 +289,9 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
                 }
                 throw new RuntimeError(@operator, "Operand must be a number.");
             case TokenType.BANG:
-                return !IsTruly(value);
+                return !StandardLibrary.Booleanify(value);
         }
-        
+
         throw new RuntimeError(@operator, "Undefined Operator.");
     }
 
@@ -237,7 +304,7 @@ class Interpreter : Expr.Visitor<Object?>, Stmt.Visitor<int> {
     }
 
     int Stmt.Visitor<int>.VisitWhile(Stmt.While stmt) {
-        while (IsTruly(Evaluate(stmt.condition))) {
+        while (StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
             Execute(stmt.branch);
         }
         return 0;

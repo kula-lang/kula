@@ -1,0 +1,81 @@
+func List() => List {
+    obj := Object();
+    capacity := 16;
+    count := 0;
+    data := Array(capacity);
+    
+    func ensure(new_count) {
+        if (new_count > capacity) {
+            new_capacity := capacity * 2;
+            new_data := Array(new_capacity);
+
+            for (i:=0; i<capacity; i=i+1) {
+                new_data[i] = data[i];
+            }
+
+            capacity = new_capacity;
+            data = new_data;
+        }
+    }
+
+    obj.get = func(i) {
+        if (i >= 0 and i < count) {
+            return data[i];
+        }
+        return null;
+    };
+    
+    obj.set = func(i, d) {
+        if (i >= 0 and i < count) {
+            data[i] = d;
+        }
+    };
+    
+    obj.add = func(i, d) {
+        if (i < 0 or i > count) {
+            return;
+        }
+        ensure(count + 1);
+        work_i := count;
+        while (work_i > i) {
+            data[work_i] = data[work_i - 1];
+            work_i = work_i - 1;
+        }
+        data[i] = d;
+        count = count + 1;
+    };
+
+    obj.count = func() {
+        return count;
+    };
+
+    obj.toString = func() {
+        str := "[";
+        for (i:=0; i<count; i=i+1) {
+            if (i != 0) {
+                str = str + ",";
+            }
+            tmp := String(data[i]);
+            str = str + tmp;
+        }
+        str = str + "]";
+        return str;
+    };
+
+
+    return obj;
+}
+
+func test() {
+    list1 := List();
+    print list1.toString();
+
+    for (i:=0; i<10; i=i+1) {
+        list1.add(i, i * 7);
+        print list1.toString();
+    }
+
+    list2 := List();
+
+    print list1.add == list2.add;
+}

@@ -1,3 +1,5 @@
+using Kula.Core.Ast;
+
 namespace Kula.Core.Runtime;
 
 class Environment {
@@ -20,7 +22,7 @@ class Environment {
             return enclosing.Get(name);
         }
 
-        throw new RuntimeError(name, $"Undefined variable '{name.lexeme}'.");
+        return null;
     }
 
     public void Assign(Token name, object? value) {
@@ -33,7 +35,7 @@ class Environment {
             return;
         }
 
-        throw new RuntimeError(name, $"Undefined variable '{name.lexeme}'.");
+        throw new RuntimeError(name, $"Undefined variable '{name.lexeme}' when assign.");
     }
 
     public void Define(Token name, object? value) {
