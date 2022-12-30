@@ -2,14 +2,33 @@ namespace Kula.Core.Ast;
 
 abstract class Stmt {
     public interface Visitor<R> {
+        R VisitBreak(Break stmt);
+        R VisitContinue(Continue stmt);
         R VisitExpression(Expression stmt);
         R VisitReturn(Return stmt);
         R VisitPrint(Print stmt);
         R VisitBlock(Block stmt);
         R VisitWhile(While stmt);
+        R VisitFor(For stmt);
         R VisitIf(If stmt);
     }
     public abstract R Accept<R>(Visitor<R> visitor);
+
+    public class Break : Stmt {
+        public Break() { }
+
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitBreak(this);
+        }
+    }
+    
+    public class Continue : Stmt {
+        public Continue() { }
+
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitContinue(this);
+        }
+    }
 
     public class Expression : Stmt {
         public readonly Expr expression;
@@ -70,6 +89,24 @@ abstract class Stmt {
 
         public override R Accept<R>(Visitor<R> visitor) {
             return visitor.VisitWhile(this);
+        }
+    }
+
+    public class For : Stmt {
+        public readonly Stmt? initializer;
+        public readonly Expr? condition;
+        public readonly Expr? increment;
+        public readonly Stmt body;
+
+        public For(Stmt? initializer, Expr? condition, Expr? increment, Stmt body) {
+            this.initializer = initializer;
+            this.condition = condition;
+            this.increment = increment;
+            this.body = body;
+        }
+
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitFor(this);
         }
     }
 

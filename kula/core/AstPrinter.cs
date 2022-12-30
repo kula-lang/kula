@@ -40,7 +40,7 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
         foreach (Expr iexpr in expr.arguments) {
             items.Add(iexpr.Accept(this));
         }
-        return $"({print(expr.callee)}{(items.Count == 0 ? "" : " ")}{string.Join(' ', items)})";
+        return $"({print(expr.callee)} {string.Join(' ', items)})";
     }
 
     string Stmt.Visitor<string>.VisitExpression(Stmt.Expression stmt) {
@@ -93,7 +93,15 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
     }
 
     string Stmt.Visitor<string>.VisitWhile(Stmt.While stmt) {
-        return $"(while {print(stmt.condition)} {print(stmt.branch)})";
+        return $"(while ({print(stmt.condition)}) {print(stmt.branch)})";
+    }
+    
+    string Stmt.Visitor<string>.VisitFor(Stmt.For stmt) {
+        string initializer = stmt.initializer is null ? "" : print(stmt.initializer);
+        string condition = stmt.condition is null ? "" : print(stmt.condition);
+        string increment = stmt.increment is null ? "" : print(stmt.increment);
+
+        return $"(for ({initializer}) ({condition}) {print(stmt.body)}) ({increment})";
     }
 
     string Stmt.Visitor<string>.VisitPrint(Stmt.Print stmt) {
@@ -102,5 +110,13 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
             items.Add(print(iexpr));
         }
         return $"(print {string.Join(' ', items)})";
+    }
+
+    string Stmt.Visitor<string>.VisitBreak(Stmt.Break stmt) {
+        return "(break!)";
+    }
+
+    string Stmt.Visitor<string>.VisitContinue(Stmt.Continue stmt) {
+        return "(continue!)";
     }
 }

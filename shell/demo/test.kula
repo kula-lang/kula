@@ -1,9 +1,12 @@
 str := "hello_world";
-arr := Array();
+arr := asArray();
 
 for (i := 0; i < str.length(); i = i + 1) {
+    if (str.at(i) == "_") {
+        break;
+    }
     print str.at(i);
-    arr.insert(0, str.at(i));
+    arr.insert(arr.length(), str.at(i));
 }
 
 print arr;

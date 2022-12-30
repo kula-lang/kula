@@ -305,9 +305,47 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
 
     int Stmt.Visitor<int>.VisitWhile(Stmt.While stmt) {
         while (StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
-            Execute(stmt.branch);
+            try {
+                Execute(stmt.branch);
+            }
+            catch (Break) {
+                break;
+            }
+            catch (Continue) {
+                continue;
+            }
         }
         return 0;
+    }
+    int Stmt.Visitor<int>.VisitFor(Stmt.For stmt) {
+        if (stmt.initializer is not null) {
+            Execute(stmt.initializer);
+        }
+        while (stmt.condition is null ? true : StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
+            try {
+                Execute(stmt.body);
+            }
+            catch (Break) {
+                break;
+            }
+            catch (Continue) {
+                continue;
+            }
+            finally {
+                if (stmt.increment is not null) {
+                    Evaluate(stmt.increment);
+                }
+            }
+        }
+        return 0;
+    }
+
+    int Stmt.Visitor<int>.VisitBreak(Stmt.Break stmt) {
+        throw new Break();
+    }
+
+    int Stmt.Visitor<int>.VisitContinue(Stmt.Continue stmt) {
+        throw new Continue();
     }
 
     internal class Return : Exception {
@@ -315,5 +353,13 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         public Return(object? value) {
             this.value = value;
         }
+    }
+
+    internal class Break : Exception {
+        public Break() { }
+    }
+
+    internal class Continue : Exception {
+        public Continue() { }
     }
 }

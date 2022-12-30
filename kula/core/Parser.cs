@@ -36,6 +36,14 @@ class Parser {
         else if (Match(TokenType.PRINT)) {
             return PrintStatement();
         }
+        else if (Match(TokenType.BREAK)) {
+            Consume(TokenType.SEMICOLON, "Expect ';' after 'break'.");
+            return new Stmt.Break();
+        }
+        else if (Match(TokenType.CONTINUE)) {
+            Consume(TokenType.SEMICOLON, "Expect ';' after 'continue'.");
+            return new Stmt.Continue();
+        }
         return ExpressionStatement();
     }
 
@@ -86,23 +94,7 @@ class Parser {
 
         Stmt body = Statement();
 
-        if (increment != null) {
-            body = new Stmt.Block(
-                new List<Stmt>() {
-                    body,
-                    new Stmt.Expression(increment) });
-        }
-
-        Expr final_condition = condition ?? new Expr.Literal(true);
-
-        Stmt loop = new Stmt.While(final_condition, body);
-        if (initializer != null) {
-            loop = new Stmt.Block(
-                new List<Stmt>() { initializer, loop }
-            );
-        }
-
-        return loop;
+        return new Stmt.For(initializer, condition, increment, body);
     }
 
     private Stmt ReturnStatement() {

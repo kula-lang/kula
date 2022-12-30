@@ -10,7 +10,8 @@ static class StandardLibrary {
         {"Bool", new NativeFunction(1, (_, args) => Booleanify(args[0]))},
         {"Object", new NativeFunction(0, (_, args) => new Container.Object())},
         {"Array", new NativeFunction(0, (_, args) => new Container.Array())},
-        {"AsArray", new NativeFunction(-1, (_, args) => new Container.Array(args))}
+        {"asArray", new NativeFunction(-1, (_, args) => new Container.Array(args))},
+        {"typeof", new NativeFunction(1, (_, args) => TypeOf(args[0]))},
     };
     public static readonly Container.Object string_proto;
     public static readonly Container.Object array_proto;
@@ -37,6 +38,12 @@ static class StandardLibrary {
                 }
             }
             throw new RuntimeError("Wrong Arguments in 'string.parse'.");
+        }));
+        string_proto.Set("split", new NativeFunction(1, (_this, args) => {
+            if (args[0] is string separator && _this is string str) {
+                return new Container.Array(str.Split(separator));
+            }
+            throw new RuntimeError("Wrong Arguments in 'string.split'.");
         }));
         string_proto.Set("length", new NativeFunction(0, (_this, _) => {
             return (double)((string)_this!).Length;

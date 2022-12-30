@@ -19,13 +19,16 @@ public class Array {
         if (j < Size && j >= 0) {
             return data[j];
         }
-        return null;
+        throw new RuntimeError("Array index out of range.");
     }
 
     public void Set(double index, object? value) {
         int j = (int)index;
         if (j < Size && j >= 0) {
             data[j] = value;
+        }
+        else {
+            throw new RuntimeError("Array index out of range.");
         }
     }
 
@@ -34,12 +37,18 @@ public class Array {
         if (j <= Size && j >= 0) {
             data.Insert(j, value);
         }
+        else {
+            throw new RuntimeError("Array index out of range.");
+        }
     }
 
     public void Remove(double index) {
         int j = (int)index;
         if (j < Size && j >= 0) {
             data.RemoveAt(j);
+        }
+        else {
+            throw new RuntimeError("Array index out of range.");
         }
     }
 
@@ -48,7 +57,7 @@ public class Array {
         int i = 0;
         foreach (object? item in data) {
             string value = StandardLibrary.Stringify(item);
-            items[i++] = item is string ? value : $"\"{value}\"";
+            items[i++] = item is string ? $"\"{value}\"" : value;
         }
         return $"[{string.Join(',', items)}]";
     }
