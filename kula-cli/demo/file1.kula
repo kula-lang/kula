@@ -1,0 +1,3 @@
+import { "file2.kula" }
+
+print "file1";

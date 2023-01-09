@@ -11,7 +11,18 @@ class Parser {
     public static Parser Instance = new Parser();
 
     private Stmt Declaration() {
-        if (Match(TokenType.FUNC)) {
+        if (Match(TokenType.IMPORT)) {
+            Consume(TokenType.LEFT_BRACE, "Expect '{' before 'import' block.");
+            if (!Check(TokenType.RIGHT_BRACE)) {
+                do {
+                    Consume(TokenType.STRING, "");
+                }
+                while (Match(TokenType.COMMA));
+            }
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after 'import' block.");
+            return Stmt.Void.Instance;
+        }
+        else if (Match(TokenType.FUNC)) {
             return FunctionDeclaration();
         }
         return Statement();
@@ -44,7 +55,9 @@ class Parser {
             Consume(TokenType.SEMICOLON, "Expect ';' after 'continue'.");
             return new Stmt.Continue();
         }
-        return ExpressionStatement();
+        else {
+            return ExpressionStatement();
+        }
     }
 
     private Stmt IfStatement() {
@@ -345,6 +358,7 @@ class Parser {
     public List<Stmt> Parse(KulaEngine kula, List<Token> tokens) {
         this.kula = kula;
         this.tokens = tokens;
+        this.current = 0;
 
         List<Stmt> statements = new List<Stmt>();
         while (!IsEnd()) {

@@ -44,7 +44,7 @@ enum TokenType {
 
     // Keyword
     AND, BREAK, CLASS, CONTINUE, ELSE, FALSE, FUNC, FOR, IF,
-    NULL, OR, PRINT, RETURN, TRUE, WHILE,
+    IMPORT, NULL, OR, PRINT, RETURN, TRUE, WHILE,
 
     // EOF
     EOF

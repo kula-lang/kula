@@ -24,6 +24,7 @@ class Lexer {
         {"func", TokenType.FUNC},
         {"for", TokenType.FOR},
         {"if", TokenType.IF},
+        {"import", TokenType.IMPORT},
         {"null", TokenType.NULL},
         {"or", TokenType.OR},
         {"print", TokenType.PRINT},
@@ -125,6 +126,7 @@ class Lexer {
     private void String() {
         while ((Peek() != '"') && !IsEnd()) {
             if (Peek() == '\n') ++line;
+            if (Peek() == '\\') Advance();
             Advance();
         }
 
@@ -136,7 +138,7 @@ class Lexer {
         Advance();
 
         string value = source!.Substring(start + 1, current - start - 2);
-        AddToken(TokenType.STRING, value);
+        AddToken(TokenType.STRING, System.Text.RegularExpressions.Regex.Unescape(value));
     }
 
     private void Number() {

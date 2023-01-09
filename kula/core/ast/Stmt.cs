@@ -2,6 +2,7 @@ namespace Kula.Core.Ast;
 
 abstract class Stmt {
     public interface Visitor<R> {
+        R VisitVoid(Void stmt);
         R VisitBreak(Break stmt);
         R VisitContinue(Continue stmt);
         R VisitExpression(Expression stmt);
@@ -14,6 +15,14 @@ abstract class Stmt {
     }
     public abstract R Accept<R>(Visitor<R> visitor);
 
+    public class Void : Stmt {
+        private Void() { }
+        public override R Accept<R>(Visitor<R> visitor) {
+            return visitor.VisitVoid(this);
+        }
+        public static Void Instance = new Void();
+    }
+
     public class Break : Stmt {
         public Break() { }
 
@@ -21,7 +30,7 @@ abstract class Stmt {
             return visitor.VisitBreak(this);
         }
     }
-    
+
     public class Continue : Stmt {
         public Continue() { }
 

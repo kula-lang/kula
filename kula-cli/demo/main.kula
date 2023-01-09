@@ -1,0 +1,10 @@
+import {
+    "./file1.kula",
+    "./file2.kula"
+}
+
+func main() {
+    print "hello_world";
+}
+
+print main();

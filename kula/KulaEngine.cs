@@ -10,7 +10,29 @@ public class KulaEngine {
 
     private AstPrinter astPrinter = new AstPrinter();
 
-    public void Run(String source) {
+    public void Run(string source) {
+        hadError = false;
+        hadRuntimeError = false;
+
+        List<Token> tokens = Lexer.Instance.ScanTokens(this, source);
+        if (hadError) { return; }
+        List<Stmt> asts = Parser.Instance.Parse(this, tokens);
+        if (hadError) { return; }
+
+        Interpreter.Instance.Interpret(this, asts);
+    }
+
+    public void RunProject(string directory) {
+        List<FileInfo> source_files = ModuleResolver.Instance.Resolve(this, directory);
+        foreach (FileInfo file in source_files) {
+            Run(file.OpenText().ReadToEnd());
+        }
+    }
+
+    public void DebugRun(string source) {
+        hadError = false;
+        hadRuntimeError = false;
+
         List<Token> tokens = Lexer.Instance.ScanTokens(this, source);
         foreach (Token token in tokens) {
             Console.WriteLine(token);
@@ -35,6 +57,10 @@ public class KulaEngine {
             Console.Error.WriteLine("RUNTIME ERROR");
             return;
         }
+    }
+
+    internal string? Input() {
+        return Console.ReadLine();
     }
 
     internal void Print(string msg) {

@@ -4,7 +4,7 @@ using System.IO;
 class Program {
     public static void Main(string[] args) {
         KulaEngine kula = new KulaEngine();
-        kula.Run(File.ReadAllText("./demo/test.kula"));
+        kula.RunProject("demo");
 
         Console.ReadLine();
         return;

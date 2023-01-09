@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kula", "kula\kula.csproj", "{C68905EA-5F85-4709-AAE1-E8C695E51823}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shell", "shell\shell.csproj", "{5ECA81EE-3CF0-41A4-AB70-B43EA42F416B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kula-cli", "kula-cli\kula-cli.csproj", "{5ECA81EE-3CF0-41A4-AB70-B43EA42F416B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

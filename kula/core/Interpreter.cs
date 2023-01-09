@@ -19,6 +19,15 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         foreach (var kv in StandardLibrary.global_functions) {
             globals.Define(Token.MakeTemp(kv.Key), kv.Value);
         }
+        globals.Define(Token.MakeTemp("input"), new NativeFunction(0, (_, args) => kula!.Input()));
+        globals.Define(Token.MakeTemp("print"), new NativeFunction(-1, (_, args) => {
+            List<string> items = new List<string>();
+            foreach (object? item in args) {
+                items.Add(StandardLibrary.Stringify(item));
+            }
+            kula!.Print(string.Join(' ', items));
+            return null;
+        }));
 
         globals.Define(Token.MakeTemp("__string_proto__"), StandardLibrary.string_proto);
         globals.Define(Token.MakeTemp("__array_proto__"), StandardLibrary.array_proto);
@@ -337,6 +346,10 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
                 }
             }
         }
+        return 0;
+    }
+
+    int Stmt.Visitor<int>.VisitVoid(Stmt.Void stmt) {
         return 0;
     }
 

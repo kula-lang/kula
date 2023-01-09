@@ -119,4 +119,8 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
     string Stmt.Visitor<string>.VisitContinue(Stmt.Continue stmt) {
         return "(continue!)";
     }
+
+    string Stmt.Visitor<string>.VisitVoid(Stmt.Void stmt) {
+        return "(void)";
+    }
 }
