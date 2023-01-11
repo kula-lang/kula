@@ -3,8 +3,13 @@ import {
     "./file2.kula"
 }
 
-func main() {
-    print "hello_world";
+a := 1;
+while (a < 10) {
+    print a;
+    a = a+1;
+    if (a == 4) {
+        break;
+    }
 }
 
-print main();
+print "END!";

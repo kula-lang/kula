@@ -1,0 +1,11 @@
+class K {
+    constructor(data) {
+        this.data = data;
+    }
+    show() {
+        print this.data;
+    }
+}
+
+print k := K(114);
+k.show();

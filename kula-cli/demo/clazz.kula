@@ -1,0 +1,14 @@
+K := func() {
+    prototype := Object();
+    prototype.hello = func() { print "hello"; };
+    prototype.world = func() { print "world"; };
+    prototype.__func__ = func() {
+        k := Object();
+        k.data = 114514;
+        k.__proto__ = prototype;
+        return k;
+    }
+    return prototype;
+}();
+
+print K;

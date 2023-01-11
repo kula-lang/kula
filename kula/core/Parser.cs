@@ -25,6 +25,9 @@ class Parser {
         else if (Match(TokenType.FUNC)) {
             return FunctionDeclaration();
         }
+        else if (Match(TokenType.CLASS)) {
+            return ClassDeclaration();
+        }
         return Statement();
     }
 
@@ -77,10 +80,11 @@ class Parser {
     private Stmt WhileStatement() {
         Consume(TokenType.LEFT_PAREN, "Expect '(' before while condition.");
         Expr condition = Expression();
-        Consume(TokenType.RIGHT_PAREN, "Expect '(' after while condition.");
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
 
         Stmt branch = Statement();
-        return new Stmt.While(condition, branch);
+        return new Stmt.For(null, condition, null, branch);
+        //return new Stmt.While(condition, branch);
     }
 
     private Stmt ForStatement() {
@@ -146,6 +150,90 @@ class Parser {
                 new Expr.Variable(func_name),
                 Token.MakeTemp(TokenType.COLON_EQUAL, ":="),
                 function));
+    }
+
+    private Stmt ClassDeclaration() {
+        Token class_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class declaration.");
+        Consume(TokenType.LEFT_BRACE, "Expect '{' before class declaration block.");
+
+        List<Stmt> methods = new List<Stmt>();
+
+        Token prototype = Token.MakeTemp("prototype");
+        Token func = Token.MakeTemp("__func__");
+        Token colon_equal = Token.MakeTemp(TokenType.COLON_EQUAL, ":=");
+        Token token_object = Token.MakeTemp("Object");
+        Token token_this = Token.MakeTemp("this");
+
+        methods.Add(
+            new Stmt.Expression(
+                new Expr.Assign(
+                    new Expr.Variable(prototype),
+                    colon_equal,
+                    new Expr.Call(
+                        new Expr.Variable(token_object),
+                        new List<Expr>(),
+                        Token.MakeTemp(TokenType.RIGHT_PAREN, ")")
+                    )
+                )
+            )
+        );
+        while (!Match(TokenType.RIGHT_BRACE)) {
+            Token method_name = Consume(TokenType.IDENTIFIER, "Expect identifier before method declaration.");
+            Expr method_body = LambdaDeclaration();
+
+            if (method_name.lexeme == "constructor") {
+                method_name = Token.MakeTemp("__func__");
+                Expr.Function constructor = (Expr.Function)method_body;
+                constructor.body.Insert(0,
+                    new Stmt.Expression(
+                        new Expr.Assign(
+                            new Expr.Variable(token_this),
+                            colon_equal,
+                            new Expr.Call(new Expr.Variable(token_object), new List<Expr>(), Token.MakeTemp(TokenType.RIGHT_PAREN, ")"))
+                        )
+                    )
+                );
+                constructor.body.Insert(1,
+                    new Stmt.Expression(
+                        new Expr.Assign(
+                            new Expr.Get(
+                                new Expr.Variable(token_this),
+                                new Expr.Literal("__proto__"),
+                                Token.MakeTemp(TokenType.DOT, ".")),
+                            colon_equal,
+                            new Expr.Variable(prototype)
+                        )
+                    )
+                );
+                constructor.body.Add(new Stmt.Return(new Expr.Variable(token_this)));
+            }
+
+            methods.Add(
+                new Stmt.Expression(
+                    new Expr.Assign(
+                        new Expr.Get(
+                            new Expr.Variable(prototype),
+                            new Expr.Literal(method_name.lexeme),
+                            Token.MakeTemp(TokenType.DOT, ".")),
+                        Token.MakeTemp(TokenType.EQUAL, "="),
+                        method_body
+                    )
+                )
+            );
+        }
+        methods.Add(new Stmt.Return(new Expr.Variable(prototype)));
+
+        return new Stmt.Expression(
+            new Expr.Assign(
+                new Expr.Variable(class_name),
+                Token.MakeTemp(TokenType.COLON_EQUAL, ":="),
+                new Expr.Call(
+                    new Expr.Function(new List<Token>(), methods),
+                    new List<Expr>(),
+                    Token.MakeTemp(")")
+                )
+            )
+        );
     }
 
     private Expr Expression() {

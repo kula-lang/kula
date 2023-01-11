@@ -19,7 +19,7 @@ public class NativeFunction : ICallable {
         }
     }
 
-    public void Bind<T>(T? @this) {
+    public void Bind(object? @this) {
         this.@this = @this;
     }
 

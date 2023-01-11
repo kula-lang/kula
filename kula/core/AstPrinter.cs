@@ -92,9 +92,9 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string> {
         return expr.name.lexeme;
     }
 
-    string Stmt.Visitor<string>.VisitWhile(Stmt.While stmt) {
-        return $"(while ({print(stmt.condition)}) {print(stmt.branch)})";
-    }
+    // string Stmt.Visitor<string>.VisitWhile(Stmt.While stmt) {
+    //     return $"(while ({print(stmt.condition)}) {print(stmt.branch)})";
+    // }
     
     string Stmt.Visitor<string>.VisitFor(Stmt.For stmt) {
         string initializer = stmt.initializer is null ? "" : print(stmt.initializer);

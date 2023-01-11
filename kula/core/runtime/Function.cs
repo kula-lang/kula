@@ -44,7 +44,7 @@ class Function : ICallable {
         return "<Function>";
     }
 
-    public void Bind<T>(T? @this) {
+    public void Bind(object? @this) {
         this.@this = @this;
     }
 

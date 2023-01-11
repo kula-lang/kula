@@ -87,7 +87,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
                 }
             }
             else {
-                throw new RuntimeError(get.@operator, "Only 'Object' have properties.");
+                throw new RuntimeError(get.@operator, "Only 'Object' have properties when set.");
             }
         }
 
@@ -177,6 +177,11 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
             callee = Evaluate(expr.callee);
         }
 
+        // __func__
+        while (callee is Container.Object functor) {
+            callee = functor.Get("__func__");
+        }
+
         if (callee is ICallable function) {
             if (function.Arity >= 0 && function.Arity != expr.arguments.Count) {
                 throw new RuntimeError($"Need {function.Arity} argument(s) but {expr.arguments.Count} is given.");
@@ -246,7 +251,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
                 return;
             }
         }
-        throw new RuntimeError(expr.@operator, "Only 'Object' have properties.");
+        throw new RuntimeError(expr.@operator, "Only 'Object' have properties when get.");
     }
 
     int Stmt.Visitor<int>.VisitIf(Stmt.If stmt) {
@@ -312,20 +317,20 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         return environment.Get(expr.name);
     }
 
-    int Stmt.Visitor<int>.VisitWhile(Stmt.While stmt) {
-        while (StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
-            try {
-                Execute(stmt.branch);
-            }
-            catch (Break) {
-                break;
-            }
-            catch (Continue) {
-                continue;
-            }
-        }
-        return 0;
-    }
+    // int Stmt.Visitor<int>.VisitWhile(Stmt.While stmt) {
+    //     while (StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
+    //         try {
+    //             Execute(stmt.branch);
+    //         }
+    //         catch (Break) {
+    //             break;
+    //         }
+    //         catch (Continue) {
+    //             continue;
+    //         }
+    //     }
+    //     return 0;
+    // }
     int Stmt.Visitor<int>.VisitFor(Stmt.For stmt) {
         if (stmt.initializer is not null) {
             Execute(stmt.initializer);

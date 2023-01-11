@@ -7,6 +7,7 @@ namespace Kula;
 public class KulaEngine {
     private bool hadError = false;
     private bool hadRuntimeError = false;
+    private string filename = string.Empty;
 
     private AstPrinter astPrinter = new AstPrinter();
 
@@ -25,13 +26,18 @@ public class KulaEngine {
     public void RunProject(string directory) {
         List<FileInfo> source_files = ModuleResolver.Instance.Resolve(this, directory);
         foreach (FileInfo file in source_files) {
+            filename = file.Name;
             Run(file.OpenText().ReadToEnd());
+            if (hadError || hadRuntimeError) {
+                return;
+            }
         }
     }
 
     public void DebugRun(string source) {
         hadError = false;
         hadRuntimeError = false;
+        filename = "DebugTempFile";
 
         List<Token> tokens = Lexer.Instance.ScanTokens(this, source);
         foreach (Token token in tokens) {
@@ -41,7 +47,6 @@ public class KulaEngine {
             Console.Error.WriteLine("LEX ERROR");
             return;
         }
-
 
         List<Stmt> asts = Parser.Instance.Parse(this, tokens);
         foreach (Stmt statement in asts) {
@@ -81,6 +86,7 @@ public class KulaEngine {
     }
 
     internal void RuntimeError(RuntimeError runtimeError) {
+        Console.Error.WriteLine($"Runtime Error in '{filename}'");
         if (runtimeError.name is not null) {
             Console.Error.WriteLine($"Runtime Error At [line {runtimeError.name?.line}]:");
         }
@@ -92,6 +98,7 @@ public class KulaEngine {
     }
 
     private void ReportError(int line, string position, string msg) {
+        Console.Error.WriteLine($"Error in '{filename}'");
         Console.Error.WriteLine($"[line {line}] Error {position}: {msg}");
         hadError = true;
     }

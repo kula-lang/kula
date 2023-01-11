@@ -9,7 +9,7 @@ abstract class Stmt {
         R VisitReturn(Return stmt);
         R VisitPrint(Print stmt);
         R VisitBlock(Block stmt);
-        R VisitWhile(While stmt);
+        // R VisitWhile(While stmt);
         R VisitFor(For stmt);
         R VisitIf(If stmt);
     }
@@ -87,19 +87,19 @@ abstract class Stmt {
         }
     }
 
-    public class While : Stmt {
-        public readonly Expr condition;
-        public readonly Stmt branch;
+    // public class While : Stmt {
+    //     public readonly Expr condition;
+    //     public readonly Stmt branch;
 
-        public While(Expr condition, Stmt branch) {
-            this.condition = condition;
-            this.branch = branch;
-        }
+    //     public While(Expr condition, Stmt branch) {
+    //         this.condition = condition;
+    //         this.branch = branch;
+    //     }
 
-        public override R Accept<R>(Visitor<R> visitor) {
-            return visitor.VisitWhile(this);
-        }
-    }
+    //     public override R Accept<R>(Visitor<R> visitor) {
+    //         return visitor.VisitWhile(this);
+    //     }
+    // }
 
     public class For : Stmt {
         public readonly Stmt? initializer;
