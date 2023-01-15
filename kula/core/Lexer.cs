@@ -107,7 +107,10 @@ class Lexer {
                 break;
             // Literial
             case '"':
-                String();
+                String('"');
+                break;
+            case '\'':
+                String('\'');
                 break;
             default:
                 if (IsDigit(c)) {
@@ -123,8 +126,8 @@ class Lexer {
         }
     }
 
-    private void String() {
-        while ((Peek() != '"') && !IsEnd()) {
+    private void String(char quote) {
+        while ((Peek() != quote) && !IsEnd()) {
             if (Peek() == '\n') ++line;
             if (Peek() == '\\') Advance();
             Advance();

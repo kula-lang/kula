@@ -16,16 +16,26 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         this.globals = new Runtime.Environment();
         this.environment = this.globals;
 
-        foreach (var kv in StandardLibrary.global_functions) {
+        foreach (KeyValuePair<string, NativeFunction> kv in StandardLibrary.global_functions) {
             globals.Define(Token.MakeTemp(kv.Key), kv.Value);
         }
         globals.Define(Token.MakeTemp("input"), new NativeFunction(0, (_, args) => kula!.Input()));
-        globals.Define(Token.MakeTemp("print"), new NativeFunction(-1, (_, args) => {
+        globals.Define(Token.MakeTemp("println"), new NativeFunction(-1, (_, args) => {
             List<string> items = new List<string>();
             foreach (object? item in args) {
                 items.Add(StandardLibrary.Stringify(item));
             }
             kula!.Print(string.Join(' ', items));
+            return null;
+        }));
+        globals.Define(Token.MakeTemp("eval"), new NativeFunction(1, (_, args) => {
+            string source = StandardLibrary.Assert<string>(args[0]);
+            kula!.Run(source);
+            return null;
+        }));
+        globals.Define(Token.MakeTemp("load"), new NativeFunction(1, (_, args) => {
+            string path = StandardLibrary.Assert<string>(args[0]);
+            kula!.Run(new FileInfo(path));
             return null;
         }));
 

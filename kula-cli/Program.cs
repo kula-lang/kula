@@ -1,12 +1,33 @@
 ﻿using Kula;
-using System.IO;
 
 class Program {
     public static void Main(string[] args) {
-        KulaEngine kula = new KulaEngine();
-        kula.DebugRun(File.ReadAllText("demo/class.kula"));
+        switch (args.Length) {
+            case 0:
+                Console.WriteLine("Usage: kula-cli <PATH> [options]");
+                Repl();
+                return;
+            default:
+                KulaEngine kula = new KulaEngine();
+                FileInfo root = new FileInfo(args[0]);
+                kula.Run(root);
+                return;
+        }
+    }
 
-        Console.ReadLine();
-        return;
+    private static void Repl() {
+        KulaEngine kula = new KulaEngine();
+        string? source;
+        for (; ; ) {
+            Console.Write(">> ");
+            source = Console.ReadLine();
+            if (source is null || source.Trim() == "#exit") {
+                break;
+            }
+            else {
+                kula.Run(source);
+            }
+            Console.WriteLine();
+        }
     }
 }

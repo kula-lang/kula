@@ -6,7 +6,7 @@ class Function : ICallable {
     private readonly Expr.Function defination;
     private readonly Interpreter interpreter;
     private readonly Environment parent;
-    private object? @this;
+    private object? callSite;
 
     public Function(Expr.Function expr, Interpreter interpreter, Environment parent) {
         this.defination = expr;
@@ -20,8 +20,8 @@ class Function : ICallable {
         Runtime.Environment environment = new Runtime.Environment(parent);
 
         environment.Define(Token.MakeTemp("self"), this);
-        if (@this is not null) {
-            environment.Define(Token.MakeTemp("this"), @this);
+        if (callSite is not null) {
+            environment.Define(Token.MakeTemp("this"), callSite);
             Unbind();
         }
 
@@ -44,11 +44,11 @@ class Function : ICallable {
         return "<Function>";
     }
 
-    public void Bind(object? @this) {
-        this.@this = @this;
+    public void Bind(object? callSite) {
+        this.callSite = callSite;
     }
 
     public void Unbind() {
-        this.@this = null;
+        this.callSite = null;
     }
 }

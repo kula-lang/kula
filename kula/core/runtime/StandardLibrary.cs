@@ -1,17 +1,16 @@
 namespace Kula.Core.Runtime;
 
-static class StandardLibrary {
+public static class StandardLibrary {
     private static readonly DateTime start = DateTime.UtcNow;
     public static readonly Dictionary<string, NativeFunction> global_functions = new Dictionary<string, NativeFunction>{
-        {"clock", new NativeFunction(0, (_, args) => {
-            return (DateTime.UtcNow - start).TotalMilliseconds / 1000.0;
-        })},
+        {"clock", new NativeFunction(0, (_, args) => (DateTime.UtcNow - start).TotalMilliseconds / 1000.0)},
         {"String", new NativeFunction(1, (_, args) => Stringify(args[0]))},
         {"Bool", new NativeFunction(1, (_, args) => Booleanify(args[0]))},
         {"Object", new NativeFunction(0, (_, args) => new Container.Object())},
         {"Array", new NativeFunction(0, (_, args) => new Container.Array())},
         {"asArray", new NativeFunction(-1, (_, args) => new Container.Array(args))},
-        {"typeof", new NativeFunction(1, (_, args) => TypeOf(args[0]))},
+        {"typeof", new NativeFunction(1, (_, args) => TypeStringify(args[0]?.GetType()))},
+        {"throw", new NativeFunction(1, (_, args) => throw new RuntimeError(Assert<string>(args[0])))},
     };
     public static readonly Container.Object string_proto;
     public static readonly Container.Object array_proto;
@@ -20,60 +19,63 @@ static class StandardLibrary {
     static StandardLibrary() {
         string_proto = new Container.Object();
         string_proto.Set("at", new NativeFunction(1, (_this, args) => {
-            if (_this is string str && args[0] is double d1) {
-                return str.Substring((int)d1, 1);
-            }
-            throw new RuntimeError("Wrong Arguments in 'string.at'.");
+            string str = Assert<string>(_this);
+            double d1 = Assert<double>(args[0]);
+            return str.Substring((int)d1, 1);
         }));
         string_proto.Set("cut", new NativeFunction(2, (_this, args) => {
-            if (_this is string str && args[0] is double d1 && args[1] is double d2) {
-                return str.Substring((int)d1, (int)d2);
-            }
-            throw new RuntimeError("Wrong Arguments in 'string.cut'.");
+            string str = Assert<string>(_this);
+            double d1 = Assert<double>(args[0]);
+            double d2 = Assert<double>(args[1]);
+            return str.Substring((int)d1, (int)d2);
         }));
         string_proto.Set("parse", new NativeFunction(0, (_this, _) => {
-            if (_this is string str) {
-                if (double.TryParse(str, out double d)) {
-                    return d;
-                }
+            string str = Assert<string>(_this);
+            if (double.TryParse(str, out double d)) {
+                return d;
             }
-            throw new RuntimeError("Wrong Arguments in 'string.parse'.");
+            throw new RuntimeError("Illegal number-string.");
         }));
         string_proto.Set("split", new NativeFunction(1, (_this, args) => {
-            if (args[0] is string separator && _this is string str) {
-                return new Container.Array(str.Split(separator));
-            }
-            throw new RuntimeError("Wrong Arguments in 'string.split'.");
+            string separator = Assert<string>(args[0]);
+            string str = Assert<string>(_this);
+            return new Container.Array(str.Split(separator));
         }));
         string_proto.Set("length", new NativeFunction(0, (_this, _) => {
-            return (double)((string)_this!).Length;
+            return (double)(Assert<string>(_this)).Length;
         }));
 
         number_proto = new Container.Object();
 
         array_proto = new Container.Object();
         array_proto.Set("insert", new NativeFunction(2, (_this, args) => {
-            if (args[0] is double d1 && _this is Container.Array array) {
-                array.Insert(d1, args[1]);
-                return null;
-            }
-            throw new RuntimeError("Wrong Arguments in 'array.insert'.");
+            double d1 = Assert<double>(args[0]);
+            Container.Array array = Assert<Container.Array>(_this);
+            array.Insert(d1, args[1]);
+            return null;
         }));
         array_proto.Set("remove", new NativeFunction(1, (_this, args) => {
-            if (args[0] is double d1 && _this is Container.Array array) {
-                array.Remove(d1);
-                return null;
-            }
-            throw new RuntimeError("Wrong Arguments in 'array.remove'.");
+            double d1 = Assert<double>(args[0]);
+            Container.Array array = Assert<Container.Array>(_this);
+            array.Remove(d1);
+            return null;
         }));
         array_proto.Set("copy", new NativeFunction(0, (_this, _) => {
-            return new Container.Array(((Container.Array)_this!).data);
+            return new Container.Array(Assert<Container.Array>(_this).data);
         }));
         array_proto.Set("length", new NativeFunction(0, (_this, _) => {
-            return (double)(((Container.Array)_this!).Size);
+            return (double)(Assert<Container.Array>(_this).Size);
         }));
 
         object_proto = new Container.Object();
+        object_proto.Set("copy", new NativeFunction(0, (_this, _) => {
+            Container.Object origin_object = Assert<Container.Object>(_this);
+            Container.Object new_object = new Container.Object();
+            foreach (KeyValuePair<string, object?> item in origin_object.data) {
+                new_object.Set(item.Key, item.Value);
+            }
+            return new_object;
+        }));
     }
 
     public static string Stringify(object? @object) {
@@ -98,28 +100,35 @@ static class StandardLibrary {
         return true;
     }
 
-    public static string TypeOf(object? @object) {
-        if (@object is null) {
+    public static string TypeStringify(Type? o) {
+        if (o is null) {
             return "None";
         }
-        else if (@object is double) {
+        else if (o == typeof(double)) {
             return "Number";
         }
-        else if (@object is string) {
+        else if (o == typeof(string)) {
             return "String";
         }
-        else if (@object is bool) {
+        else if (o == typeof(bool)) {
             return "Bool";
         }
-        else if (@object is ICallable) {
+        else if (o == typeof(ICallable)) {
             return "Function";
         }
-        else if (@object is Container.Array) {
+        else if (o == typeof(Container.Array)) {
             return "Array";
         }
-        else if (@object is Container.Object) {
+        else if (o == typeof(Container.Object)) {
             return "Object";
         }
         return "Unknown";
+    }
+
+    public static T Assert<T>(object? o) {
+        if (o is T t) {
+            return t;
+        }
+        throw new RuntimeError($"Need '{TypeStringify(typeof(T))}' but '{TypeStringify(o?.GetType())}' is given.");
     }
 }

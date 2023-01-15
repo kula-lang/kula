@@ -11,23 +11,42 @@ public class KulaEngine {
 
     private AstPrinter astPrinter = new AstPrinter();
 
-    public void Run(string source) {
+    private void Run(string source, string filename, bool isDebug) {
+        this.filename = filename;
+
         hadError = false;
         hadRuntimeError = false;
 
         List<Token> tokens = Lexer.Instance.ScanTokens(this, source);
-        if (hadError) { return; }
+        if (isDebug) {
+            foreach (Token token in tokens) {
+                Console.WriteLine(token);
+            }
+        }
+        if (hadError) {
+            return;
+        }
         List<Stmt> asts = Parser.Instance.Parse(this, tokens);
-        if (hadError) { return; }
+        if (isDebug) {
+            foreach (Stmt stmt in asts) {
+                Console.WriteLine(stmt);
+            }
+        }
+        if (hadError) {
+            return;
+        }
 
         Interpreter.Instance.Interpret(this, asts);
     }
 
-    public void RunProject(string directory) {
-        List<FileInfo> source_files = ModuleResolver.Instance.Resolve(this, directory);
-        foreach (FileInfo file in source_files) {
-            filename = file.Name;
-            Run(file.OpenText().ReadToEnd());
+    public void Run(string source) {
+        Run(source, "TempFile", false);
+    }
+
+    public void Run(FileInfo file) {
+        List<FileInfo> source_files = ModuleResolver.Instance.Resolve(this, file);
+        foreach (FileInfo file_info in source_files) {
+            Run(file_info.OpenText().ReadToEnd(), file_info.Name, false);
             if (hadError || hadRuntimeError) {
                 return;
             }
@@ -35,33 +54,7 @@ public class KulaEngine {
     }
 
     public void DebugRun(string source) {
-        hadError = false;
-        hadRuntimeError = false;
-        filename = "DebugTempFile";
-
-        List<Token> tokens = Lexer.Instance.ScanTokens(this, source);
-        foreach (Token token in tokens) {
-            Console.WriteLine(token);
-        }
-        if (hadError) {
-            Console.Error.WriteLine("LEX ERROR");
-            return;
-        }
-
-        List<Stmt> asts = Parser.Instance.Parse(this, tokens);
-        foreach (Stmt statement in asts) {
-            Console.WriteLine(astPrinter.Print(statement));
-        }
-        if (hadError) {
-            Console.Error.WriteLine("PARSE ERROR");
-            return;
-        }
-
-        Interpreter.Instance.Interpret(this, asts);
-        if (hadRuntimeError) {
-            Console.Error.WriteLine("RUNTIME ERROR");
-            return;
-        }
+        Run(source, "DebugTempFile", true);
     }
 
     internal string? Input() {

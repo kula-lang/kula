@@ -154,11 +154,17 @@ class Parser {
 
     private Stmt ClassDeclaration() {
         Token class_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class declaration.");
+        
+        Token? parent_name = null;
+        if (Match(TokenType.COLON)) {
+            parent_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class extension.");
+        }
+
         Consume(TokenType.LEFT_BRACE, "Expect '{' before class declaration block.");
 
         List<Stmt> methods = new List<Stmt>();
 
-        Token prototype = Token.MakeTemp("prototype");
+        Token prototype = Token.MakeTemp("__proto__");
         Token func = Token.MakeTemp("__func__");
         Token colon_equal = Token.MakeTemp(TokenType.COLON_EQUAL, ":=");
         Token token_object = Token.MakeTemp("Object");
@@ -205,6 +211,21 @@ class Parser {
                         )
                     )
                 );
+
+                if (parent_name is not null) {
+                    constructor.body.Insert(2,
+                    new Stmt.Expression(
+                            new Expr.Assign(
+                                new Expr.Get(
+                                    new Expr.Variable(prototype),
+                                    new Expr.Literal("__proto__"),
+                                    Token.MakeTemp(TokenType.DOT, ".")),
+                                colon_equal,
+                                new Expr.Variable(parent_name.Value)
+                            )
+                        )
+                    );
+                }
                 constructor.body.Add(new Stmt.Return(new Expr.Variable(token_this)));
             }
 
@@ -466,6 +487,7 @@ class Parser {
 
         while (!IsEnd()) {
             if (Previous().type == TokenType.SEMICOLON) return;
+            if (Previous().type == TokenType.RIGHT_BRACE) return;
             switch (Peek().type) {
                 case TokenType.CLASS:
                 case TokenType.FOR:
@@ -473,7 +495,7 @@ class Parser {
                 case TokenType.WHILE:
                 case TokenType.RETURN:
                 case TokenType.PRINT:
-                    break;
+                    return;
             }
 
             Advance();

@@ -27,7 +27,7 @@ public class Object {
 
     public override string ToString() {
         List<string> items = new List<string>();
-        foreach (var item in data) {
+        foreach (KeyValuePair<string, object?> item in data) {
             if (item.Key != __proto__) {
                 string value = StandardLibrary.Stringify(item.Value);
                 items.Add($"\"{item.Key}\":{(item.Value is string ? ($"\"{value}\"") : (value))}");

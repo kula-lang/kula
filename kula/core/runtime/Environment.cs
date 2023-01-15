@@ -22,7 +22,7 @@ class Environment {
             return enclosing.Get(name);
         }
 
-        return null;
+        throw new RuntimeError(name, "Undefined variable.");
     }
 
     public void Assign(Token name, object? value) {

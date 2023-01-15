@@ -1,0 +1,5 @@
+import {
+    "lib.kula"
+}
+
+print "TEST";

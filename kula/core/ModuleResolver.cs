@@ -4,40 +4,59 @@ namespace Kula.Core;
 
 class ModuleResolver {
     private KulaEngine? kula;
-    private string? root;
+    private FileInfo? root;
+    HashSet<string> scannedFiles = new HashSet<string>();
 
     private ModuleResolver() { }
     public static ModuleResolver Instance = new ModuleResolver();
 
-    public List<FileInfo> Resolve(KulaEngine kula, string root) {
+    public List<FileInfo> Resolve(KulaEngine kula, FileInfo root) {
         this.kula = kula;
         this.root = root;
 
-        List<FileInfo> file_info_list = new List<FileInfo>();
-        List<FileInfo[]> topo_info_list = new List<FileInfo[]>();
-
-        foreach (string raw_filename in Directory.EnumerateFiles(root, "*.kula")) {
-            FileInfo file = new FileInfo(raw_filename);
-            DirectoryInfo directory = file.Directory!;
-
-            string source = file.OpenText().ReadToEnd();
-            FileInfo[] files = AnalyzeModule(directory, source);
-
-            file_info_list.Add(file);
-            topo_info_list.Add(files);
-
-            // Console.WriteLine(file.FullName);
-            // foreach (FileInfo file_info in files) {
-            //     Console.WriteLine("\t" + file_info.FullName);
-            // }
-        }
+        (List<FileInfo> file_info_list, List<FileInfo[]> topo_info_list) = Scan(root);
 
         List<FileInfo> final_files = TopoSortFiles(file_info_list, topo_info_list);
+        // Console.WriteLine(":");
         // foreach (FileInfo file_info in final_files) {
         //     Console.WriteLine(file_info.FullName);
         // }
 
         return final_files;
+    }
+
+    private (List<FileInfo>, List<FileInfo[]>) Scan(FileInfo root) {
+        List<FileInfo> file_info_list = new List<FileInfo>();
+        List<FileInfo[]> topo_info_list = new List<FileInfo[]>();
+
+        Queue<FileInfo> file_info_que = new Queue<FileInfo>();
+        file_info_que.Enqueue(root);
+
+        while (file_info_que.Count > 0) {
+            FileInfo file_info = file_info_que.Dequeue();
+
+            if (!scannedFiles.Contains(file_info.FullName)) {
+                string source = file_info.OpenText().ReadToEnd();
+                FileInfo[] next_list = AnalyzeModule(file_info.Directory!, source);
+                foreach (FileInfo next in next_list) {
+                    file_info_que.Enqueue(next);
+                }
+
+                file_info_list.Add(file_info);
+                topo_info_list.Add(next_list);
+
+                scannedFiles.Add(file_info.FullName);
+            }
+        }
+
+        // for (int i = 0; i < file_info_list.Count; ++i) {
+        //     Console.WriteLine(file_info_list[i].FullName);
+        //     foreach (FileInfo item in topo_info_list[i]) {
+        //         Console.WriteLine("\t" + item.FullName);
+        //     }
+        // }
+
+        return (file_info_list, topo_info_list);
     }
 
     private List<FileInfo> TopoSortFiles(List<FileInfo> files, List<FileInfo[]> topo) {
@@ -77,6 +96,7 @@ class ModuleResolver {
             }
         }
 
+
         List<int> ans = new List<int>();
         while (que.Count != 0) {
             int last = que.Dequeue();
@@ -96,8 +116,12 @@ class ModuleResolver {
         Regex rx = new Regex(@"^\s*import\s*\{(?<inner>.*?)\}", RegexOptions.Compiled | RegexOptions.Singleline);
         MatchCollection matches = rx.Matches(source);
         foreach (Match match in matches) {
-            string inner = match.Groups["inner"].Value;
-            string[] inner_values = inner.Trim().Split(',');
+            string inner = match.Groups["inner"].Value.Trim();
+            if (inner == "") {
+                return new FileInfo[0];
+            }
+
+            string[] inner_values = inner.Split(',');
             for (int i = 0; i < inner_values.Length; ++i) {
                 inner_values[i] = inner_values[i].Trim();
                 inner_values[i] = inner_values[i].Substring(1, inner_values[i].Length - 2);
@@ -119,6 +143,6 @@ class ModuleResolver {
                 return i;
             }
         }
-        return -1;
+        throw new Exception();
     }
 }
