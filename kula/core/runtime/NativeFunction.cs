@@ -7,9 +7,9 @@ public class NativeFunction : ICallable {
     private Callee callee;
     private object? callSite;
 
-    int ICallable.Arity => arity;
+    public int Arity => arity;
 
-    object? ICallable.Call(List<object?> arguments) {
+    public object? Call(List<object?> arguments) {
         try {
             return callee(callSite, arguments);
         }
@@ -29,5 +29,9 @@ public class NativeFunction : ICallable {
     public NativeFunction(int arity, Callee callee) {
         this.callee = callee;
         this.arity = arity;
+    }
+
+    public override string ToString() {
+        return "<Function>";
     }
 }

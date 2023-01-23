@@ -35,7 +35,7 @@ class Environment {
             return;
         }
 
-        throw new RuntimeError(name, $"Undefined variable '{name.lexeme}' when assign.");
+        throw new RuntimeError(name, $"Undefined variable when assign.");
     }
 
     public void Define(Token name, object? value) {

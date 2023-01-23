@@ -16,7 +16,7 @@ class Function : ICallable {
 
     public int Arity => defination.parameters.Count;
 
-    object? ICallable.Call(List<object?> arguments) {
+    public object? Call(List<object?> arguments) {
         Runtime.Environment environment = new Runtime.Environment(parent);
 
         environment.Define(Token.MakeTemp("self"), this);

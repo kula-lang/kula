@@ -62,11 +62,23 @@ class Lexer {
             case '}': AddToken(TokenType.RIGHT_BRACE); break;
             case ',': AddToken(TokenType.COMMA); break;
             case '.': AddToken(TokenType.DOT); break;
-            case '-': AddToken(TokenType.MINUS); break;
-            case '+': AddToken(TokenType.PLUS); break;
             case ';': AddToken(TokenType.SEMICOLON); break;
-            case '*': AddToken(TokenType.STAR); break;
-            case '/': AddToken(TokenType.SLASH); break;
+            // operator sugar
+            case '-':
+                AddToken(Match('=') ? TokenType.MINUS_EQUAL : TokenType.MINUS);
+                break;
+            case '+':
+                AddToken(Match('=') ? TokenType.PLUS_EQUAL : TokenType.PLUS);
+                break;
+            case '*':
+                AddToken(Match('=') ? TokenType.STAR_EQUAL : TokenType.STAR); 
+                break;
+            case '/':
+                AddToken(Match('=') ? TokenType.SLASH_EQUAL : TokenType.STAR); 
+                break;
+            case '%':
+                AddToken(Match('=') ? TokenType.MODULUS_EQUAL : TokenType.MODULUS);
+                break;
             // Multi Character Tokens
             case ':':
                 AddToken(Match('=') ? TokenType.COLON_EQUAL : TokenType.COLON);
@@ -91,6 +103,20 @@ class Lexer {
                 }
                 AddToken(TokenType.EQUAL);
                 break;
+            case '&':
+                if (Match('&')) {
+                    AddToken(TokenType.AND);
+                    break;
+                }
+                kula!.Error(line, "Unexpected character '&'.");
+                break;
+            case '|':
+                if (Match('|')) {
+                    AddToken(TokenType.OR);
+                    break;
+                }
+                kula!.Error(line, "Unexpected character '|'.");
+                break;
             // Comment
             case '#':
                 while (Peek() != '\n' && !IsEnd()) {
@@ -107,10 +133,9 @@ class Lexer {
                 break;
             // Literial
             case '"':
-                String('"');
-                break;
             case '\'':
-                String('\'');
+            case '`':
+                String(c);
                 break;
             default:
                 if (IsDigit(c)) {

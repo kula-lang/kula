@@ -9,6 +9,18 @@ public static class StandardLibrary {
         {"Object", new NativeFunction(0, (_, args) => new Container.Object())},
         {"Array", new NativeFunction(0, (_, args) => new Container.Array())},
         {"asArray", new NativeFunction(-1, (_, args) => new Container.Array(args))},
+        {"asObject", new NativeFunction(-1, (_, args) => {
+            if (args.Count % 2 != 0) {
+                throw new RuntimeError("Need odd argument(s) but even is given.");
+            }
+            Container.Object my_obj = new Container.Object();
+            for (int i = 0; i + 1 < args.Count; i += 2) {
+                string key = Assert<string>(args[i]);
+                object? value = args[i + 1];
+                my_obj.Set(key, value);
+            }
+            return my_obj;
+        })},
         {"typeof", new NativeFunction(1, (_, args) => TypeStringify(args[0]?.GetType()))},
         {"throw", new NativeFunction(1, (_, args) => throw new RuntimeError(Assert<string>(args[0])))},
     };
@@ -34,7 +46,7 @@ public static class StandardLibrary {
             if (double.TryParse(str, out double d)) {
                 return d;
             }
-            throw new RuntimeError("Illegal number-string.");
+            return null;
         }));
         string_proto.Set("split", new NativeFunction(1, (_this, args) => {
             string separator = Assert<string>(args[0]);
@@ -43,6 +55,9 @@ public static class StandardLibrary {
         }));
         string_proto.Set("length", new NativeFunction(0, (_this, _) => {
             return (double)(Assert<string>(_this)).Length;
+        }));
+        string_proto.Set("charCode", new NativeFunction(0, (_this, _) => {
+            return (double)((short)(Assert<string>(_this)[0]));
         }));
 
         number_proto = new Container.Object();
@@ -66,6 +81,47 @@ public static class StandardLibrary {
         array_proto.Set("length", new NativeFunction(0, (_this, _) => {
             return (double)(Assert<Container.Array>(_this).Size);
         }));
+        array_proto.Set("foreach", new NativeFunction(1, (_this, args) => {
+            ICallable lambda = Assert<ICallable>(args[0]);
+            Container.Array arr = Assert<Container.Array>(_this);
+            for (int i = 0; i < arr.data.Count; ++i) {
+                lambda.Call(new List<object?>() { arr.data[i], (double)i });
+            }
+            return null;
+        }));
+        array_proto.Set("map", new NativeFunction(1, (_this, args) => {
+            ICallable lambda = Assert<ICallable>(args[0]);
+            Container.Array arr = Assert<Container.Array>(_this);
+            List<object?> new_arr = new List<object?>();
+            for (int i = 0; i < arr.data.Count; ++i) {
+                object? item = lambda.Call(new List<object?>() { arr.data[i], (double)i });
+                new_arr.Add(item);
+            }
+            return new Container.Array(new_arr);
+        }));
+        array_proto.Set("reduce", new NativeFunction(2, (_this, args) => {
+            ICallable lambda = Assert<ICallable>(args[0]);
+            Container.Array arr = Assert<Container.Array>(_this);
+            object? total = args[1];
+            List<object?> new_arr = new List<object?>();
+            for (int i = 0; i < arr.data.Count; ++i) {
+                object? item = lambda.Call(new List<object?>() { total, arr.data[i], (double)i });
+                total = item;
+            }
+            return total;
+        }));
+        array_proto.Set("filter", new NativeFunction(1, (_this, args) => {
+            ICallable lambda = Assert<ICallable>(args[0]);
+            Container.Array arr = Assert<Container.Array>(_this);
+            List<object?> new_arr = new List<object?>();
+            for (int i = 0; i < arr.data.Count; ++i) {
+                object? flag = lambda.Call(new List<object?>() { arr.data[i], (double)i });
+                if (Assert<bool>(flag)) {
+                    new_arr.Add(arr.data[i]);
+                }
+            }
+            return new Container.Array(new_arr);
+        }));
 
         object_proto = new Container.Object();
         object_proto.Set("copy", new NativeFunction(0, (_this, _) => {
@@ -75,6 +131,14 @@ public static class StandardLibrary {
                 new_object.Set(item.Key, item.Value);
             }
             return new_object;
+        }));
+        object_proto.Set("foreach", new NativeFunction(1, (_this, args) => {
+            ICallable lambda = Assert<ICallable>(args[0]);
+            Container.Object obj = Assert<Container.Object>(_this);
+            foreach (KeyValuePair<string, object?> item in obj.data) {
+                lambda.Call(new List<object?>() { item.Key, item.Value });
+            }
+            return null;
         }));
     }
 
@@ -122,7 +186,7 @@ public static class StandardLibrary {
         else if (o == typeof(Container.Object)) {
             return "Object";
         }
-        return "Unknown";
+        return o.ToString();
     }
 
     public static T Assert<T>(object? o) {

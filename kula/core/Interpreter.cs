@@ -131,6 +131,8 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
                         return left_double * right_double;
                     case TokenType.SLASH:
                         return left_double / right_double;
+                    case TokenType.MODULUS:
+                        return (double)((int)left_double % (int)right_double);
                     case TokenType.GREATER:
                         return left_double > right_double;
                     case TokenType.LESS:
@@ -144,7 +146,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
                 }
             }
             else {
-                throw new RuntimeError(@operator, "Operands must be numbers.");
+                throw new RuntimeError(@operator, $"Operands '{@operator.lexeme}' must be numbers.");
             }
         }
     }
@@ -261,7 +263,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
                 return;
             }
         }
-        throw new RuntimeError(expr.@operator, "Only 'Object' have properties when get.");
+        throw new RuntimeError(expr.@operator, "Only 'Object' and 'Array' have properties when get.");
     }
 
     int Stmt.Visitor<int>.VisitIf(Stmt.If stmt) {

@@ -154,7 +154,7 @@ class Parser {
 
     private Stmt ClassDeclaration() {
         Token class_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class declaration.");
-        
+
         Token? parent_name = null;
         if (Match(TokenType.COLON)) {
             parent_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class extension.");
@@ -272,6 +272,25 @@ class Parser {
 
             throw Error(@operator, "Invalid assignment target.");
         }
+        else if (Match(TokenType.PLUS_EQUAL, TokenType.MINUS_EQUAL, TokenType.STAR_EQUAL, TokenType.SLASH_EQUAL, TokenType.MODULUS_EQUAL)) {
+            Token @operator = Previous();
+            Expr right = Assignment();
+            Token equal = Token.MakeTemp(TokenType.EQUAL, "=");
+
+            switch (@operator.type) {
+                case TokenType.PLUS_EQUAL:
+                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.PLUS, "+"), expr, right));
+                case TokenType.MINUS_EQUAL:
+                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.MINUS, "-"), expr, right));
+                case TokenType.STAR_EQUAL:
+                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.STAR, "*"), expr, right));
+                case TokenType.SLASH_EQUAL:
+                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.SLASH, "/"), expr, right));
+                case TokenType.MODULUS_EQUAL:
+                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.MODULUS, "%"), expr, right));
+            }
+            throw Error(@operator, "Invalid assignment target.");
+        }
 
         return expr;
     }
@@ -339,7 +358,7 @@ class Parser {
     private Expr Factor() {
         Expr expr = Unary();
 
-        while (Match(TokenType.STAR, TokenType.SLASH)) {
+        while (Match(TokenType.STAR, TokenType.SLASH, TokenType.MODULUS)) {
             Token @operator = Previous();
             Expr right = Unary();
             expr = new Expr.Binary(@operator, expr, right);
@@ -423,8 +442,31 @@ class Parser {
         }
         else if (Match(TokenType.LEFT_PAREN)) {
             Expr expr = Expression();
+            List<Token>? parameters = null;
+            if (Match(TokenType.COMMA)) {
+                parameters = new List<Token>();
+                do {
+                    Token param_name = Consume(TokenType.IDENTIFIER, "Expect parameter names.");
+                    parameters.Add(param_name);
+                }
+                while (Match(TokenType.COMMA));
+            }
             Consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
-            return expr;
+
+            if (Match(TokenType.ARROW)) {
+                parameters = parameters ?? new List<Token>();
+                if (expr is Expr.Variable first_param) {
+                    parameters.Insert(0, first_param.name);
+                }
+                else {
+                    throw Error(Previous(), "Expect parameter name in arrow-function.");
+                }
+                Expr return_value = Expression();
+                return new Expr.Function(parameters!, new List<Stmt>() { new Stmt.Return(return_value) });
+            }
+            else {
+                return expr;
+            }
         }
         // Lambda Declaration
         else if (Match(TokenType.FUNC)) {
@@ -440,7 +482,7 @@ class Parser {
         List<Token> parameters = new List<Token>();
         if (!Check(TokenType.RIGHT_PAREN)) {
             do {
-                Token param_name = Consume(TokenType.IDENTIFIER, "Expect parameters name.");
+                Token param_name = Consume(TokenType.IDENTIFIER, "Expect parameter names.");
                 parameters.Add(param_name);
             }
             while (Match(TokenType.COMMA));
@@ -516,6 +558,10 @@ class Parser {
 
     private Token Previous() {
         return tokens![current - 1];
+    }
+
+    private Token Previous(int i) {
+        return tokens![current - i];
     }
 
     private Token Peek() {

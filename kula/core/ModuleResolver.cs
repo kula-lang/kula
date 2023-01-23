@@ -124,7 +124,9 @@ class ModuleResolver {
             string[] inner_values = inner.Split(',');
             for (int i = 0; i < inner_values.Length; ++i) {
                 inner_values[i] = inner_values[i].Trim();
-                inner_values[i] = inner_values[i].Substring(1, inner_values[i].Length - 2);
+                if (inner_values[i].Length >= 2) {
+                    inner_values[i] = inner_values[i].Substring(1, inner_values[i].Length - 2);
+                }
             }
 
             FileInfo[] files = new FileInfo[inner_values.Length];

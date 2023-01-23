@@ -4,6 +4,7 @@ class Program {
     public static void Main(string[] args) {
         switch (args.Length) {
             case 0:
+                Console.WriteLine($"Kula-CLI (tags/v1.0.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
                 Console.WriteLine("Usage: kula-cli <PATH> [options]");
                 Repl();
                 return;
@@ -19,6 +20,7 @@ class Program {
         KulaEngine kula = new KulaEngine();
         string? source;
         for (; ; ) {
+            Console.WriteLine();
             Console.Write(">> ");
             source = Console.ReadLine();
             if (source is null || source.Trim() == "#exit") {
@@ -27,7 +29,6 @@ class Program {
             else {
                 kula.Run(source);
             }
-            Console.WriteLine();
         }
     }
 }
