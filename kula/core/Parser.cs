@@ -2,7 +2,8 @@ using Kula.Core.Ast;
 
 namespace Kula.Core;
 
-class Parser {
+class Parser
+{
     private KulaEngine? kula;
     private List<Token>? tokens;
 
@@ -10,17 +11,10 @@ class Parser {
 
     public static Parser Instance = new Parser();
 
-    private Stmt Declaration() {
+    private Stmt Declaration()
+    {
         if (Match(TokenType.IMPORT)) {
-            Consume(TokenType.LEFT_BRACE, "Expect '{' before 'import' block.");
-            if (!Check(TokenType.RIGHT_BRACE)) {
-                do {
-                    Consume(TokenType.STRING, "");
-                }
-                while (Match(TokenType.COMMA));
-            }
-            Consume(TokenType.RIGHT_BRACE, "Expect '}' after 'import' block.");
-            return Stmt.Void.Instance;
+            return Import();
         }
         else if (Match(TokenType.FUNC)) {
             return FunctionDeclaration();
@@ -31,7 +25,28 @@ class Parser {
         return Statement();
     }
 
-    private Stmt Statement() {
+    private Stmt.Sugar Import()
+    {
+        Token lbrace = Consume(TokenType.LEFT_BRACE, "Expect '{' before 'import' block.");
+        List<Stmt> list = new List<Stmt>();
+        if (!Check(TokenType.RIGHT_BRACE)) {
+            do {
+                Token file_path = Consume(TokenType.STRING, "Expect module name.");
+                list.Add(
+                    new Stmt.Expression(
+                        new Expr.Call(
+                            new Expr.Variable(Token.MakeTemp("load")),
+                            new List<Expr>() { new Expr.Literal(file_path.literial) },
+                            lbrace)));
+            }
+            while (Match(TokenType.COMMA));
+        }
+        Consume(TokenType.RIGHT_BRACE, "Expect '}' after 'import' block.");
+        return new Stmt.Sugar(list);
+    }
+
+    private Stmt Statement()
+    {
         if (Match(TokenType.IF)) {
             return IfStatement();
         }
@@ -63,10 +78,11 @@ class Parser {
         }
     }
 
-    private Stmt IfStatement() {
-        Consume(TokenType.LEFT_PAREN, "Expect '(' after if.");
+    private Stmt IfStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expect '(' before 'if' condition.");
         Expr condition = Expression();
-        Consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after 'if' condition.");
 
         Stmt then_branch = Statement();
         Stmt? else_branch = null;
@@ -77,17 +93,19 @@ class Parser {
         return new Stmt.If(condition, then_branch, else_branch);
     }
 
-    private Stmt WhileStatement() {
-        Consume(TokenType.LEFT_PAREN, "Expect '(' before while condition.");
+    private Stmt WhileStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expect '(' before 'while' condition.");
         Expr condition = Expression();
-        Consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after 'while' condition.");
 
         Stmt branch = Statement();
         return new Stmt.For(null, condition, null, branch);
         //return new Stmt.While(condition, branch);
     }
 
-    private Stmt ForStatement() {
+    private Stmt ForStatement()
+    {
         Consume(TokenType.LEFT_PAREN, "Expect '(' before 'for' condition.");
         Stmt? initializer;
         if (Match(TokenType.SEMICOLON)) {
@@ -114,7 +132,8 @@ class Parser {
         return new Stmt.For(initializer, condition, increment, body);
     }
 
-    private Stmt ReturnStatement() {
+    private Stmt ReturnStatement()
+    {
         Expr? value = null;
         if (!Check(TokenType.SEMICOLON)) {
             value = Expression();
@@ -123,7 +142,8 @@ class Parser {
         return new Stmt.Return(value);
     }
 
-    private Stmt PrintStatement() {
+    private Stmt PrintStatement()
+    {
         List<Expr> items = new List<Expr>();
         do {
             items.Add(Expression());
@@ -134,14 +154,16 @@ class Parser {
         return new Stmt.Print(items);
     }
 
-    private Stmt ExpressionStatement() {
+    private Stmt ExpressionStatement()
+    {
         Expr expr = Expression();
         Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
 
         return new Stmt.Expression(expr);
     }
 
-    private Stmt FunctionDeclaration() {
+    private Stmt FunctionDeclaration()
+    {
         Token func_name = Consume(TokenType.IDENTIFIER, "Expect identifier in function declaration.");
         Expr function = LambdaDeclaration();
 
@@ -152,7 +174,8 @@ class Parser {
                 function));
     }
 
-    private Stmt ClassDeclaration() {
+    private Stmt ClassDeclaration()
+    {
         Token class_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class declaration.");
 
         Token? parent_name = null;
@@ -160,7 +183,7 @@ class Parser {
             parent_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class extension.");
         }
 
-        Consume(TokenType.LEFT_BRACE, "Expect '{' before class declaration block.");
+        Token lbrace = Consume(TokenType.LEFT_BRACE, "Expect '{' before class declaration block.");
 
         List<Stmt> methods = new List<Stmt>();
 
@@ -251,17 +274,19 @@ class Parser {
                 new Expr.Call(
                     new Expr.Function(new List<Token>(), methods),
                     new List<Expr>(),
-                    Token.MakeTemp(")")
+                    lbrace
                 )
             )
         );
     }
 
-    private Expr Expression() {
+    private Expr Expression()
+    {
         return Assignment();
     }
 
-    private Expr Assignment() {
+    private Expr Assignment()
+    {
         Expr expr = LogicOr();
 
         if (Match(TokenType.EQUAL, TokenType.COLON_EQUAL)) {
@@ -295,7 +320,8 @@ class Parser {
         return expr;
     }
 
-    private Expr LogicOr() {
+    private Expr LogicOr()
+    {
         Expr expr = LogicAnd();
 
         while (Match(TokenType.OR)) {
@@ -307,7 +333,8 @@ class Parser {
         return expr;
     }
 
-    private Expr LogicAnd() {
+    private Expr LogicAnd()
+    {
         Expr expr = Equality();
 
         while (Match(TokenType.AND)) {
@@ -319,7 +346,8 @@ class Parser {
         return expr;
     }
 
-    private Expr Equality() {
+    private Expr Equality()
+    {
         Expr expr = Comparison();
 
         while (Match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
@@ -331,7 +359,8 @@ class Parser {
         return expr;
     }
 
-    private Expr Comparison() {
+    private Expr Comparison()
+    {
         Expr expr = Term();
 
         while (Match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
@@ -343,7 +372,8 @@ class Parser {
         return expr;
     }
 
-    private Expr Term() {
+    private Expr Term()
+    {
         Expr expr = Factor();
 
         while (Match(TokenType.PLUS, TokenType.MINUS)) {
@@ -355,7 +385,8 @@ class Parser {
         return expr;
     }
 
-    private Expr Factor() {
+    private Expr Factor()
+    {
         Expr expr = Unary();
 
         while (Match(TokenType.STAR, TokenType.SLASH, TokenType.MODULUS)) {
@@ -367,7 +398,8 @@ class Parser {
         return expr;
     }
 
-    private Expr Unary() {
+    private Expr Unary()
+    {
         if (Match(TokenType.BANG, TokenType.MINUS)) {
             Token @operator = Previous();
             Expr right = Unary();
@@ -378,7 +410,8 @@ class Parser {
         }
     }
 
-    private Expr Call() {
+    private Expr Call()
+    {
         Expr expr = Primary();
 
         for (; ; ) {
@@ -398,7 +431,8 @@ class Parser {
         return expr;
     }
 
-    private Expr FinishCall(Expr callee) {
+    private Expr FinishCall(Expr callee)
+    {
         List<Expr> arguments = new List<Expr>();
 
         if (!Check(TokenType.RIGHT_PAREN)) {
@@ -412,19 +446,22 @@ class Parser {
         return new Expr.Call(callee, arguments, paren);
     }
 
-    private Expr DotGet(Expr dict, Token dot) {
+    private Expr DotGet(Expr dict, Token dot)
+    {
         Token key = Consume(TokenType.IDENTIFIER, "Expect identifier after dot.");
         return new Expr.Get(dict, new Expr.Literal(key.lexeme), dot);
     }
 
-    private Expr SquareGet(Expr dict, Token square) {
+    private Expr SquareGet(Expr dict, Token square)
+    {
         Expr key = Expression();
         Consume(TokenType.RIGHT_SQUARE, "Expect ']' after dict key.");
 
         return new Expr.Get(dict, key, square);
     }
 
-    private Expr Primary() {
+    private Expr Primary()
+    {
         if (Match(TokenType.FALSE)) {
             return new Expr.Literal(false);
         }
@@ -441,8 +478,14 @@ class Parser {
             return new Expr.Variable(Previous());
         }
         else if (Match(TokenType.LEFT_PAREN)) {
+            // () => xxx
+            if (Match(TokenType.RIGHT_PAREN)) {
+                return ArrowFunction(new List<Token>());
+            }
+            // expr
             Expr expr = Expression();
             List<Token>? parameters = null;
+            // (a,b...)
             if (Match(TokenType.COMMA)) {
                 parameters = new List<Token>();
                 do {
@@ -453,16 +496,15 @@ class Parser {
             }
             Consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
 
-            if (Match(TokenType.ARROW)) {
+            if (Peek().type == TokenType.ARROW) {
                 parameters = parameters ?? new List<Token>();
                 if (expr is Expr.Variable first_param) {
                     parameters.Insert(0, first_param.name);
                 }
                 else {
-                    throw Error(Previous(), "Expect parameter name in arrow-function.");
+                    throw Error(Peek(), "Expect parameter name in arrow-function.");
                 }
-                Expr return_value = Expression();
-                return new Expr.Function(parameters!, new List<Stmt>() { new Stmt.Return(return_value) });
+                return ArrowFunction(parameters);
             }
             else {
                 return expr;
@@ -476,7 +518,15 @@ class Parser {
         throw Error(Peek(), "Expect expression.");
     }
 
-    private Expr LambdaDeclaration() {
+    private Expr ArrowFunction(List<Token> parameters)
+    {
+        Consume(TokenType.ARROW, "Expect '=>' in arrow-function.");
+        Expr return_value = Expression();
+        return new Expr.Function(parameters, new List<Stmt>() { new Stmt.Return(return_value) });
+    }
+
+    private Expr LambdaDeclaration()
+    {
         Consume(TokenType.LEFT_PAREN, "Expect '(' before function parameters.");
 
         List<Token> parameters = new List<Token>();
@@ -495,7 +545,8 @@ class Parser {
         return new Expr.Function(parameters, body);
     }
 
-    private List<Stmt> Block() {
+    private List<Stmt> Block()
+    {
         List<Stmt> statements = new List<Stmt>();
 
         while (!Check(TokenType.RIGHT_BRACE) && !IsEnd()) {
@@ -506,7 +557,8 @@ class Parser {
         return statements;
     }
 
-    public List<Stmt> Parse(KulaEngine kula, List<Token> tokens) {
+    public List<Stmt> Parse(KulaEngine kula, List<Token> tokens)
+    {
         this.kula = kula;
         this.tokens = tokens;
         this.current = 0;
@@ -514,7 +566,13 @@ class Parser {
         List<Stmt> statements = new List<Stmt>();
         while (!IsEnd()) {
             try {
-                statements.Add(Declaration());
+                Stmt stmt = Declaration();
+                if (stmt is Stmt.Sugar sugar) {
+                    statements.AddRange(sugar.list);
+                }
+                else {
+                    statements.Add(stmt);
+                }
             }
             catch (ParseError) {
                 Synchronize();
@@ -524,7 +582,8 @@ class Parser {
         return statements;
     }
 
-    private void Synchronize() {
+    private void Synchronize()
+    {
         Advance();
 
         while (!IsEnd()) {
@@ -544,46 +603,55 @@ class Parser {
         }
     }
 
-    private Token Consume(TokenType type, string errmsg) {
+    private Token Consume(TokenType type, string errmsg)
+    {
         if (Check(type)) {
             return Advance();
         }
         throw Error(Peek(), errmsg);
     }
 
-    private ParseError Error(Token token, string errmsg) {
+    private ParseError Error(Token token, string errmsg)
+    {
         kula!.Error(token, errmsg);
         return ParseError.Instance;
     }
 
-    private Token Previous() {
+    private Token Previous()
+    {
         return tokens![current - 1];
     }
 
-    private Token Previous(int i) {
+    private Token Previous(int i)
+    {
         return tokens![current - i];
     }
 
-    private Token Peek() {
+    private Token Peek()
+    {
         return tokens![current];
     }
 
-    private bool IsEnd() {
+    private bool IsEnd()
+    {
         return Peek().type == TokenType.EOF;
     }
 
-    private bool Check(TokenType type) {
+    private bool Check(TokenType type)
+    {
         return !IsEnd() && Peek().type == type;
     }
 
-    private Token Advance() {
+    private Token Advance()
+    {
         if (!IsEnd()) {
             ++current;
         }
         return Previous();
     }
 
-    private bool Match(TokenType type) {
+    private bool Match(TokenType type)
+    {
         if (Check(type)) {
             Advance();
             return true;
@@ -591,7 +659,8 @@ class Parser {
         return false;
     }
 
-    private bool Match(params TokenType[] types) {
+    private bool Match(params TokenType[] types)
+    {
         foreach (TokenType type in types) {
             if (Check(type)) {
                 Advance();
@@ -601,7 +670,8 @@ class Parser {
         return false;
     }
 
-    public class ParseError : Exception {
+    public class ParseError : Exception
+    {
         public static ParseError Instance = new ParseError();
     }
 }

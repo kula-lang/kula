@@ -1,6 +1,7 @@
 namespace Kula.Core.Runtime;
 
-public class NativeFunction : ICallable {
+public class NativeFunction : ICallable
+{
     public delegate object? Callee(object? _this, List<object?> arguments);
 
     private int arity;
@@ -9,29 +10,31 @@ public class NativeFunction : ICallable {
 
     public int Arity => arity;
 
-    public object? Call(List<object?> arguments) {
-        try {
-            return callee(callSite, arguments);
-        }
-        finally {
-            Unbind();
-        }
+    public object? Call(List<object?> arguments)
+    {
+        object? callsite = callSite;
+        Unbind();
+        return callee(callsite, arguments);
     }
 
-    public void Bind(object? callSite) {
+    public void Bind(object? callSite)
+    {
         this.callSite = callSite;
     }
 
-    public void Unbind() {
+    void Unbind()
+    {
         this.callSite = null;
     }
 
-    public NativeFunction(int arity, Callee callee) {
+    public NativeFunction(int arity, Callee callee)
+    {
         this.callee = callee;
         this.arity = arity;
     }
 
-    public override string ToString() {
+    public override string ToString()
+    {
         return "<Function>";
     }
 }

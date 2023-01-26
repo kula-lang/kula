@@ -2,16 +2,19 @@ using Kula.Core.Runtime;
 
 namespace Kula.Core.Container;
 
-public class Object {
+public class Object
+{
     private static readonly string __proto__ = "__proto__";
     internal readonly Dictionary<string, object?> data;
 
-    public Object() {
+    public Object()
+    {
         data = new Dictionary<string, object?>();
         Set(__proto__, StandardLibrary.object_proto);
     }
 
-    public object? Get(string key) {
+    public object? Get(string key)
+    {
         if (data.ContainsKey(key)) {
             return data[key];
         }
@@ -21,11 +24,13 @@ public class Object {
         return null;
     }
 
-    public void Set(string key, object? value) {
+    public void Set(string key, object? value)
+    {
         data[key] = value;
     }
 
-    public override string ToString() {
+    public override string ToString()
+    {
         List<string> items = new List<string>();
         foreach (KeyValuePair<string, object?> item in data) {
             if (item.Key != __proto__) {

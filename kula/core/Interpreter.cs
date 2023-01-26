@@ -4,21 +4,16 @@ using Kula.Core.Container;
 
 namespace Kula.Core;
 
-class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
+class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
+{
     internal readonly Runtime.Environment globals;
     internal Runtime.Environment environment;
     private KulaEngine? kula;
 
     public static readonly Interpreter Instance = new Interpreter();
-    private readonly Dictionary<Expr.Function, Function> functionDict = new Dictionary<Expr.Function, Function>();
 
-    private Interpreter() {
-        this.globals = new Runtime.Environment();
-        this.environment = this.globals;
-
-        foreach (KeyValuePair<string, NativeFunction> kv in StandardLibrary.global_functions) {
-            globals.Define(Token.MakeTemp(kv.Key), kv.Value);
-        }
+    private void CoreFunctions()
+    {
         globals.Define(Token.MakeTemp("input"), new NativeFunction(0, (_, args) => kula!.Input()));
         globals.Define(Token.MakeTemp("println"), new NativeFunction(-1, (_, args) => {
             List<string> items = new List<string>();
@@ -30,14 +25,31 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         }));
         globals.Define(Token.MakeTemp("eval"), new NativeFunction(1, (_, args) => {
             string source = StandardLibrary.Assert<string>(args[0]);
-            kula!.Run(source);
+            kula!.RunSource(source, "<eval>", false);
             return null;
         }));
         globals.Define(Token.MakeTemp("load"), new NativeFunction(1, (_, args) => {
             string path = StandardLibrary.Assert<string>(args[0]);
-            kula!.Run(new FileInfo(path));
+            if (File.Exists(path)) {
+                kula!.LoadRun(new FileInfo(path));
+            }
+            else {
+                throw new RuntimeInnerError($"File '{path}' does not exist.");
+            }
             return null;
         }));
+    }
+
+    private Interpreter()
+    {
+        this.globals = new Runtime.Environment();
+        this.environment = this.globals;
+
+        foreach (KeyValuePair<string, NativeFunction> kv in StandardLibrary.global_functions) {
+            globals.Define(Token.MakeTemp(kv.Key), kv.Value);
+        }
+
+        CoreFunctions();
 
         globals.Define(Token.MakeTemp("__string_proto__"), StandardLibrary.string_proto);
         globals.Define(Token.MakeTemp("__array_proto__"), StandardLibrary.array_proto);
@@ -45,7 +57,8 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         globals.Define(Token.MakeTemp("__object_proto__"), StandardLibrary.object_proto);
     }
 
-    public void Interpret(KulaEngine kula, List<Stmt> stmts) {
+    public void Interpret(KulaEngine kula, List<Stmt> stmts)
+    {
         this.kula = kula;
         try {
             ExecuteBlock(stmts, environment);
@@ -55,15 +68,18 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         }
     }
 
-    private object? Evaluate(Expr expr) {
+    private object? Evaluate(Expr expr)
+    {
         return expr.Accept(this);
     }
 
-    private void Execute(Stmt stmt) {
+    private void Execute(Stmt stmt)
+    {
         stmt.Accept(this);
     }
 
-    object? Expr.Visitor<object?>.VisitAssign(Expr.Assign expr) {
+    object? Expr.Visitor<object?>.VisitAssign(Expr.Assign expr)
+    {
         object? value = Evaluate(expr.right);
 
         if (expr.left is Expr.Variable variable) {
@@ -90,7 +106,12 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
             }
             else if (container is Container.Array container_array) {
                 if (key is double key_double) {
-                    container_array.Set(key_double, value);
+                    try {
+                        container_array.Set(key_double, value);
+                    }
+                    catch (RuntimeInnerError rie) {
+                        throw new RuntimeError(get.@operator, rie.Message);
+                    }
                 }
                 else {
                     throw new RuntimeError(get.@operator, "Index of 'Array' can only be 'Number'.");
@@ -104,7 +125,8 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         return value;
     }
 
-    private object EvalBinary(Token @operator, object? left, object? right) {
+    private object EvalBinary(Token @operator, object? left, object? right)
+    {
         if (@operator.type == TokenType.PLUS) {
             if (left is string left_string && right is string right_string) {
                 return left_string + right_string;
@@ -142,25 +164,28 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
                     case TokenType.LESS_EQUAL:
                         return left_double <= right_double;
                     default:
-                        throw new RuntimeError(@operator, "Undefined Operator.");
+                        throw new RuntimeError(@operator, $"Undefined Operator '{@operator.lexeme}'.");
                 }
             }
             else {
-                throw new RuntimeError(@operator, $"Operands '{@operator.lexeme}' must be numbers.");
+                throw new RuntimeError(@operator, $"Operands must be numbers.");
             }
         }
     }
 
-    object? Expr.Visitor<object?>.VisitBinary(Expr.Binary expr) {
+    object? Expr.Visitor<object?>.VisitBinary(Expr.Binary expr)
+    {
         return EvalBinary(expr.@operator, Evaluate(expr.left), Evaluate(expr.right));
     }
 
-    int Stmt.Visitor<int>.VisitBlock(Stmt.Block stmt) {
+    int Stmt.Visitor<int>.VisitBlock(Stmt.Block stmt)
+    {
         ExecuteBlock(stmt.statements, new Runtime.Environment(environment));
         return 0;
     }
 
-    internal void ExecuteBlock(List<Stmt> statements, Runtime.Environment environment) {
+    internal void ExecuteBlock(List<Stmt> statements, Runtime.Environment environment)
+    {
         Runtime.Environment previous = this.environment;
 
         try {
@@ -174,7 +199,8 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         }
     }
 
-    object? Expr.Visitor<object?>.VisitCall(Expr.Call expr) {
+    object? Expr.Visitor<object?>.VisitCall(Expr.Call expr)
+    {
         object? callee;
 
         // 'this' binding
@@ -196,7 +222,10 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
 
         if (callee is ICallable function) {
             if (function.Arity >= 0 && function.Arity != expr.arguments.Count) {
-                throw new RuntimeError($"Need {function.Arity} argument(s) but {expr.arguments.Count} is given.");
+                throw new RuntimeError(
+                    expr.paren,
+                    $"Need {function.Arity} argument(s) but {expr.arguments.Count} is given."
+                );
             }
 
             List<object?> arguments = new List<object?>();
@@ -204,32 +233,38 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
                 arguments.Add(Evaluate(argument));
             }
 
-            return function.Call(arguments);
+            try {
+                return function.Call(arguments);
+            }
+            catch (RuntimeInnerError rie) {
+                throw new RuntimeError(expr.paren, rie.Message);
+            }
         }
         else {
-            throw new RuntimeError("Can only call functions.");
+            throw new RuntimeError(expr.paren, "Can only call functions.");
         }
     }
 
-    int Stmt.Visitor<int>.VisitExpression(Stmt.Expression stmt) {
+    int Stmt.Visitor<int>.VisitExpression(Stmt.Expression stmt)
+    {
         Evaluate(stmt.expression);
         return 0;
     }
 
-    object? Expr.Visitor<object?>.VisitFunction(Expr.Function expr) {
-        if (!functionDict.ContainsKey(expr)) {
-            functionDict[expr] = new Function(expr, this, environment);
-        }
-        return functionDict[expr];
+    object? Expr.Visitor<object?>.VisitFunction(Expr.Function expr)
+    {
+        return new Function(expr, this, environment);
     }
 
-    object? Expr.Visitor<object?>.VisitGet(Expr.Get expr) {
+    object? Expr.Visitor<object?>.VisitGet(Expr.Get expr)
+    {
         // TODO
         EvalGet(expr, out object? container, out object? key, out object? value);
         return value;
     }
 
-    void EvalGet(Expr.Get expr, out object? container, out object? key, out object? value) {
+    void EvalGet(Expr.Get expr, out object? container, out object? key, out object? value)
+    {
         container = Evaluate(expr.container);
         key = Evaluate(expr.key);
 
@@ -242,7 +277,12 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         }
         else if (container is Container.Array array) {
             if (key is Double key_double) {
-                value = array.Get(key_double);
+                try {
+                    value = array.Get(key_double);
+                }
+                catch (RuntimeInnerError rie) {
+                    throw new RuntimeError(expr.@operator, rie.Message);
+                }
                 return;
             }
             else if (key is string key_string) {
@@ -266,7 +306,8 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         throw new RuntimeError(expr.@operator, "Only 'Object' and 'Array' have properties when get.");
     }
 
-    int Stmt.Visitor<int>.VisitIf(Stmt.If stmt) {
+    int Stmt.Visitor<int>.VisitIf(Stmt.If stmt)
+    {
         if (StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
             Execute(stmt.thenBranch);
         }
@@ -276,11 +317,13 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         return 0;
     }
 
-    object? Expr.Visitor<object?>.VisitLiteral(Expr.Literal expr) {
+    object? Expr.Visitor<object?>.VisitLiteral(Expr.Literal expr)
+    {
         return expr.value;
     }
 
-    object? Expr.Visitor<object?>.VisitLogical(Expr.Logical expr) {
+    object? Expr.Visitor<object?>.VisitLogical(Expr.Logical expr)
+    {
         object? left = Evaluate(expr.left);
 
         if ((expr.@operator.type == TokenType.OR) == StandardLibrary.Booleanify(left)) {
@@ -290,7 +333,8 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         return Evaluate(expr.right);
     }
 
-    int Stmt.Visitor<int>.VisitPrint(Stmt.Print stmt) {
+    int Stmt.Visitor<int>.VisitPrint(Stmt.Print stmt)
+    {
         List<string> items = new List<string>();
 
         foreach (Expr iexpr in stmt.items) {
@@ -301,11 +345,13 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitReturn(Stmt.Return stmt) {
+    int Stmt.Visitor<int>.VisitReturn(Stmt.Return stmt)
+    {
         throw new Return(stmt.value is null ? null : Evaluate(stmt.value));
     }
 
-    private object? EvalUnary(Token @operator, Expr expr) {
+    private object? EvalUnary(Token @operator, Expr expr)
+    {
         object? value = Evaluate(expr);
 
         switch (@operator.type) {
@@ -321,11 +367,13 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         throw new RuntimeError(@operator, "Undefined Operator.");
     }
 
-    object? Expr.Visitor<object?>.VisitUnary(Expr.Unary expr) {
+    object? Expr.Visitor<object?>.VisitUnary(Expr.Unary expr)
+    {
         return EvalUnary(expr.@operator, expr.right);
     }
 
-    object? Expr.Visitor<object?>.VisitVariable(Expr.Variable expr) {
+    object? Expr.Visitor<object?>.VisitVariable(Expr.Variable expr)
+    {
         return environment.Get(expr.name);
     }
 
@@ -343,7 +391,8 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
     //     }
     //     return 0;
     // }
-    int Stmt.Visitor<int>.VisitFor(Stmt.For stmt) {
+    int Stmt.Visitor<int>.VisitFor(Stmt.For stmt)
+    {
         if (stmt.initializer is not null) {
             Execute(stmt.initializer);
         }
@@ -366,30 +415,37 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int> {
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitVoid(Stmt.Void stmt) {
+    int Stmt.Visitor<int>.VisitSugar(Stmt.Sugar stmt)
+    {
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitBreak(Stmt.Break stmt) {
+    int Stmt.Visitor<int>.VisitBreak(Stmt.Break stmt)
+    {
         throw new Break();
     }
 
-    int Stmt.Visitor<int>.VisitContinue(Stmt.Continue stmt) {
+    int Stmt.Visitor<int>.VisitContinue(Stmt.Continue stmt)
+    {
         throw new Continue();
     }
 
-    internal class Return : Exception {
+    internal class Return : Exception
+    {
         public readonly object? value;
-        public Return(object? value) {
+        public Return(object? value)
+        {
             this.value = value;
         }
     }
 
-    internal class Break : Exception {
+    internal class Break : Exception
+    {
         public Break() { }
     }
 
-    internal class Continue : Exception {
+    internal class Continue : Exception
+    {
         public Continue() { }
     }
 }

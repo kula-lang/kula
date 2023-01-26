@@ -1,6 +1,8 @@
 #  CSharp formatting rules:
 [*.cs]
-csharp_new_line_before_open_brace = 
+# accessors, anonymous_methods, anonymous_types, control_blocks, events, indexers, 
+# lambdas, local_functions, methods, object_collection_array_initializers, properties, types
+csharp_new_line_before_open_brace = methods, properties, types 
 csharp_new_line_before_else = true
 csharp_new_line_before_catch = true
 csharp_new_line_before_finally = true

@@ -1,6 +1,7 @@
 namespace Kula.Core.Runtime;
 
-public static class StandardLibrary {
+public static class StandardLibrary
+{
     private static readonly DateTime start = DateTime.UtcNow;
     public static readonly Dictionary<string, NativeFunction> global_functions = new Dictionary<string, NativeFunction>{
         {"clock", new NativeFunction(0, (_, args) => (DateTime.UtcNow - start).TotalMilliseconds / 1000.0)},
@@ -11,7 +12,7 @@ public static class StandardLibrary {
         {"asArray", new NativeFunction(-1, (_, args) => new Container.Array(args))},
         {"asObject", new NativeFunction(-1, (_, args) => {
             if (args.Count % 2 != 0) {
-                throw new RuntimeError("Need odd argument(s) but even is given.");
+                throw new RuntimeInnerError("Need odd argument(s) but even is given.");
             }
             Container.Object my_obj = new Container.Object();
             for (int i = 0; i + 1 < args.Count; i += 2) {
@@ -22,13 +23,14 @@ public static class StandardLibrary {
             return my_obj;
         })},
         {"typeof", new NativeFunction(1, (_, args) => TypeStringify(args[0]?.GetType()))},
-        {"throw", new NativeFunction(1, (_, args) => throw new RuntimeError(Assert<string>(args[0])))},
+        {"throw", new NativeFunction(1, (_, args) => throw new RuntimeInnerError(Assert<string>(args[0])))},
     };
     public static readonly Container.Object string_proto;
     public static readonly Container.Object array_proto;
     public static readonly Container.Object number_proto;
     public static readonly Container.Object object_proto;
-    static StandardLibrary() {
+    static StandardLibrary()
+    {
         string_proto = new Container.Object();
         string_proto.Set("at", new NativeFunction(1, (_this, args) => {
             string str = Assert<string>(_this);
@@ -53,14 +55,20 @@ public static class StandardLibrary {
             string str = Assert<string>(_this);
             return new Container.Array(str.Split(separator));
         }));
-        string_proto.Set("length", new NativeFunction(0, (_this, _) => {
-            return (double)(Assert<string>(_this)).Length;
-        }));
-        string_proto.Set("charCode", new NativeFunction(0, (_this, _) => {
-            return (double)((short)(Assert<string>(_this)[0]));
-        }));
+        string_proto.Set("length", new NativeFunction(0, (_this, _) =>
+            (double)(Assert<string>(_this)).Length
+        ));
+        string_proto.Set("charCode", new NativeFunction(0, (_this, _) =>
+            (double)((short)(Assert<string>(_this)[0]))
+        ));
 
         number_proto = new Container.Object();
+        number_proto.Set("floor", new NativeFunction(0, (_this, _) =>
+            (double)(Math.Floor(Assert<Double>(_this)))
+        ));
+        number_proto.Set("round", new NativeFunction(0, (_this, _) =>
+            (double)(Math.Round(Assert<Double>(_this)))
+        ));
 
         array_proto = new Container.Object();
         array_proto.Set("insert", new NativeFunction(2, (_this, args) => {
@@ -142,7 +150,8 @@ public static class StandardLibrary {
         }));
     }
 
-    public static string Stringify(object? @object) {
+    public static string Stringify(object? @object)
+    {
         if (@object is bool object_bool) {
             return object_bool.ToString().ToLower();
         }
@@ -153,7 +162,8 @@ public static class StandardLibrary {
         return @object?.ToString() ?? "null";
     }
 
-    public static bool Booleanify(object? @object) {
+    public static bool Booleanify(object? @object)
+    {
         if (@object is null) {
             return false;
         }
@@ -164,7 +174,8 @@ public static class StandardLibrary {
         return true;
     }
 
-    public static string TypeStringify(Type? o) {
+    public static string TypeStringify(Type? o)
+    {
         if (o is null) {
             return "None";
         }
@@ -189,10 +200,11 @@ public static class StandardLibrary {
         return o.ToString();
     }
 
-    public static T Assert<T>(object? o) {
+    public static T Assert<T>(object? o)
+    {
         if (o is T t) {
             return t;
         }
-        throw new RuntimeError($"Need '{TypeStringify(typeof(T))}' but '{TypeStringify(o?.GetType())}' is given.");
+        throw new RuntimeInnerError($"Need '{TypeStringify(typeof(T))}' but '{TypeStringify(o?.GetType())}' is given.");
     }
 }

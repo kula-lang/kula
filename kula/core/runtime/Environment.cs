@@ -2,19 +2,23 @@ using Kula.Core.Ast;
 
 namespace Kula.Core.Runtime;
 
-class Environment {
+class Environment
+{
     private readonly Environment enclosing;
     private readonly Dictionary<string, object?> values = new Dictionary<string, object?>();
 
-    public Environment() {
+    public Environment()
+    {
         enclosing = this;
     }
 
-    public Environment(Environment enclosing) {
+    public Environment(Environment enclosing)
+    {
         this.enclosing = enclosing;
     }
 
-    public object? Get(Token name) {
+    public object? Get(Token name)
+    {
         if (values.ContainsKey(name.lexeme)) {
             return values[name.lexeme];
         }
@@ -22,10 +26,11 @@ class Environment {
             return enclosing.Get(name);
         }
 
-        throw new RuntimeError(name, "Undefined variable.");
+        throw new RuntimeError(name, $"Undefined variable '{name.lexeme}'.");
     }
 
-    public void Assign(Token name, object? value) {
+    public void Assign(Token name, object? value)
+    {
         if (values.ContainsKey(name.lexeme)) {
             values[name.lexeme] = value;
             return;
@@ -35,10 +40,11 @@ class Environment {
             return;
         }
 
-        throw new RuntimeError(name, $"Undefined variable when assign.");
+        throw new RuntimeError(name, $"Undefined variable '{name.lexeme}' when assign.");
     }
 
-    public void Define(Token name, object? value) {
+    public void Define(Token name, object? value)
+    {
         values[name.lexeme] = value;
     }
 }

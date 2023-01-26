@@ -1,7 +1,9 @@
 ﻿using Kula;
 
-class Program {
-    public static void Main(string[] args) {
+class Program
+{
+    public static void Main(string[] args)
+    {
         switch (args.Length) {
             case 0:
                 Console.WriteLine($"Kula-CLI (tags/v1.0.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
@@ -16,7 +18,8 @@ class Program {
         }
     }
 
-    private static void Repl() {
+    private static void Repl()
+    {
         KulaEngine kula = new KulaEngine();
         string? source;
         for (; ; ) {

@@ -1,38 +1,47 @@
 namespace Kula.Core.Ast;
 
-struct Token {
+struct Token
+{
     public readonly TokenType type;
     public readonly string lexeme;
     public readonly object? literial;
-    public readonly int line;
+    public readonly (int, int, TokenFile) position;
 
-    public Token(TokenType type, string lexeme, object? literial, int line) {
+    static (int, int, TokenFile) lastPosition;
+
+    public Token(TokenType type, string lexeme, object? literial, int line, int column, TokenFile tfile)
+    {
         this.type = type;
         this.lexeme = lexeme;
         this.literial = literial;
-        this.line = line;
+        position = (line, column, tfile);
+        lastPosition = position;
     }
 
-    public static Token MakeTemp(string lexeme) {
-        return new Token(TokenType.IDENTIFIER, lexeme, null, -1);
+    public static Token MakeTemp(string lexeme)
+    {
+        return MakeTemp(TokenType.IDENTIFIER, lexeme);
     }
 
-    public static Token MakeTemp(TokenType type, string lexeme) {
-        return new Token(type, lexeme, null, -1);
+    public static Token MakeTemp(TokenType type, string lexeme)
+    {
+        return new Token(type, lexeme, null, -1, -1, lastPosition.Item3);
     }
 
-    public override string ToString() {
+    public override string ToString()
+    {
         return
-            $"[ line {line.ToString().PadRight(4)}: {type.ToString().PadRight(12)} ] => [ {lexeme.PadRight(12)} ]"
+            $"[ ln {position.Item1.ToString().PadRight(4)}, col {position.Item2.ToString().PadRight(4)}: {type.ToString().PadRight(12)} ] => [ {lexeme.PadRight(12)} ]"
             + (literial is null ? "" : $" => [ {literial} ]");
     }
 }
 
-enum TokenType {
+enum TokenType
+{
     // Single-Character Tokens.
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, LEFT_SQUARE, RIGHT_SQUARE,
     COMMA, DOT, MINUS, MODULUS, PLUS, SEMICOLON, SLASH, STAR,
-    
+
     PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, MODULUS_EQUAL,
 
     // One or Two Character Tokens.

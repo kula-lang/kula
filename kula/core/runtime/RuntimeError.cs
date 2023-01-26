@@ -2,12 +2,17 @@ using Kula.Core.Ast;
 
 namespace Kula.Core.Runtime;
 
-class RuntimeError : Exception {
-    public readonly Token? name;
+class RuntimeError : Exception
+{
+    public readonly Token name;
 
-    public RuntimeError(Token name, string msg) : base(msg) {
+    public RuntimeError(Token name, string msg) : base(msg)
+    {
         this.name = name;
     }
+}
 
-    public RuntimeError(string msg) : base(msg) { }
+class RuntimeInnerError : Exception
+{
+    public RuntimeInnerError(string msg) : base(msg) { }
 }

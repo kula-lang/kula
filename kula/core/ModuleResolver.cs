@@ -2,7 +2,8 @@ using System.Text.RegularExpressions;
 
 namespace Kula.Core;
 
-class ModuleResolver {
+class ModuleResolver
+{
     private KulaEngine? kula;
     private FileInfo? root;
     HashSet<string> scannedFiles = new HashSet<string>();
@@ -10,7 +11,8 @@ class ModuleResolver {
     private ModuleResolver() { }
     public static ModuleResolver Instance = new ModuleResolver();
 
-    public List<FileInfo> Resolve(KulaEngine kula, FileInfo root) {
+    public List<FileInfo> Resolve(KulaEngine kula, FileInfo root)
+    {
         this.kula = kula;
         this.root = root;
 
@@ -25,7 +27,8 @@ class ModuleResolver {
         return final_files;
     }
 
-    private (List<FileInfo>, List<FileInfo[]>) Scan(FileInfo root) {
+    private (List<FileInfo>, List<FileInfo[]>) Scan(FileInfo root)
+    {
         List<FileInfo> file_info_list = new List<FileInfo>();
         List<FileInfo[]> topo_info_list = new List<FileInfo[]>();
 
@@ -59,7 +62,8 @@ class ModuleResolver {
         return (file_info_list, topo_info_list);
     }
 
-    private List<FileInfo> TopoSortFiles(List<FileInfo> files, List<FileInfo[]> topo) {
+    private List<FileInfo> TopoSortFiles(List<FileInfo> files, List<FileInfo[]> topo)
+    {
         int[][] neighbors = new int[topo.Count][];
         for (int i = 0; i < topo.Count; ++i) {
             neighbors[i] = new int[topo[i].Length];
@@ -77,7 +81,8 @@ class ModuleResolver {
         return ans;
     }
 
-    private List<int> TopoSort(int[][] neighbor) {
+    private List<int> TopoSort(int[][] neighbor)
+    {
         int len = neighbor.Length;
         HashSet<int>[] nexts = new HashSet<int>[len];
         int[] indegree = new int[len];
@@ -112,7 +117,8 @@ class ModuleResolver {
         return ans;
     }
 
-    private FileInfo[] AnalyzeModule(DirectoryInfo directory, string source) {
+    private FileInfo[] AnalyzeModule(DirectoryInfo directory, string source)
+    {
         Regex rx = new Regex(@"^\s*import\s*\{(?<inner>.*?)\}", RegexOptions.Compiled | RegexOptions.Singleline);
         MatchCollection matches = rx.Matches(source);
         foreach (Match match in matches) {
@@ -139,7 +145,8 @@ class ModuleResolver {
         return new FileInfo[0];
     }
 
-    private static int MyIndexOf(List<FileInfo> arr, FileInfo item) {
+    private static int MyIndexOf(List<FileInfo> arr, FileInfo item)
+    {
         for (int i = 0; i < arr.Count; ++i) {
             if (item.FullName == arr[i].FullName) {
                 return i;

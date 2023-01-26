@@ -2,13 +2,15 @@ using Kula.Core.Ast;
 
 namespace Kula.Core.Runtime;
 
-class Function : ICallable {
+class Function : ICallable
+{
     private readonly Expr.Function defination;
     private readonly Interpreter interpreter;
     private readonly Environment parent;
     private object? callSite;
 
-    public Function(Expr.Function expr, Interpreter interpreter, Environment parent) {
+    public Function(Expr.Function expr, Interpreter interpreter, Environment parent)
+    {
         this.defination = expr;
         this.interpreter = interpreter;
         this.parent = parent;
@@ -16,7 +18,8 @@ class Function : ICallable {
 
     public int Arity => defination.parameters.Count;
 
-    public object? Call(List<object?> arguments) {
+    public object? Call(List<object?> arguments)
+    {
         Runtime.Environment environment = new Runtime.Environment(parent);
 
         environment.Define(Token.MakeTemp("self"), this);
@@ -40,15 +43,18 @@ class Function : ICallable {
         return null;
     }
 
-    public override string ToString() {
+    public override string ToString()
+    {
         return "<Function>";
     }
 
-    public void Bind(object? callSite) {
+    public void Bind(object? callSite)
+    {
         this.callSite = callSite;
     }
 
-    public void Unbind() {
+    public void Unbind()
+    {
         this.callSite = null;
     }
 }
