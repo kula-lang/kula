@@ -25,24 +25,21 @@ class Parser
         return Statement();
     }
 
-    private Stmt.Sugar Import()
+    private Stmt Import()
     {
         Token lbrace = Consume(TokenType.LEFT_BRACE, "Expect '{' before 'import' block.");
-        List<Stmt> list = new List<Stmt>();
+        List<Expr> list = new List<Expr>();
         if (!Check(TokenType.RIGHT_BRACE)) {
             do {
                 Token file_path = Consume(TokenType.STRING, "Expect module name.");
-                list.Add(
-                    new Stmt.Expression(
-                        new Expr.Call(
-                            new Expr.Variable(Token.MakeTemp("load")),
-                            new List<Expr>() { new Expr.Literal(file_path.literial) },
-                            lbrace)));
+                list.Add(new Expr.Literal(file_path.literial));
             }
             while (Match(TokenType.COMMA));
         }
         Consume(TokenType.RIGHT_BRACE, "Expect '}' after 'import' block.");
-        return new Stmt.Sugar(list);
+        return new Stmt.Expression(
+            new Expr.Call(
+                new Expr.Variable(Token.MakeTemp("load")), list, lbrace));
     }
 
     private Stmt Statement()
@@ -170,10 +167,12 @@ class Parser
         return new Stmt.Expression(
             new Expr.Assign(
                 new Expr.Variable(func_name),
-                Token.MakeTemp(TokenType.COLON_EQUAL, ":="),
+                //Token.MakeTemp(TokenType.COLON_EQUAL, ":="),
+                Token.Fake(func_name, TokenType.COLON_EQUAL),
                 function));
     }
 
+    // TODO
     private Stmt ClassDeclaration()
     {
         Token class_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class declaration.");
@@ -190,6 +189,7 @@ class Parser
         Token prototype = Token.MakeTemp("__proto__");
         Token func = Token.MakeTemp("__func__");
         Token colon_equal = Token.MakeTemp(TokenType.COLON_EQUAL, ":=");
+        Token dot = Token.MakeTemp(TokenType.DOT, ".");
         Token token_object = Token.MakeTemp("Object");
         Token token_this = Token.MakeTemp("this");
 
@@ -201,39 +201,38 @@ class Parser
                     new Expr.Call(
                         new Expr.Variable(token_object),
                         new List<Expr>(),
-                        Token.MakeTemp(TokenType.RIGHT_PAREN, ")")
+                        lbrace
                     )
                 )
             )
         );
+
         while (!Match(TokenType.RIGHT_BRACE)) {
             Token method_name = Consume(TokenType.IDENTIFIER, "Expect identifier before method declaration.");
             Expr method_body = LambdaDeclaration();
 
             if (method_name.lexeme == "constructor") {
-                method_name = Token.MakeTemp("__func__");
+                method_name = func;
                 Expr.Function constructor = (Expr.Function)method_body;
                 constructor.body.Insert(0,
                     new Stmt.Expression(
                         new Expr.Assign(
                             new Expr.Variable(token_this),
                             colon_equal,
-                            new Expr.Call(new Expr.Variable(token_object), new List<Expr>(), Token.MakeTemp(TokenType.RIGHT_PAREN, ")"))
-                        )
-                    )
-                );
+                            new Expr.Call(
+                                new Expr.Variable(token_object),
+                                new List<Expr>(),
+                                lbrace))));
+
                 constructor.body.Insert(1,
                     new Stmt.Expression(
                         new Expr.Assign(
                             new Expr.Get(
                                 new Expr.Variable(token_this),
                                 new Expr.Literal("__proto__"),
-                                Token.MakeTemp(TokenType.DOT, ".")),
+                                dot),
                             colon_equal,
-                            new Expr.Variable(prototype)
-                        )
-                    )
-                );
+                            new Expr.Variable(prototype))));
 
                 if (parent_name is not null) {
                     constructor.body.Insert(2,
@@ -242,12 +241,9 @@ class Parser
                                 new Expr.Get(
                                     new Expr.Variable(prototype),
                                     new Expr.Literal("__proto__"),
-                                    Token.MakeTemp(TokenType.DOT, ".")),
+                                    dot),
                                 colon_equal,
-                                new Expr.Variable(parent_name.Value)
-                            )
-                        )
-                    );
+                                new Expr.Variable(parent_name.Value))));
                 }
                 constructor.body.Add(new Stmt.Return(new Expr.Variable(token_this)));
             }
@@ -258,26 +254,20 @@ class Parser
                         new Expr.Get(
                             new Expr.Variable(prototype),
                             new Expr.Literal(method_name.lexeme),
-                            Token.MakeTemp(TokenType.DOT, ".")),
-                        Token.MakeTemp(TokenType.EQUAL, "="),
-                        method_body
-                    )
-                )
-            );
+                            dot),
+                        colon_equal,
+                        method_body)));
         }
         methods.Add(new Stmt.Return(new Expr.Variable(prototype)));
 
         return new Stmt.Expression(
             new Expr.Assign(
                 new Expr.Variable(class_name),
-                Token.MakeTemp(TokenType.COLON_EQUAL, ":="),
+                colon_equal,
                 new Expr.Call(
                     new Expr.Function(new List<Token>(), methods),
                     new List<Expr>(),
-                    lbrace
-                )
-            )
-        );
+                    lbrace)));
     }
 
     private Expr Expression()
@@ -300,21 +290,22 @@ class Parser
         else if (Match(TokenType.PLUS_EQUAL, TokenType.MINUS_EQUAL, TokenType.STAR_EQUAL, TokenType.SLASH_EQUAL, TokenType.MODULUS_EQUAL)) {
             Token @operator = Previous();
             Expr right = Assignment();
-            Token equal = Token.MakeTemp(TokenType.EQUAL, "=");
+            Token equal = Token.Fake(@operator, TokenType.EQUAL);
 
-            switch (@operator.type) {
-                case TokenType.PLUS_EQUAL:
-                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.PLUS, "+"), expr, right));
-                case TokenType.MINUS_EQUAL:
-                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.MINUS, "-"), expr, right));
-                case TokenType.STAR_EQUAL:
-                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.STAR, "*"), expr, right));
-                case TokenType.SLASH_EQUAL:
-                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.SLASH, "/"), expr, right));
-                case TokenType.MODULUS_EQUAL:
-                    return new Expr.Assign(expr, equal, new Expr.Binary(Token.MakeTemp(TokenType.MODULUS, "%"), expr, right));
-            }
-            throw Error(@operator, "Invalid assignment target.");
+            return new Expr.Assign(
+                expr, equal,
+                new Expr.Binary(
+                    Token.Fake(
+                        @operator,
+                        @operator.type switch {
+                            TokenType.PLUS_EQUAL => TokenType.PLUS,
+                            TokenType.MINUS_EQUAL => TokenType.MINUS,
+                            TokenType.STAR_EQUAL => TokenType.STAR,
+                            TokenType.SLASH_EQUAL => TokenType.SLASH,
+                            TokenType.MODULUS_EQUAL => TokenType.MODULUS,
+                            _ => throw Error(@operator, "Invalid assignment target.")
+                        }),
+                        expr, right));
         }
 
         return expr;
@@ -559,27 +550,24 @@ class Parser
 
     public List<Stmt> Parse(KulaEngine kula, List<Token> tokens)
     {
-        this.kula = kula;
-        this.tokens = tokens;
-        this.current = 0;
+        lock (this) {
+            this.kula = kula;
+            this.tokens = tokens;
+            this.current = 0;
 
-        List<Stmt> statements = new List<Stmt>();
-        while (!IsEnd()) {
-            try {
-                Stmt stmt = Declaration();
-                if (stmt is Stmt.Sugar sugar) {
-                    statements.AddRange(sugar.list);
-                }
-                else {
+            List<Stmt> statements = new List<Stmt>();
+            while (!IsEnd()) {
+                try {
+                    Stmt stmt = Declaration();
                     statements.Add(stmt);
                 }
+                catch (ParseError) {
+                    Synchronize();
+                }
             }
-            catch (ParseError) {
-                Synchronize();
-            }
-        }
 
-        return statements;
+            return statements;
+        }
     }
 
     private void Synchronize()
@@ -613,7 +601,7 @@ class Parser
 
     private ParseError Error(Token token, string errmsg)
     {
-        kula!.Error(token, errmsg);
+        kula!.ParseError(token, errmsg);
         return ParseError.Instance;
     }
 

@@ -4,7 +4,6 @@ abstract class Stmt
 {
     public interface Visitor<R>
     {
-        R VisitSugar(Sugar stmt);
         R VisitBreak(Break stmt);
         R VisitContinue(Continue stmt);
         R VisitExpression(Expression stmt);
@@ -15,19 +14,6 @@ abstract class Stmt
         R VisitIf(If stmt);
     }
     public abstract R Accept<R>(Visitor<R> visitor);
-
-    public class Sugar : Stmt
-    {
-        public readonly List<Stmt> list;
-        public Sugar(List<Stmt> list)
-        {
-            this.list = list;
-        }
-        public override R Accept<R>(Visitor<R> visitor)
-        {
-            return visitor.VisitSugar(this);
-        }
-    }
 
     public class Break : Stmt
     {

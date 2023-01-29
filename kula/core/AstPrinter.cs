@@ -140,9 +140,4 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string>
     {
         return "(continue!)";
     }
-
-    string Stmt.Visitor<string>.VisitSugar(Stmt.Sugar stmt)
-    {
-        return "(void)";
-    }
 }

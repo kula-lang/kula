@@ -10,12 +10,13 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
     internal Runtime.Environment environment;
     private KulaEngine? kula;
 
-    public static readonly Interpreter Instance = new Interpreter();
+    private int depth;
+    private int maxDepth;
 
     private void CoreFunctions()
     {
-        globals.Define(Token.MakeTemp("input"), new NativeFunction(0, (_, args) => kula!.Input()));
-        globals.Define(Token.MakeTemp("println"), new NativeFunction(-1, (_, args) => {
+        globals.Define("input", new NativeFunction(0, (_, args) => kula!.Input()));
+        globals.Define("println", new NativeFunction(-1, (_, args) => {
             List<string> items = new List<string>();
             foreach (object? item in args) {
                 items.Add(StandardLibrary.Stringify(item));
@@ -23,43 +24,48 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
             kula!.Print(string.Join(' ', items));
             return null;
         }));
-        globals.Define(Token.MakeTemp("eval"), new NativeFunction(1, (_, args) => {
+        globals.Define("eval", new NativeFunction(1, (_, args) => {
             string source = StandardLibrary.Assert<string>(args[0]);
             kula!.RunSource(source, "<eval>", false);
             return null;
         }));
-        globals.Define(Token.MakeTemp("load"), new NativeFunction(1, (_, args) => {
-            string path = StandardLibrary.Assert<string>(args[0]);
-            if (File.Exists(path)) {
-                kula!.LoadRun(new FileInfo(path));
-            }
-            else {
-                throw new RuntimeInnerError($"File '{path}' does not exist.");
+        globals.Define("load", new NativeFunction(-1, (_, args) => {
+            foreach (object? item in args) {
+                string path = StandardLibrary.Assert<string>(item);
+                if (File.Exists(path)) {
+                    kula!.RunFile(new FileInfo(path));
+                }
+                else {
+                    throw new RuntimeInnerError($"File '{path}' does not exist.");
+                }
             }
             return null;
         }));
     }
 
-    private Interpreter()
+    public Interpreter(int maxDepth)
     {
         this.globals = new Runtime.Environment();
         this.environment = this.globals;
 
         foreach (KeyValuePair<string, NativeFunction> kv in StandardLibrary.global_functions) {
-            globals.Define(Token.MakeTemp(kv.Key), kv.Value);
+            globals.Define(kv.Key, kv.Value);
         }
 
         CoreFunctions();
 
-        globals.Define(Token.MakeTemp("__string_proto__"), StandardLibrary.string_proto);
-        globals.Define(Token.MakeTemp("__array_proto__"), StandardLibrary.array_proto);
-        globals.Define(Token.MakeTemp("__number_proto__"), StandardLibrary.number_proto);
-        globals.Define(Token.MakeTemp("__object_proto__"), StandardLibrary.object_proto);
+        globals.Define("__string_proto__", StandardLibrary.string_proto);
+        globals.Define("__array_proto__", StandardLibrary.array_proto);
+        globals.Define("__number_proto__", StandardLibrary.number_proto);
+        globals.Define("__object_proto__", StandardLibrary.object_proto);
+
+        this.maxDepth = maxDepth;
     }
 
     public void Interpret(KulaEngine kula, List<Stmt> stmts)
     {
         this.kula = kula;
+        depth = maxDepth;
         try {
             ExecuteBlock(stmts, environment);
         }
@@ -85,10 +91,15 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         if (expr.left is Expr.Variable variable) {
             switch (expr.@operator.type) {
                 case TokenType.COLON_EQUAL:
-                    environment.Define(variable.name, value);
+                    environment.Define(variable.name.lexeme, value);
                     break;
                 case TokenType.EQUAL:
-                    environment.Assign(variable.name, value);
+                    try {
+                        environment.Assign(variable.name.lexeme, value);
+                    }
+                    catch (RuntimeInnerError rie) {
+                        return new RuntimeError(variable.name, rie.Message);
+                    }
                     break;
             }
         }
@@ -120,6 +131,9 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
             else {
                 throw new RuntimeError(get.@operator, "Only 'Object' have properties when set.");
             }
+        }
+        else {
+            throw new RuntimeError(expr.@operator, "Illegal expression for assignment.");
         }
 
         return value;
@@ -202,6 +216,10 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
     object? Expr.Visitor<object?>.VisitCall(Expr.Call expr)
     {
         object? callee;
+        --depth;
+        if (depth <= 0) {
+            throw new RuntimeInnerError("Maximum recursion depth exceeded.");
+        }
 
         // 'this' binding
         if (expr.callee is Expr.Get expr_get) {
@@ -239,10 +257,14 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
             catch (RuntimeInnerError rie) {
                 throw new RuntimeError(expr.paren, rie.Message);
             }
+            finally {
+                ++depth;
+            }
         }
         else {
             throw new RuntimeError(expr.paren, "Can only call functions.");
         }
+
     }
 
     int Stmt.Visitor<int>.VisitExpression(Stmt.Expression stmt)
@@ -258,7 +280,6 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
 
     object? Expr.Visitor<object?>.VisitGet(Expr.Get expr)
     {
-        // TODO
         EvalGet(expr, out object? container, out object? key, out object? value);
         return value;
     }
@@ -374,7 +395,12 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
 
     object? Expr.Visitor<object?>.VisitVariable(Expr.Variable expr)
     {
-        return environment.Get(expr.name);
+        try {
+            return environment.Get(expr.name.lexeme);
+        }
+        catch (RuntimeInnerError rie) {
+            throw new RuntimeError(expr.name, rie.Message);
+        }
     }
 
     // int Stmt.Visitor<int>.VisitWhile(Stmt.While stmt) {
@@ -412,11 +438,6 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
                 }
             }
         }
-        return 0;
-    }
-
-    int Stmt.Visitor<int>.VisitSugar(Stmt.Sugar stmt)
-    {
         return 0;
     }
 

@@ -21,11 +21,14 @@ class Program
     private static void Repl()
     {
         KulaEngine kula = new KulaEngine();
+        kula.DeclareFunction("kula", new Kula.Core.Runtime.NativeFunction(0, (_this, args) => {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            return "Diamond Breath!";
+        }));
         string? source;
         for (; ; ) {
             Console.WriteLine();
-            Console.Write(">> ");
-            source = Console.ReadLine();
+            source = InputMultiline();
             if (source is null || source.Trim() == "#exit") {
                 break;
             }
@@ -33,5 +36,60 @@ class Program
                 kula.Run(source);
             }
         }
+    }
+
+    private static string? InputMultiline()
+    {
+        int brackets = 0;
+        char quote = '\0';
+
+        string? ret = null;
+        do {
+            Console.Write(ret == null ? ">> " : ".. ");
+            string? tmp = Console.ReadLine();
+            if (tmp is null) {
+                break;
+            }
+            else if (tmp.Trim() == "#break") {
+                return "";
+            }
+            else {
+                ret = (ret is null ? "" : (ret + Environment.NewLine)) + tmp;
+                for (int i = 0; i < tmp.Length; ++i) {
+                    if (quote == '\0') {
+                        if (tmp[i] == '{' || tmp[i] == '[' || tmp[i] == '(') {
+                            if (i > 0 && tmp[i - 1] == '\\') {
+
+                            }
+                            else {
+                                brackets += 1;
+                            }
+                        }
+                        else if (tmp[i] == '}' || tmp[i] == ']' || tmp[i] == ')') {
+                            if (i > 0 && tmp[i - 1] == '\\') {
+
+                            }
+                            else {
+                                brackets -= 1;
+                            }
+                        }
+                        else if (tmp[i] == '"' || tmp[i] == '\'' || tmp[i] == '`') {
+                            if (i > 0 && tmp[i - 1] == '\\') {
+                            }
+                            else {
+                                quote = tmp[i];
+                            }
+                        }
+                    }
+                    else {
+                        if (tmp[i] == quote) {
+                            quote = '\0';
+                        }
+                    }
+                }
+            }
+        }
+        while (brackets > 0);
+        return ret;
     }
 }

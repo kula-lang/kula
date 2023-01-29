@@ -17,22 +17,22 @@ class Environment
         this.enclosing = enclosing;
     }
 
-    public object? Get(Token name)
+    public object? Get(string name)
     {
-        if (values.ContainsKey(name.lexeme)) {
-            return values[name.lexeme];
+        if (values.ContainsKey(name)) {
+            return values[name];
         }
         if (enclosing != this) {
             return enclosing.Get(name);
         }
 
-        throw new RuntimeError(name, $"Undefined variable '{name.lexeme}'.");
+        throw new RuntimeInnerError($"Undefined variable '{name}'.");
     }
 
-    public void Assign(Token name, object? value)
+    public void Assign(string name, object? value)
     {
-        if (values.ContainsKey(name.lexeme)) {
-            values[name.lexeme] = value;
+        if (values.ContainsKey(name)) {
+            values[name] = value;
             return;
         }
         if (enclosing != this) {
@@ -40,11 +40,11 @@ class Environment
             return;
         }
 
-        throw new RuntimeError(name, $"Undefined variable '{name.lexeme}' when assign.");
+        throw new RuntimeInnerError($"Undefined variable '{name}' when assign.");
     }
 
-    public void Define(Token name, object? value)
+    public void Define(string name, object? value)
     {
-        values[name.lexeme] = value;
+        values[name] = value;
     }
 }

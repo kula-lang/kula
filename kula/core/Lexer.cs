@@ -37,23 +37,25 @@ class Lexer
 
     public TokenFile Lex(KulaEngine kula, string source, string filename)
     {
-        this.kula = kula;
-        this.source = source;
+        lock (this) {
+            this.kula = kula;
+            this.source = source;
 
-        tokens = new List<Token>();
-        tfile = new TokenFile(filename, tokens, source);
-        start = 0;
-        current = start;
-        line = 1;
-        column = 1;
+            tokens = new List<Token>();
+            tfile = new TokenFile(filename, tokens, source);
+            start = 0;
+            current = start;
+            line = 1;
+            column = 1;
 
-        while (!IsEnd()) {
-            start = current;
-            ScanToken();
+            while (!IsEnd()) {
+                start = current;
+                ScanToken();
+            }
+            tokens.Add(new Token(TokenType.EOF, "", null, line, column, tfile));
+
+            return tfile;
         }
-        tokens.Add(new Token(TokenType.EOF, "", null, line, column, tfile));
-
-        return tfile;
     }
 
     private void ScanToken()
@@ -115,14 +117,14 @@ class Lexer
                     AddToken(TokenType.AND);
                     break;
                 }
-                kula!.Error((line, column, tfile!), "", "Unexpected character '&'.");
+                kula!.LexError((line, column, tfile!), "", "Unexpected character '&'.");
                 break;
             case '|':
                 if (Match('|')) {
                     AddToken(TokenType.OR);
                     break;
                 }
-                kula!.Error((line, column, tfile!), "", "Unexpected character '|'.");
+                kula!.LexError((line, column, tfile!), "", "Unexpected character '|'.");
                 break;
             // Comment
             case '#':
@@ -152,7 +154,7 @@ class Lexer
                     Identifier();
                 }
                 else {
-                    kula!.Error((line, column, tfile!), "", $"Unexpected character '{c}'.");
+                    kula!.LexError((line, column, tfile!), "", $"Unexpected character '{c}'.");
                 }
                 break;
         }
@@ -167,7 +169,7 @@ class Lexer
         }
 
         if (IsEnd()) {
-            kula!.Error((line, column, tfile!), "", "Unterminated string.");
+            kula!.LexError((line, column, tfile!), "", "Unterminated string.");
             return;
         }
 

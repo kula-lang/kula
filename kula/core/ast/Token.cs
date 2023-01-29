@@ -28,6 +28,16 @@ struct Token
         return new Token(type, lexeme, null, -1, -1, lastPosition.Item3);
     }
 
+    public static Token Fake(Token baseToken, TokenType newType)
+    {
+        return new Token(newType,
+                         baseToken.lexeme,
+                         baseToken.literial,
+                         baseToken.position.Item1,
+                         baseToken.position.Item2,
+                         baseToken.position.Item3);
+    }
+
     public override string ToString()
     {
         return

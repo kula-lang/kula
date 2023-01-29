@@ -22,15 +22,15 @@ class Function : ICallable
     {
         Runtime.Environment environment = new Runtime.Environment(parent);
 
-        environment.Define(Token.MakeTemp("self"), this);
+        environment.Define("self", this);
         if (callSite is not null) {
-            environment.Define(Token.MakeTemp("this"), callSite);
+            environment.Define("this", callSite);
             Unbind();
         }
 
         int size = Arity >= 0 ? Arity : arguments.Count;
         for (int i = 0; i < size; ++i) {
-            environment.Define(defination.parameters[i], arguments[i]);
+            environment.Define(defination.parameters[i].lexeme, arguments[i]);
         }
 
         try {
