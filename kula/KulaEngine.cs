@@ -10,23 +10,73 @@ public class KulaEngine
     private bool hadRuntimeError = false;
 
     private AstPrinter astPrinter = new AstPrinter();
-    private HashSet<string> usedFiles = new HashSet<string>();
     private Interpreter interpreter = new Interpreter(200);
 
-    internal bool RunFile(FileInfo file)
+    private Dictionary<string, AstFile> compiledFiles = new Dictionary<string, AstFile>();
+
+    private void CompileFile(FileInfo file)
     {
+        if (hadError) { return; }
+
         if (!file.Exists) {
-            throw new RuntimeInnerError($"File Not Exist.");
+            throw new RuntimeInnerError($"File Not Exist. {file.FullName}");
+        }
+        if (compiledFiles.ContainsKey(file.FullName)) {
+            return;
         }
 
-        string fullname = file.FullName;
-        if (usedFiles.Contains(fullname)) {
-            return true;
+        TokenFile tfile = Lexer.Instance.Lex(this, file.OpenText().ReadToEnd(), file.Name);
+        if (hadError) { return; }
+        List<Stmt> asts = Parser.Instance.Parse(this, tfile.tokens);
+        if (hadError) { return; }
+
+        List<FileInfo> nexts = ModuleResolver.Instance.AnalyzeAST(file.Directory!, asts);
+        compiledFiles.Add(file.FullName, new AstFile(file, nexts, asts));
+
+        foreach (var next in nexts) {
+            CompileFile(next);
         }
-        else {
-            usedFiles.Add(fullname);
-            return RunSource(file.OpenText().ReadToEnd(), file.Name, false);
+    }
+
+    private bool RunStmts(List<Stmt> stmts)
+    {
+        interpreter.Interpret(this, stmts);
+        if (hadRuntimeError) {
+            return false;
         }
+        return true;
+    }
+
+    private bool RunFile(FileInfo file)
+    {
+        hadError = false;
+        hadRuntimeError = false;
+
+        try {
+            CompileFile(file);
+        }
+        catch (RuntimeInnerError e) {
+            ReportError(e.Message);
+            return false;
+        }
+        if (hadError) {
+            return false;
+        }
+
+        List<AstFile> ast_files = ModuleResolver.Instance.Resolve(compiledFiles, file);
+        List<Stmt> stmts = new List<Stmt>();
+        foreach (var ast_file in ast_files) {
+            stmts.AddRange(ast_file.stmts);
+        }
+
+        Resolver.Instance.Resolve(this, stmts);
+        if (hadError) {
+            return false;
+        }
+
+        RunStmts(stmts);
+
+        return true;
     }
 
     internal bool RunSource(string source, string filename, bool isDebug)
@@ -53,12 +103,12 @@ public class KulaEngine
             return false;
         }
 
-        interpreter.Interpret(this, asts);
-        if (hadRuntimeError) {
+        Resolver.Instance.Resolve(this, asts);
+        if (hadError) {
             return false;
         }
 
-        return true;
+        return RunStmts(asts);
     }
 
     public bool Run(string source)
@@ -74,7 +124,8 @@ public class KulaEngine
         return false;
     }
 
-    public void DeclareFunction(string fnName, NativeFunction function) {
+    public void DeclareFunction(string fnName, NativeFunction function)
+    {
         interpreter.globals.Define(fnName, function);
     }
 
@@ -95,12 +146,12 @@ public class KulaEngine
 
     internal void ParseError(Token token, string msg)
     {
-        if (token.type == TokenType.EOF) {
-            ReportError(token.position, "EOF", msg, false);
-        }
-        else {
-            ReportError(token.position, $"'{token.lexeme}'", msg, false);
-        }
+        ReportError(token.position, token.type == TokenType.EOF ? "EOF" : $"'{token.lexeme}'", msg, false);
+    }
+
+    internal void ResolveError(Token token, string msg)
+    {
+        ReportError(token.position, token.lexeme, msg, false);
     }
 
     internal void RuntimeError(RuntimeError runtimeError)
@@ -129,8 +180,19 @@ public class KulaEngine
             Console.Error.WriteLine(prompt);
         }
         Console.Error.WriteLine($"Error: {msg}");
-        hadError = true;
 
         Console.ForegroundColor = color;
+
+        hadError = true;
+    }
+
+    private void ReportError(string msg)
+    {
+        ConsoleColor color = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Error.WriteLine(msg);
+        Console.ForegroundColor = color;
+
+        hadError = true;
     }
 }

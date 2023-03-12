@@ -6,8 +6,7 @@ class Program
     {
         switch (args.Length) {
             case 0:
-                Console.WriteLine($"Kula-CLI (tags/v1.0.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
-                Console.WriteLine("Usage: kula-cli <PATH> [options]");
+                Info();
                 Repl();
                 return;
             default:
@@ -16,6 +15,12 @@ class Program
                 kula.Run(root);
                 return;
         }
+    }
+
+    private static void Info()
+    {
+        Console.WriteLine($"Kula-CLI (tags/v1.0.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
+        Console.WriteLine("Usage: kula-cli <PATH> [options]");
     }
 
     private static void Repl()

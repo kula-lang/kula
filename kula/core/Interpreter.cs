@@ -33,7 +33,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
             foreach (object? item in args) {
                 string path = StandardLibrary.Assert<string>(item);
                 if (File.Exists(path)) {
-                    kula!.RunFile(new FileInfo(path));
+                    kula!.Run(new FileInfo(path));
                 }
                 else {
                     throw new RuntimeInnerError($"File '{path}' does not exist.");
@@ -403,22 +403,11 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         }
     }
 
-    // int Stmt.Visitor<int>.VisitWhile(Stmt.While stmt) {
-    //     while (StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
-    //         try {
-    //             Execute(stmt.branch);
-    //         }
-    //         catch (Break) {
-    //             break;
-    //         }
-    //         catch (Continue) {
-    //             continue;
-    //         }
-    //     }
-    //     return 0;
-    // }
     int Stmt.Visitor<int>.VisitFor(Stmt.For stmt)
     {
+        Runtime.Environment previous = environment;
+        environment = new Runtime.Environment(previous);
+
         if (stmt.initializer is not null) {
             Execute(stmt.initializer);
         }
@@ -438,6 +427,9 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
                 }
             }
         }
+
+        environment = previous;
+
         return 0;
     }
 
@@ -450,6 +442,12 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
     {
         throw new Continue();
     }
+
+    int Stmt.Visitor<int>.VisitImport(Stmt.Import stmt)
+    {
+        return 0;
+    }
+
 
     internal class Return : Exception
     {

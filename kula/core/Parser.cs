@@ -28,18 +28,16 @@ class Parser
     private Stmt Import()
     {
         Token lbrace = Consume(TokenType.LEFT_BRACE, "Expect '{' before 'import' block.");
-        List<Expr> list = new List<Expr>();
+        List<Token> list = new List<Token>();
         if (!Check(TokenType.RIGHT_BRACE)) {
             do {
                 Token file_path = Consume(TokenType.STRING, "Expect module name.");
-                list.Add(new Expr.Literal(file_path.literial));
+                list.Add(file_path);
             }
             while (Match(TokenType.COMMA));
         }
         Consume(TokenType.RIGHT_BRACE, "Expect '}' after 'import' block.");
-        return new Stmt.Expression(
-            new Expr.Call(
-                new Expr.Variable(Token.MakeTemp("load")), list, lbrace));
+        return new Stmt.Import(list);
     }
 
     private Stmt Statement()
@@ -64,11 +62,11 @@ class Parser
         }
         else if (Match(TokenType.BREAK)) {
             Consume(TokenType.SEMICOLON, "Expect ';' after 'break'.");
-            return new Stmt.Break();
+            return new Stmt.Break(Previous(2));
         }
         else if (Match(TokenType.CONTINUE)) {
             Consume(TokenType.SEMICOLON, "Expect ';' after 'continue'.");
-            return new Stmt.Continue();
+            return new Stmt.Continue(Previous(2));
         }
         else {
             return ExpressionStatement();
@@ -131,12 +129,13 @@ class Parser
 
     private Stmt ReturnStatement()
     {
+        Token keyword = Previous();
         Expr? value = null;
         if (!Check(TokenType.SEMICOLON)) {
             value = Expression();
         }
         Consume(TokenType.SEMICOLON, "Expect ';' after return.");
-        return new Stmt.Return(value);
+        return new Stmt.Return(keyword, value);
     }
 
     private Stmt PrintStatement()
@@ -192,6 +191,7 @@ class Parser
         Token dot = Token.MakeTemp(TokenType.DOT, ".");
         Token token_object = Token.MakeTemp("Object");
         Token token_this = Token.MakeTemp("this");
+        Token token_return = Token.MakeTemp(TokenType.RETURN, "return");
 
         methods.Add(
             new Stmt.Expression(
@@ -245,7 +245,7 @@ class Parser
                                 colon_equal,
                                 new Expr.Variable(parent_name.Value))));
                 }
-                constructor.body.Add(new Stmt.Return(new Expr.Variable(token_this)));
+                constructor.body.Add(new Stmt.Return(token_return, new Expr.Variable(token_this)));
             }
 
             methods.Add(
@@ -258,7 +258,7 @@ class Parser
                         colon_equal,
                         method_body)));
         }
-        methods.Add(new Stmt.Return(new Expr.Variable(prototype)));
+        methods.Add(new Stmt.Return(token_return, new Expr.Variable(prototype)));
 
         return new Stmt.Expression(
             new Expr.Assign(
@@ -512,8 +512,10 @@ class Parser
     private Expr ArrowFunction(List<Token> parameters)
     {
         Consume(TokenType.ARROW, "Expect '=>' in arrow-function.");
+        Token token_return = Token.MakeTemp(TokenType.RETURN, "return");
         Expr return_value = Expression();
-        return new Expr.Function(parameters, new List<Stmt>() { new Stmt.Return(return_value) });
+
+        return new Expr.Function(parameters, new List<Stmt>() { new Stmt.Return(token_return, return_value) });
     }
 
     private Expr LambdaDeclaration()
@@ -660,6 +662,6 @@ class Parser
 
     public class ParseError : Exception
     {
-        public static ParseError Instance = new ParseError();
+        public static readonly ParseError Instance = new ParseError();
     }
 }

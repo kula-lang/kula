@@ -12,12 +12,17 @@ abstract class Stmt
         R VisitBlock(Block stmt);
         R VisitFor(For stmt);
         R VisitIf(If stmt);
+        R VisitImport(Import stmt);
     }
     public abstract R Accept<R>(Visitor<R> visitor);
 
     public class Break : Stmt
     {
-        public Break() { }
+        public Token keyword;
+        public Break(Token keyword)
+        {
+            this.keyword = keyword;
+        }
 
         public override R Accept<R>(Visitor<R> visitor)
         {
@@ -27,7 +32,11 @@ abstract class Stmt
 
     public class Continue : Stmt
     {
-        public Continue() { }
+        public Token keyword;
+        public Continue(Token keyword)
+        {
+            this.keyword = keyword;
+        }
 
         public override R Accept<R>(Visitor<R> visitor)
         {
@@ -68,9 +77,11 @@ abstract class Stmt
     public class Return : Stmt
     {
         public readonly Expr? value;
+        public readonly Token keyword;
 
-        public Return(Expr? value)
+        public Return(Token keyword, Expr? value)
         {
+            this.keyword = keyword;
             this.value = value;
         }
 
@@ -146,6 +157,21 @@ abstract class Stmt
         public override R Accept<R>(Visitor<R> visitor)
         {
             return visitor.VisitIf(this);
+        }
+    }
+
+    public class Import : Stmt
+    {
+        public readonly List<Token> modules;
+
+        public Import(List<Token> modules)
+        {
+            this.modules = modules;
+        }
+
+        public override R Accept<R>(Visitor<R> visitor)
+        {
+            return visitor.VisitImport(this);
         }
     }
 }

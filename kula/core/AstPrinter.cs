@@ -140,4 +140,13 @@ class AstPrinter : Stmt.Visitor<string>, Expr.Visitor<string>
     {
         return "(continue!)";
     }
+
+    string Stmt.Visitor<string>.VisitImport(Stmt.Import stmt) 
+    {
+        List<string> items = new List<string>();
+        foreach (Token tk in stmt.modules) {
+            items.Add(tk.lexeme);
+        }
+        return $"(import {string.Join(' ', items)})";
+    }
 }
