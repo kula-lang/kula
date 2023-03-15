@@ -18,11 +18,6 @@ struct Token
         lastPosition = position;
     }
 
-    public static Token MakeTemp(string lexeme)
-    {
-        return MakeTemp(TokenType.IDENTIFIER, lexeme);
-    }
-
     public static Token MakeTemp(TokenType type, string lexeme)
     {
         return new Token(type, lexeme, null, -1, -1, lastPosition.Item3);

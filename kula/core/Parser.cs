@@ -176,6 +176,7 @@ class Parser
     {
         Token class_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class declaration.");
 
+        // Extends
         Token? parent_name = null;
         if (Match(TokenType.COLON)) {
             parent_name = Consume(TokenType.IDENTIFIER, "Expect identifier in class extension.");
@@ -185,12 +186,14 @@ class Parser
 
         List<Stmt> methods = new List<Stmt>();
 
-        Token prototype = Token.MakeTemp("__proto__");
-        Token func = Token.MakeTemp("__func__");
+        string string_constructor = "constructor";
+        string string_proto = "__proto__";
+        Token prototype = Token.MakeTemp(TokenType.IDENTIFIER, string_proto);
+        Token func = Token.MakeTemp(TokenType.IDENTIFIER, "__func__");
         Token colon_equal = Token.MakeTemp(TokenType.COLON_EQUAL, ":=");
         Token dot = Token.MakeTemp(TokenType.DOT, ".");
-        Token token_object = Token.MakeTemp("Object");
-        Token token_this = Token.MakeTemp("this");
+        Token token_object = Token.MakeTemp(TokenType.IDENTIFIER, "Object");
+        Token token_this = Token.MakeTemp(TokenType.IDENTIFIER, "this");
         Token token_return = Token.MakeTemp(TokenType.RETURN, "return");
 
         methods.Add(
@@ -207,45 +210,49 @@ class Parser
             )
         );
 
+        Expr.Function? constructor = null;
+        List<Expr>? super = null;
+
         while (!Match(TokenType.RIGHT_BRACE)) {
             Token method_name = Consume(TokenType.IDENTIFIER, "Expect identifier before method declaration.");
-            Expr method_body = LambdaDeclaration();
+            Expr.Function method_body;
 
-            if (method_name.lexeme == "constructor") {
-                method_name = func;
-                Expr.Function constructor = (Expr.Function)method_body;
-                constructor.body.Insert(0,
-                    new Stmt.Expression(
-                        new Expr.Assign(
-                            new Expr.Variable(token_this),
-                            colon_equal,
-                            new Expr.Call(
-                                new Expr.Variable(token_object),
-                                new List<Expr>(),
-                                lbrace))));
+            // Constructor
+            if (method_name.lexeme == string_constructor) {
+                Consume(TokenType.LEFT_PAREN, "Expect '(' before constructor parameters.");
 
-                constructor.body.Insert(1,
-                    new Stmt.Expression(
-                        new Expr.Assign(
-                            new Expr.Get(
-                                new Expr.Variable(token_this),
-                                new Expr.Literal("__proto__"),
-                                dot),
-                            colon_equal,
-                            new Expr.Variable(prototype))));
-
-                if (parent_name is not null) {
-                    constructor.body.Insert(2,
-                    new Stmt.Expression(
-                            new Expr.Assign(
-                                new Expr.Get(
-                                    new Expr.Variable(prototype),
-                                    new Expr.Literal("__proto__"),
-                                    dot),
-                                colon_equal,
-                                new Expr.Variable(parent_name.Value))));
+                List<Token> constructor_parameters = new List<Token>();
+                if (!Check(TokenType.RIGHT_PAREN)) {
+                    do {
+                        Token param_name = Consume(TokenType.IDENTIFIER, "Expect parameter names.");
+                        constructor_parameters.Add(param_name);
+                    }
+                    while (Match(TokenType.COMMA));
                 }
-                constructor.body.Add(new Stmt.Return(token_return, new Expr.Variable(token_this)));
+                Consume(TokenType.RIGHT_PAREN, "Expect ')' after constructor parameters.");
+
+                if (Match(TokenType.COLON)) {
+                    super = new List<Expr>();
+                    Consume(TokenType.LEFT_PAREN, "Expect '(' before super constructor.");
+                    if (!Check(TokenType.RIGHT_PAREN)) {
+                        do {
+                            super.Add(Expression());
+                        }
+                        while (Match(TokenType.COMMA));
+                    }
+                    Consume(TokenType.RIGHT_PAREN, "Expect ')' after super constructor.");
+                }
+
+                Consume(TokenType.LEFT_BRACE, "Expect '{' before constructor body.");
+                List<Stmt> constructor_body = Block();
+                method_body = new Expr.Function(constructor_parameters, constructor_body);
+
+                constructor = method_body;
+                method_name = func;
+            }
+            // Not Constructor
+            else {
+                method_body = LambdaDeclaration();
             }
 
             methods.Add(
@@ -258,6 +265,54 @@ class Parser
                         colon_equal,
                         method_body)));
         }
+
+        if (constructor is null) {
+            constructor = new Expr.Function(new List<Token>(), new List<Stmt>());
+            methods.Add(
+                new Stmt.Expression(
+                    new Expr.Assign(
+                        new Expr.Get(
+                            new Expr.Variable(prototype),
+                            new Expr.Literal(string_constructor),
+                            dot),
+                        colon_equal,
+                        constructor)));
+        }
+
+        constructor.body.Insert(0,
+            new Stmt.Expression(
+                new Expr.Assign(
+                    new Expr.Variable(token_this),
+                    colon_equal,
+                    new Expr.Call(
+                        (super is not null && parent_name is not null) ? new Expr.Variable((Token)parent_name) : new Expr.Variable(token_object),
+                        super ?? new List<Expr>(),
+                        lbrace))));
+
+        constructor.body.Insert(1,
+            new Stmt.Expression(
+                new Expr.Assign(
+                    new Expr.Get(
+                        new Expr.Variable(token_this),
+                        new Expr.Literal(string_proto),
+                        dot),
+                    colon_equal,
+                    new Expr.Variable(prototype))));
+
+        if (parent_name is not null) {
+            constructor.body.Insert(2,
+            new Stmt.Expression(
+                    new Expr.Assign(
+                        new Expr.Get(
+                            new Expr.Variable(prototype),
+                            new Expr.Literal(string_proto),
+                            dot),
+                        colon_equal,
+                        new Expr.Variable(parent_name.Value))));
+        }
+
+        constructor.body.Add(new Stmt.Return(token_return, new Expr.Variable(token_this)));
+
         methods.Add(new Stmt.Return(token_return, new Expr.Variable(prototype)));
 
         return new Stmt.Expression(
@@ -518,7 +573,7 @@ class Parser
         return new Expr.Function(parameters, new List<Stmt>() { new Stmt.Return(token_return, return_value) });
     }
 
-    private Expr LambdaDeclaration()
+    private Expr.Function LambdaDeclaration()
     {
         Consume(TokenType.LEFT_PAREN, "Expect '(' before function parameters.");
 

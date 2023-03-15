@@ -97,7 +97,7 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
             }
             else if (expr.@operator.type == TokenType.EQUAL) {
                 if (environment.Has(left_expr.name.lexeme) == false) {
-                    // throw Error(left_expr.name, $"Use Variable '{left_expr.name.lexeme}' before declaration. (=)");
+                    // throw Error(left_expr.name, $"Use Variable '{left_expr.name.lexeme}' before declaration.");
                 }
             }
         }

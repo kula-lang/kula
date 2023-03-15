@@ -29,6 +29,7 @@ public static class StandardLibrary
     public static readonly Container.Object array_proto;
     public static readonly Container.Object number_proto;
     public static readonly Container.Object object_proto;
+    public static readonly Container.Object function_proto;
     static StandardLibrary()
     {
         string_proto = new Container.Object();
@@ -147,6 +148,14 @@ public static class StandardLibrary
                 lambda.Call(new List<object?>() { item.Key, item.Value });
             }
             return null;
+        }));
+
+        function_proto = new Container.Object();
+        function_proto.Set("apply", new NativeFunction(2, (_this, args) => {
+            ICallable function = Assert<ICallable>(_this);
+            Container.Array arglist = Assert<Container.Array>(args[1]);
+            function.Bind(args[0]);
+            return function.Call(arglist.data);
         }));
     }
 

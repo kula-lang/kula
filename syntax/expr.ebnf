@@ -23,7 +23,7 @@ call        ::= primary ("(" arguments ? ")" | "." IDENTIFIER)* ;
 
 type        ::= IDENTIFIER ("<" type ">")? ;
 
-primary     ::= "true" | "false" | "nil" | "this" 
+primary     ::= "true" | "false" | "null" | "this" 
             |   NUMBER | STRING | IDENTIFIER 
             |   "(" expression ")" 
             |   function

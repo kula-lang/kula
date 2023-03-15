@@ -58,6 +58,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         globals.Define("__array_proto__", StandardLibrary.array_proto);
         globals.Define("__number_proto__", StandardLibrary.number_proto);
         globals.Define("__object_proto__", StandardLibrary.object_proto);
+        globals.Define("__function_proto__", StandardLibrary.function_proto);
 
         this.maxDepth = maxDepth;
     }
@@ -236,6 +237,9 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         // __func__
         while (callee is Container.Object functor) {
             callee = functor.Get("__func__");
+            if (callee is Function callee_function) {
+                callee_function.Bind(functor);
+            }
         }
 
         if (callee is ICallable function) {
@@ -321,6 +325,12 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         else if (container is double number_proto) {
             if (key is string key_string) {
                 value = StandardLibrary.number_proto.Get(key_string);
+                return;
+            }
+        }
+        else if (container is ICallable function_proto) {
+            if (key is string key_string) {
+                value = StandardLibrary.function_proto.Get(key_string);
                 return;
             }
         }
