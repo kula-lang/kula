@@ -99,7 +99,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
                         environment.Assign(variable.name.lexeme, value);
                     }
                     catch (RuntimeInnerError rie) {
-                        return new RuntimeError(variable.name, rie.Message);
+                        throw new RuntimeError(variable.name, rie.Message);
                     }
                     break;
             }

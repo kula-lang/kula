@@ -19,7 +19,7 @@ class Program
 
     private static void Info()
     {
-        Console.WriteLine($"Kula-CLI (tags/v1.0.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
+        Console.WriteLine($"Kula-CLI (tags/v0.7.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
         Console.WriteLine("Usage: kula-cli <PATH> [options]");
     }
 

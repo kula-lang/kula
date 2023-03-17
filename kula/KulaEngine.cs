@@ -12,16 +12,16 @@ public class KulaEngine
     private AstPrinter astPrinter = new AstPrinter();
     private Interpreter interpreter = new Interpreter(200);
 
-    private Dictionary<string, AstFile> compiledFiles = new Dictionary<string, AstFile>();
+    private Dictionary<string, AstFile> readFiles = new Dictionary<string, AstFile>();
 
-    private void CompileFile(FileInfo file)
+    private void ReadFile(FileInfo file)
     {
         if (hadError) { return; }
 
         if (!file.Exists) {
             throw new RuntimeInnerError($"File Not Exist. {file.FullName}");
         }
-        if (compiledFiles.ContainsKey(file.FullName)) {
+        if (readFiles.ContainsKey(file.FullName)) {
             return;
         }
 
@@ -31,10 +31,10 @@ public class KulaEngine
         if (hadError) { return; }
 
         List<FileInfo> nexts = ModuleResolver.Instance.AnalyzeAST(file.Directory!, asts);
-        compiledFiles.Add(file.FullName, new AstFile(file, nexts, asts));
+        readFiles.Add(file.FullName, new AstFile(file, nexts, asts));
 
         foreach (var next in nexts) {
-            CompileFile(next);
+            ReadFile(next);
         }
     }
 
@@ -53,7 +53,7 @@ public class KulaEngine
         hadRuntimeError = false;
 
         try {
-            CompileFile(file);
+            ReadFile(file);
         }
         catch (RuntimeInnerError e) {
             ReportError(e.Message);
@@ -63,7 +63,7 @@ public class KulaEngine
             return false;
         }
 
-        List<AstFile> ast_files = ModuleResolver.Instance.Resolve(compiledFiles, file);
+        List<AstFile> ast_files = ModuleResolver.Instance.Resolve(readFiles, file);
         List<Stmt> stmts = new List<Stmt>();
         foreach (var ast_file in ast_files) {
             stmts.AddRange(ast_file.stmts);
