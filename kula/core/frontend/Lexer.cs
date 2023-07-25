@@ -4,9 +4,9 @@ namespace Kula.Core;
 
 class Lexer
 {
-    private KulaEngine? kula;
-    private string? source;
-    private List<Token>? tokens;
+    private KulaEngine kula = null!;
+    private string source = null!;
+    private List<Token> tokens = null!;
 
     private int start;
     private int current;
@@ -117,14 +117,14 @@ class Lexer
                     AddToken(TokenType.AND);
                     break;
                 }
-                kula!.LexError((line, column, tfile!), "", "Unexpected character '&'.");
+                kula.LexError((line, column, tfile!), "", "Unexpected character '&'.");
                 break;
             case '|':
                 if (Match('|')) {
                     AddToken(TokenType.OR);
                     break;
                 }
-                kula!.LexError((line, column, tfile!), "", "Unexpected character '|'.");
+                kula.LexError((line, column, tfile!), "", "Unexpected character '|'.");
                 break;
             // Comment
             case '#':
@@ -154,7 +154,7 @@ class Lexer
                     Identifier();
                 }
                 else {
-                    kula!.LexError((line, column, tfile!), "", $"Unexpected character '{c}'.");
+                    kula.LexError((line, column, tfile!), "", $"Unexpected character '{c}'.");
                 }
                 break;
         }
@@ -169,13 +169,13 @@ class Lexer
         }
 
         if (IsEnd()) {
-            kula!.LexError((line, column, tfile!), "", "Unterminated string.");
+            kula.LexError((line, column, tfile!), "", "Unterminated string.");
             return;
         }
 
         Advance();
 
-        string value = source!.Substring(start + 1, current - start - 2);
+        string value = source.Substring(start + 1, current - start - 2);
         AddToken(TokenType.STRING, System.Text.RegularExpressions.Regex.Unescape(value));
     }
 
@@ -191,7 +191,7 @@ class Lexer
             }
         }
 
-        AddToken(TokenType.NUMBER, Double.Parse(source!.Substring(start, current - start)));
+        AddToken(TokenType.NUMBER, Double.Parse(source.Substring(start, current - start)));
     }
 
     private void Identifier()
@@ -199,7 +199,7 @@ class Lexer
         while (IsAlphaNumeric(Peek())) {
             Advance();
         }
-        string text = source!.Substring(start, current - start);
+        string text = source.Substring(start, current - start);
         AddToken(keywordDict.GetValueOrDefault(text, TokenType.IDENTIFIER));
     }
 
@@ -243,13 +243,13 @@ class Lexer
 
     private char PeekNext()
     {
-        if (current + 1 >= source!.Length) return '\0';
+        if (current + 1 >= source.Length) return '\0';
         return source![current + 1];
     }
 
     private bool IsEnd()
     {
-        return current >= source!.Length;
+        return current >= source.Length;
     }
 
     private void Newline()
@@ -265,7 +265,7 @@ class Lexer
 
     private void AddToken(TokenType type, object? literial)
     {
-        string lexeme = source!.Substring(start, current - start);
-        tokens!.Add(new Token(type, lexeme, literial, line, column - (type == TokenType.STRING ? 1 : lexeme.Length), tfile!));
+        string lexeme = source.Substring(start, current - start);
+        tokens.Add(new Token(type, lexeme, literial, line, column - (type == TokenType.STRING ? 1 : lexeme.Length), tfile!));
     }
 }

@@ -20,6 +20,7 @@ Kula 语言诞生于 2021 年 5 月 下旬，并且正在高速的发展之中�
   * 和 C# 双向交互，可由 C# 实现高度的扩展性
   * 模块化编码，支持动态引用其他原生库
   * [优雅美观的官方文档](https://kula-lang.github.io/)
+  * 丰富易用的错误提示
 
 * 语言本身
   * 灵活的基础语法
@@ -44,23 +45,22 @@ Kula 语言诞生于 2021 年 5 月 下旬，并且正在高速的发展之中�
 ## 项目其他信息
 
 ### 主要负责人
->
-> 1. [会唱歌的花枝丸 - Hana Yabuki on @github.com](https://github.com/HanaYabuki)
++ 会唱歌的花枝丸 - Hana Yabuki
+   * [@github](https://github.com/HanaYabuki)
+   * [@bilibili](https://space.bilibili.com/496956009)
 
 ### 参与贡献代码的方式
->
-> 1. 直接和[花枝丸](https://github.com/HanaYabuki)击剑
-> 2. 参与到相关申必组织
-> 3. *PlaceHolder*
+1. 直接和[花枝丸](https://github.com/HanaYabuki)击剑
+2. 参与到相关申必组织
+3. *PlaceHolder*
 
 ### 开源协议
 
-> [MIT](./LICENSE)
+> [MIT-LICENSE](./LICENSE)
 
 ### FAQ
 
 #### **Q1**
-
 Kula 语言是什么？我怎么没听说过？我需要学习他吗？
 
 #### **A1**
@@ -74,5 +74,5 @@ Kula 暂时只是一个玩具语言，不具有 **很强的工程性 或 学习�
 
 #### **A2**
 
-因为 立项的时候 Hana 在打拳皇。
-和 "为什么 Java 叫 Java" 同理 (🍀
+因为 立项的时候 Hana 在打拳皇。\
+和 "为什么 Java 叫 Java" 同理 （🍀

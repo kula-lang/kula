@@ -1,6 +1,5 @@
 using Kula.Core.Ast;
 using Kula.Core.Runtime;
-using Kula.Core.Container;
 
 namespace Kula.Core;
 
@@ -8,32 +7,32 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
 {
     internal readonly Runtime.Environment globals;
     internal Runtime.Environment environment;
-    private KulaEngine? kula;
+    private KulaEngine kula = null!;
 
     private int depth;
     private int maxDepth;
 
     private void CoreFunctions()
     {
-        globals.Define("input", new NativeFunction(0, (_, args) => kula!.Input()));
+        globals.Define("input", new NativeFunction(0, (_, args) => kula.Input()));
         globals.Define("println", new NativeFunction(-1, (_, args) => {
             List<string> items = new List<string>();
             foreach (object? item in args) {
                 items.Add(StandardLibrary.Stringify(item));
             }
-            kula!.Print(string.Join(' ', items));
+            kula.Print(string.Join(' ', items));
             return null;
         }));
         globals.Define("eval", new NativeFunction(1, (_, args) => {
             string source = StandardLibrary.Assert<string>(args[0]);
-            kula!.RunSource(source, "<eval>", false);
+            kula.RunSource(source, "<eval>", false);
             return null;
         }));
         globals.Define("load", new NativeFunction(-1, (_, args) => {
             foreach (object? item in args) {
                 string path = StandardLibrary.Assert<string>(item);
                 if (File.Exists(path)) {
-                    kula!.Run(new FileInfo(path));
+                    kula.Run(new FileInfo(path));
                 }
                 else {
                     throw new RuntimeInnerError($"File '{path}' does not exist.");
@@ -71,7 +70,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
             ExecuteBlock(stmts, environment);
         }
         catch (RuntimeError runtimeError) {
-            kula!.RuntimeError(runtimeError);
+            kula.RuntimeError(runtimeError);
         }
     }
 
@@ -372,7 +371,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
             items.Add(StandardLibrary.Stringify(Evaluate(iexpr)));
         }
 
-        kula!.Print(string.Join(' ', items));
+        kula.Print(string.Join(' ', items));
         return 0;
     }
 

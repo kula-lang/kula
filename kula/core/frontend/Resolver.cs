@@ -23,16 +23,18 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
 
     public void Resolve(KulaEngine kula, List<Stmt> stmts)
     {
-        this.kula = kula;
-        inFunction = new Stack<int>();
-        inFor = 0;
+        lock (this) {
+            this.kula = kula;
+            inFunction.Clear();//inFunction = new Stack<int>();
+            inFor = 0;
 
-        foreach (Stmt stmt in stmts) {
-            try {
-                stmt.Accept(this);
-            }
-            catch (ResolveError) {
-                continue;
+            foreach (Stmt stmt in stmts) {
+                try {
+                    stmt.Accept(this);
+                }
+                catch (ResolveError) {
+                    continue;
+                }
             }
         }
     }

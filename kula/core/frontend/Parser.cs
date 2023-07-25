@@ -4,8 +4,8 @@ namespace Kula.Core;
 
 class Parser
 {
-    private KulaEngine? kula;
-    private List<Token>? tokens;
+    private KulaEngine kula = null!;
+    private List<Token> tokens = null!;
 
     private int current;
 
@@ -658,23 +658,23 @@ class Parser
 
     private ParseError Error(Token token, string errmsg)
     {
-        kula!.ParseError(token, errmsg);
+        kula.ParseError(token, errmsg);
         return ParseError.Instance;
     }
 
     private Token Previous()
     {
-        return tokens![current - 1];
+        return tokens[current - 1];
     }
 
     private Token Previous(int i)
     {
-        return tokens![current - i];
+        return tokens[current - i];
     }
 
     private Token Peek()
     {
-        return tokens![current];
+        return tokens[current];
     }
 
     private bool IsEnd()
