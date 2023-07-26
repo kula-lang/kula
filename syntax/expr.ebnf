@@ -1,34 +1,49 @@
-expression  ::= assignment
-            ;
+expression      =   assignment
+                ;
 
-assignment  ::= (call ".")? IDENTIFIER ("=" | ":=") assignment
-            |   logicOr 
-            ;
+assignment      =   (call | IDENTIFIER) assign expression
+                |   logicOr 
+                ;
 
-logicOr     ::= logicAnd ("or" logicAnd)* ;
+assign          =   "=" | ":=" | "+=" | "-=" | "*=" | "/=" | "%="
+                ;
 
-logicAnd    ::= equality ("and" equality)* ;
+logicOr         =   logicAnd ("or" logicAnd)* 
+                ;
 
-equality    ::= comparison (("!=" | "==") comparison)* ;
+logicAnd        =   equality ("and" equality)* 
+                ;
 
-comparison  ::= term ((">" | ">=" | "<" | "<=") term)* ;
+equality        =   comparison (("!=" | "==") comparison)* 
+                ;
 
-term        ::= factor (( "-" | "+" ) factor)* ;
+comparison      =   term ((">" | ">=" | "<" | "<=") term)* 
+                ;
 
-factor      ::= unary (( "*" | "/" ) unary)* ;
+term            =   factor (( "-" | "+" ) factor)* 
+                ;
 
-unary       ::= ("!" | "-") unary | call ;
+factor          =   unary (( "*" | "/" | "%" ) unary)* 
+                ;
 
-call        ::= primary ("(" arguments ? ")" | "." IDENTIFIER)* ;
+unary           =   ("!" | "-") unary | call 
+                ;
 
-type        ::= IDENTIFIER ("<" type ">")? ;
+call            =   primary ("(" arguments ? ")" | "." IDENTIFIER | "[" expression "]")* 
+                ;
 
-primary     ::= "true" | "false" | "null" | "this" 
-            |   NUMBER | STRING | IDENTIFIER 
-            |   "(" expression ")" 
-            |   function
-            ;
+primary         =   "true" | "false" | "null" | "this" 
+                |   NUMBER | STRING | IDENTIFIER 
+                |   "(" expression ")" 
+                |   function
+                |   arrowFunction
+                ;
 
-function    ::= "func" lambda ;
+function        =   "func" (lambda | arrowFunction) 
+                ;
 
-lambda      ::= "(" (IDENTIFIER (":" type)?) ")" ("=>" type)? block ;
+arrowFunction   =   "(" parameters? ")" "=>" expression
+                ;
+
+lambda          =   "(" parameters? ")" block
+                ;

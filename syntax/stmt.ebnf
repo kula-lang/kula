@@ -1,10 +1,11 @@
-declaration ::= funcDecl
+declaration =   funcDecl
             |   statement
             ;
 
-funcDecl    ::= "func" IDENTIFIER lambda ;
+funcDecl    =   "func" IDENTIFIER lambda "
+            ;
         
-statement   ::= exprStmt
+statement   =   exprStmt
             |   ifStmt
             |   whileStmt
             |   printStmt
@@ -13,16 +14,21 @@ statement   ::= exprStmt
             |   block
             ;
 
-exprStmt    ::= expression ;
+exprStmt    =   expression ";" ;
 
-ifStmt      ::= "if" "(" expression ")" statement ("else" statement)? ;
+ifStmt      =   "if" "(" expression ")" statement ("else" statement)? 
+            ;
 
-whileStmt   ::= "while" "(" expression ")" statement ;
+whileStmt   =   "while" "(" expression ")" statement 
+            ;
 
-printStmt   ::= "print" statement ;
+printStmt   =   "print" statement 
+            ;
 
-returnStmt  ::= "return" statement ;
+returnStmt  =   "return" statement ;
 
-forStmt     ::= "for" "(" (exprStmt | ";") expression? ";" expression? ")" statement ;
+forStmt     =   "for" "(" (exprStmt | ";") expression? ";" expression? ")" statement 
+            ;
 
-block       ::= "{" declaration* "}" ;
+block       =   "{" declaration* "}" 
+            ;

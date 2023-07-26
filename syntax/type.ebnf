@@ -1,5 +1,0 @@
-type                ::= IDENTIFIER
-                    |   "<" (type ("," type)*) ":" type ">"
-                    ;
-
-typeDeclaration     ::= "type" IDENTIFIER "{" typeItems "}" ;

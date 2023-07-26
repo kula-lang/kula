@@ -1,9 +1,5 @@
-parameter       ::= IDENTIFIER (":" type)? ;
+parameters      ::= IDENTIFIER ("," IDENTIFIER)* 
+                ;
 
-parameters      ::= parameter ("," parameter)* ;
-
-arguments       ::= expression ("," expression)* ;
-
-typeItems       ::= typeItem ("," typeItem)* ;
-
-typeItem        ::= IDENTIFIER ":" type
+arguments       ::= expression ("," expression)* 
+                ;
