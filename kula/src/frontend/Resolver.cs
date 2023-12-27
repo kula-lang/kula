@@ -2,7 +2,7 @@ using Kula.Core.Ast;
 
 namespace Kula.Core;
 
-class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
+class Resolver : Stmt.IVisitor<int>, Expr.IVisitor<int>
 {
     private ResolveError Error(Token token, string errmsg)
     {
@@ -39,7 +39,7 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         }
     }
 
-    int Expr.Visitor<int>.VisitAssign(Expr.Assign expr)
+    int Expr.IVisitor<int>.VisitAssign(Expr.Assign expr)
     {
         if (expr.left is Expr.Variable left_variable) {
             if (expr.@operator.type == TokenType.COLON_EQUAL) {
@@ -58,14 +58,14 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Expr.Visitor<int>.VisitBinary(Expr.Binary expr)
+    int Expr.IVisitor<int>.VisitBinary(Expr.Binary expr)
     {
         expr.left.Accept(this);
         expr.right.Accept(this);
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitBlock(Stmt.Block stmt)
+    int Stmt.IVisitor<int>.VisitBlock(Stmt.Block stmt)
     {
         foreach (Stmt si in stmt.statements) {
             si.Accept(this);
@@ -73,7 +73,7 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitBreak(Stmt.Break stmt)
+    int Stmt.IVisitor<int>.VisitBreak(Stmt.Break stmt)
     {
         if (inFor <= 0) {
             throw Error(stmt.keyword, "Illegal 'break'.");
@@ -81,7 +81,7 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Expr.Visitor<int>.VisitCall(Expr.Call expr)
+    int Expr.IVisitor<int>.VisitCall(Expr.Call expr)
     {
         foreach (var ei in expr.arguments) {
             ei.Accept(this);
@@ -89,7 +89,7 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitContinue(Stmt.Continue stmt)
+    int Stmt.IVisitor<int>.VisitContinue(Stmt.Continue stmt)
     {
         if (inFor <= 0) {
             throw Error(stmt.keyword, "Illegal 'continue'.");
@@ -97,13 +97,13 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitExpression(Stmt.Expression stmt)
+    int Stmt.IVisitor<int>.VisitExpression(Stmt.Expression stmt)
     {
         stmt.expression.Accept(this);
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitFor(Stmt.For stmt)
+    int Stmt.IVisitor<int>.VisitFor(Stmt.For stmt)
     {
         inFor++;
 
@@ -119,7 +119,7 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Expr.Visitor<int>.VisitFunction(Expr.Function expr)
+    int Expr.IVisitor<int>.VisitFunction(Expr.Function expr)
     {
         inFunction.Push(inFor);
         inFor = 0;
@@ -134,14 +134,14 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Expr.Visitor<int>.VisitGet(Expr.Get expr)
+    int Expr.IVisitor<int>.VisitGet(Expr.Get expr)
     {
         expr.container.Accept(this);
         expr.key.Accept(this);
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitIf(Stmt.If stmt)
+    int Stmt.IVisitor<int>.VisitIf(Stmt.If stmt)
     {
         stmt.condition.Accept(this);
         stmt.thenBranch.Accept(this);
@@ -151,24 +151,24 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitImport(Stmt.Import stmt)
+    int Stmt.IVisitor<int>.VisitImport(Stmt.Import stmt)
     {
         return 0;
     }
 
-    int Expr.Visitor<int>.VisitLiteral(Expr.Literal expr)
+    int Expr.IVisitor<int>.VisitLiteral(Expr.Literal expr)
     {
         return 0;
     }
 
-    int Expr.Visitor<int>.VisitLogical(Expr.Logical expr)
+    int Expr.IVisitor<int>.VisitLogical(Expr.Logical expr)
     {
         expr.left.Accept(this);
         expr.right.Accept(this);
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitPrint(Stmt.Print stmt)
+    int Stmt.IVisitor<int>.VisitPrint(Stmt.Print stmt)
     {
         foreach (Expr expr in stmt.items) {
             expr.Accept(this);
@@ -176,7 +176,7 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitReturn(Stmt.Return stmt)
+    int Stmt.IVisitor<int>.VisitReturn(Stmt.Return stmt)
     {
         if (inFunction.Count <= 0) {
             throw Error(stmt.keyword, "Illegal 'return'.");
@@ -187,13 +187,13 @@ class Resolver : Stmt.Visitor<int>, Expr.Visitor<int>
         return 0;
     }
 
-    int Expr.Visitor<int>.VisitUnary(Expr.Unary expr)
+    int Expr.IVisitor<int>.VisitUnary(Expr.Unary expr)
     {
         expr.right.Accept(this);
         return 0;
     }
 
-    int Expr.Visitor<int>.VisitVariable(Expr.Variable expr)
+    int Expr.IVisitor<int>.VisitVariable(Expr.Variable expr)
     {
         return 0;
     }

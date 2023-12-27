@@ -57,18 +57,18 @@ public static class StandardLibrary
             return new Container.Array(str.Split(separator));
         }));
         string_proto.Set("length", new NativeFunction(0, (_this, _) =>
-            (double)(Assert<string>(_this)).Length
+            (double)Assert<string>(_this).Length
         ));
         string_proto.Set("charCode", new NativeFunction(0, (_this, _) =>
-            (double)((short)(Assert<string>(_this)[0]))
+            (double)(short)Assert<string>(_this)[0]
         ));
 
         number_proto = new Container.Object();
         number_proto.Set("floor", new NativeFunction(0, (_this, _) =>
-            (double)(Math.Floor(Assert<Double>(_this)))
+            Math.Floor(Assert<double>(_this))
         ));
         number_proto.Set("round", new NativeFunction(0, (_this, _) =>
-            (double)(Math.Round(Assert<Double>(_this)))
+            Math.Round(Assert<double>(_this))
         ));
 
         array_proto = new Container.Object();
@@ -88,7 +88,7 @@ public static class StandardLibrary
             return new Container.Array(Assert<Container.Array>(_this).data);
         }));
         array_proto.Set("length", new NativeFunction(0, (_this, _) => {
-            return (double)(Assert<Container.Array>(_this).Size);
+            return (double)Assert<Container.Array>(_this).Size;
         }));
         array_proto.Set("foreach", new NativeFunction(1, (_this, args) => {
             ICallable lambda = Assert<ICallable>(args[0]);

@@ -4,11 +4,11 @@ namespace Kula.Core.Runtime;
 
 class RuntimeError : Exception
 {
-    public readonly Token name;
+    public readonly Token token;
 
-    public RuntimeError(Token name, string msg) : base(msg)
+    public RuntimeError(Token token, string msg) : base(msg)
     {
-        this.name = name;
+        this.token = token;
     }
 }
 

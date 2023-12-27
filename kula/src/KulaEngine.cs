@@ -1,6 +1,8 @@
 ﻿using Kula.Core;
 using Kula.Core.Ast;
+using Kula.Core.Compiler;
 using Kula.Core.Runtime;
+using Kula.Core.Utils;
 
 namespace Kula;
 
@@ -9,12 +11,17 @@ public class KulaEngine
     private bool hadError = false;
     private bool hadRuntimeError = false;
 
-    private AstPrinter astPrinter = new AstPrinter();
-    private Interpreter interpreter = new Interpreter(200);
+    private readonly AstPrinter astPrinter = new();
+    private readonly Interpreter interpreter = new(200);
 
-    private Dictionary<string, AstFile> readFiles = new Dictionary<string, AstFile>();
+    private Dictionary<string, AstFile> ReadFile(FileInfo file)
+    {
+        Dictionary<string, AstFile> readFiles = new();
+        ReadFile1(file, readFiles);
+        return readFiles;
+    }
 
-    private void ReadFile(FileInfo file)
+    private void ReadFile1(FileInfo file, Dictionary<string, AstFile> readFiles)
     {
         if (hadError) { return; }
 
@@ -34,7 +41,7 @@ public class KulaEngine
         readFiles.Add(file.FullName, new AstFile(file, nexts, asts));
 
         foreach (var next in nexts) {
-            ReadFile(next);
+            ReadFile1(next, readFiles);
         }
     }
 
@@ -52,8 +59,9 @@ public class KulaEngine
         hadError = false;
         hadRuntimeError = false;
 
+        Dictionary<string, AstFile> readFiles;
         try {
-            ReadFile(file);
+            readFiles = ReadFile(file);
         }
         catch (RuntimeInnerError e) {
             ReportError(e.Message);
@@ -64,7 +72,7 @@ public class KulaEngine
         }
 
         List<AstFile> ast_files = ModuleResolver.Instance.Resolve(readFiles, file);
-        List<Stmt> stmts = new List<Stmt>();
+        List<Stmt> stmts = new();
         foreach (var ast_file in ast_files) {
             stmts.AddRange(ast_file.stmts);
         }
@@ -75,6 +83,54 @@ public class KulaEngine
         }
 
         RunStmts(stmts);
+
+        return true;
+    }
+
+    private bool CompileFile(FileInfo file)
+    {
+        hadError = false;
+        hadRuntimeError = false;
+
+        Dictionary<string, AstFile> readFiles;
+        try {
+            readFiles = ReadFile(file);
+        }
+        catch (RuntimeInnerError e) {
+            ReportError(e.Message);
+            return false;
+        }
+        if (hadError) {
+            return false;
+        }
+
+        List<AstFile> ast_files = ModuleResolver.Instance.Resolve(readFiles, file);
+        List<Stmt> stmts = new();
+        foreach (var ast_file in ast_files) {
+            stmts.AddRange(ast_file.stmts);
+        }
+
+        Resolver.Instance.Resolve(this, stmts);
+        if (hadError) {
+            return false;
+        }
+
+        CompiledFile compiledFile = Compiler.Instance.Compile(stmts);
+        using (var stream = File.Open("a.klc", FileMode.Create)) {
+            using (var bw = new BinaryWriter(stream)) {
+                compiledFile.Write(bw);
+            }
+        }
+        Console.WriteLine("### Origin: ###");
+        Console.WriteLine(compiledFile.ToString());
+        using (var stream = File.Open("a.klc", FileMode.Open)) {
+            using (var br = new BinaryReader(stream)) {
+                CompiledFile cf = new();
+                cf.Read(br);
+                Console.WriteLine("### Read: ###");
+                Console.WriteLine(cf.ToString());
+            }
+        }
 
         return true;
     }
@@ -129,6 +185,14 @@ public class KulaEngine
         interpreter.globals.Define(fnName, function);
     }
 
+    public bool Compile(FileInfo file)
+    {
+        if (file.Exists) {
+            return CompileFile(file);
+        }
+        return false;
+    }
+
     internal string? Input()
     {
         return Console.ReadLine();
@@ -156,7 +220,7 @@ public class KulaEngine
 
     internal void RuntimeError(RuntimeError runtimeError)
     {
-        Token token = runtimeError.name;
+        Token token = runtimeError.token;
         ReportError(token.position, token.lexeme, runtimeError.Message, true);
     }
 
@@ -169,10 +233,10 @@ public class KulaEngine
         if (pos.Item1 >= 0) {
             (string err_source, int err_pos) = pos.Item3.ErrorLog(pos.Item1, pos.Item2);
             Console.Error.WriteLine("  " + err_source);
-            string prompt = "  " + new String('-', err_pos - 1);
+            string prompt = "  " + new string('-', err_pos - 1);
             if (isExactly) {
-                prompt += new String('^', lexeme.Length)
-                        + new String('-', err_source.Length - lexeme.Length - err_pos + 1);
+                prompt += new string('^', lexeme.Length)
+                        + new string('-', err_source.Length - lexeme.Length - err_pos + 1);
             }
             else {
                 prompt += '^';

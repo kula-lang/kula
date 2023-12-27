@@ -2,7 +2,7 @@ namespace Kula.Core.Ast;
 
 abstract class Expr
 {
-    public interface Visitor<R>
+    public interface IVisitor<R>
     {
         R VisitCall(Call expr);
         R VisitGet(Get expr);
@@ -14,7 +14,7 @@ abstract class Expr
         R VisitAssign(Assign expr);
         R VisitFunction(Function expr);
     }
-    public abstract R Accept<R>(Visitor<R> visitor);
+    public abstract R Accept<R>(IVisitor<R> visitor);
 
     public class Call : Expr
     {
@@ -29,12 +29,15 @@ abstract class Expr
             this.paren = paren;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitCall(this);
         }
     }
 
+    /// <summary>
+    /// Get Value by Key From Container (Object|Array)
+    /// </summary>
     public class Get : Expr
     {
         public readonly Token @operator;
@@ -48,7 +51,7 @@ abstract class Expr
             this.@operator = @operator;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitGet(this);
         }
@@ -63,7 +66,7 @@ abstract class Expr
             this.value = value;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitLiteral(this);
         }
@@ -80,7 +83,7 @@ abstract class Expr
             this.right = right;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitUnary(this);
         }
@@ -98,7 +101,7 @@ abstract class Expr
             this.right = right;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitBinary(this);
         }
@@ -116,7 +119,7 @@ abstract class Expr
             this.right = right;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitLogical(this);
         }
@@ -131,7 +134,7 @@ abstract class Expr
             this.name = name;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitVariable(this);
         }
@@ -150,7 +153,7 @@ abstract class Expr
             this.right = right;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitAssign(this);
         }
@@ -167,7 +170,7 @@ abstract class Expr
             this.body = body;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitFunction(this);
         }

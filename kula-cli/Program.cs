@@ -5,15 +5,23 @@ class Program
     public static void Main(string[] args)
     {
         switch (args.Length) {
-            case 0:
-                Info();
-                Repl();
-                return;
-            default:
-                KulaEngine kula = new KulaEngine();
-                FileInfo root = new FileInfo(args[0]);
-                kula.Run(root);
-                return;
+            case 2: {
+                    KulaEngine kula = new();
+                    FileInfo root = new(args[1]);
+                    kula.Compile(root);
+                    return;
+                }
+            case 1: {
+                    KulaEngine kula = new();
+                    FileInfo root = new(args[0]);
+                    kula.Run(root);
+                    return;
+                }
+            default: {
+                    Info();
+                    Repl();
+                    return;
+                }
         }
     }
 
@@ -25,7 +33,7 @@ class Program
 
     private static void Repl()
     {
-        KulaEngine kula = new KulaEngine();
+        KulaEngine kula = new();
         kula.DeclareFunction("kula", new Kula.Core.Runtime.NativeFunction(0, (_this, args) => {
             Console.ForegroundColor = ConsoleColor.Cyan;
             return "Diamond Breath!";

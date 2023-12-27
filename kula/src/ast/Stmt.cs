@@ -2,7 +2,7 @@ namespace Kula.Core.Ast;
 
 abstract class Stmt
 {
-    public interface Visitor<R>
+    public interface IVisitor<R>
     {
         R VisitBreak(Break stmt);
         R VisitContinue(Continue stmt);
@@ -14,7 +14,7 @@ abstract class Stmt
         R VisitIf(If stmt);
         R VisitImport(Import stmt);
     }
-    public abstract R Accept<R>(Visitor<R> visitor);
+    public abstract R Accept<R>(IVisitor<R> visitor);
 
     public class Break : Stmt
     {
@@ -24,7 +24,7 @@ abstract class Stmt
             this.keyword = keyword;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitBreak(this);
         }
@@ -38,7 +38,7 @@ abstract class Stmt
             this.keyword = keyword;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitContinue(this);
         }
@@ -53,7 +53,7 @@ abstract class Stmt
             this.expression = expression;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitExpression(this);
         }
@@ -68,7 +68,7 @@ abstract class Stmt
             this.items = items;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitPrint(this);
         }
@@ -85,7 +85,7 @@ abstract class Stmt
             this.value = value;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitReturn(this);
         }
@@ -100,7 +100,7 @@ abstract class Stmt
             this.statements = statements;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitBlock(this);
         }
@@ -135,7 +135,7 @@ abstract class Stmt
             this.body = body;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitFor(this);
         }
@@ -154,7 +154,7 @@ abstract class Stmt
             this.elseBranch = elseBranch;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitIf(this);
         }
@@ -169,7 +169,7 @@ abstract class Stmt
             this.modules = modules;
         }
 
-        public override R Accept<R>(Visitor<R> visitor)
+        public override R Accept<R>(IVisitor<R> visitor)
         {
             return visitor.VisitImport(this);
         }

@@ -3,7 +3,7 @@ using Kula.Core.Runtime;
 
 namespace Kula.Core;
 
-class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
+class Interpreter : Expr.IVisitor<object?>, Stmt.IVisitor<int>
 {
     internal readonly Runtime.Environment globals;
     internal Runtime.Environment environment;
@@ -84,7 +84,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         stmt.Accept(this);
     }
 
-    object? Expr.Visitor<object?>.VisitAssign(Expr.Assign expr)
+    object? Expr.IVisitor<object?>.VisitAssign(Expr.Assign expr)
     {
         object? value = Evaluate(expr.right);
 
@@ -187,12 +187,12 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         }
     }
 
-    object? Expr.Visitor<object?>.VisitBinary(Expr.Binary expr)
+    object? Expr.IVisitor<object?>.VisitBinary(Expr.Binary expr)
     {
         return EvalBinary(expr.@operator, Evaluate(expr.left), Evaluate(expr.right));
     }
 
-    int Stmt.Visitor<int>.VisitBlock(Stmt.Block stmt)
+    int Stmt.IVisitor<int>.VisitBlock(Stmt.Block stmt)
     {
         ExecuteBlock(stmt.statements, new Runtime.Environment(environment));
         return 0;
@@ -213,7 +213,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         }
     }
 
-    object? Expr.Visitor<object?>.VisitCall(Expr.Call expr)
+    object? Expr.IVisitor<object?>.VisitCall(Expr.Call expr)
     {
         object? callee;
         --depth;
@@ -270,18 +270,18 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
 
     }
 
-    int Stmt.Visitor<int>.VisitExpression(Stmt.Expression stmt)
+    int Stmt.IVisitor<int>.VisitExpression(Stmt.Expression stmt)
     {
         Evaluate(stmt.expression);
         return 0;
     }
 
-    object? Expr.Visitor<object?>.VisitFunction(Expr.Function expr)
+    object? Expr.IVisitor<object?>.VisitFunction(Expr.Function expr)
     {
         return new Function(expr, this, environment);
     }
 
-    object? Expr.Visitor<object?>.VisitGet(Expr.Get expr)
+    object? Expr.IVisitor<object?>.VisitGet(Expr.Get expr)
     {
         EvalGet(expr, out object? container, out object? key, out object? value);
         return value;
@@ -336,7 +336,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         throw new RuntimeError(expr.@operator, "Only 'Object' and 'Array' have properties when get.");
     }
 
-    int Stmt.Visitor<int>.VisitIf(Stmt.If stmt)
+    int Stmt.IVisitor<int>.VisitIf(Stmt.If stmt)
     {
         if (StandardLibrary.Booleanify(Evaluate(stmt.condition))) {
             Execute(stmt.thenBranch);
@@ -347,23 +347,23 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         return 0;
     }
 
-    object? Expr.Visitor<object?>.VisitLiteral(Expr.Literal expr)
+    object? Expr.IVisitor<object?>.VisitLiteral(Expr.Literal expr)
     {
         return expr.value;
     }
 
-    object? Expr.Visitor<object?>.VisitLogical(Expr.Logical expr)
+    object? Expr.IVisitor<object?>.VisitLogical(Expr.Logical expr)
     {
         object? left = Evaluate(expr.left);
 
-        if ((expr.@operator.type == TokenType.OR) == StandardLibrary.Booleanify(left)) {
+        if (expr.@operator.type == TokenType.OR == StandardLibrary.Booleanify(left)) {
             return left;
         }
 
         return Evaluate(expr.right);
     }
 
-    int Stmt.Visitor<int>.VisitPrint(Stmt.Print stmt)
+    int Stmt.IVisitor<int>.VisitPrint(Stmt.Print stmt)
     {
         List<string> items = new List<string>();
 
@@ -375,7 +375,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitReturn(Stmt.Return stmt)
+    int Stmt.IVisitor<int>.VisitReturn(Stmt.Return stmt)
     {
         throw new Return(stmt.value is null ? null : Evaluate(stmt.value));
     }
@@ -397,12 +397,12 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         throw new RuntimeError(@operator, "Undefined Operator.");
     }
 
-    object? Expr.Visitor<object?>.VisitUnary(Expr.Unary expr)
+    object? Expr.IVisitor<object?>.VisitUnary(Expr.Unary expr)
     {
         return EvalUnary(expr.@operator, expr.right);
     }
 
-    object? Expr.Visitor<object?>.VisitVariable(Expr.Variable expr)
+    object? Expr.IVisitor<object?>.VisitVariable(Expr.Variable expr)
     {
         try {
             return environment.Get(expr.name.lexeme);
@@ -412,7 +412,7 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         }
     }
 
-    int Stmt.Visitor<int>.VisitFor(Stmt.For stmt)
+    int Stmt.IVisitor<int>.VisitFor(Stmt.For stmt)
     {
         Runtime.Environment previous = environment;
         environment = new Runtime.Environment(previous);
@@ -442,17 +442,17 @@ class Interpreter : Expr.Visitor<System.Object?>, Stmt.Visitor<int>
         return 0;
     }
 
-    int Stmt.Visitor<int>.VisitBreak(Stmt.Break stmt)
+    int Stmt.IVisitor<int>.VisitBreak(Stmt.Break stmt)
     {
         throw new Break();
     }
 
-    int Stmt.Visitor<int>.VisitContinue(Stmt.Continue stmt)
+    int Stmt.IVisitor<int>.VisitContinue(Stmt.Continue stmt)
     {
         throw new Continue();
     }
 
-    int Stmt.Visitor<int>.VisitImport(Stmt.Import stmt)
+    int Stmt.IVisitor<int>.VisitImport(Stmt.Import stmt)
     {
         return 0;
     }
