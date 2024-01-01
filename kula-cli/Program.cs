@@ -5,10 +5,11 @@ class Program
     public static void Main(string[] args)
     {
         switch (args.Length) {
-            case 2: {
+            case 3: {
                     KulaEngine kula = new();
                     FileInfo root = new(args[1]);
-                    kula.Compile(root);
+                    String export = args[2];
+                    kula.Compile(root, export);
                     return;
                 }
             case 1: {

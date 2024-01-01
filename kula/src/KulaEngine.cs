@@ -3,6 +3,7 @@ using Kula.Core.Ast;
 using Kula.Core.Compiler;
 using Kula.Core.Runtime;
 using Kula.Core.Utils;
+using Kula.Core.VM;
 
 namespace Kula;
 
@@ -12,7 +13,7 @@ public class KulaEngine
     private bool hadRuntimeError = false;
 
     private readonly AstPrinter astPrinter = new();
-    private readonly Interpreter interpreter = new(200);
+    private readonly Interpreter interpreter = new();
 
     private Dictionary<string, AstFile> ReadFile(FileInfo file)
     {
@@ -87,7 +88,7 @@ public class KulaEngine
         return true;
     }
 
-    private bool CompileFile(FileInfo file)
+    private bool CompileFile(FileInfo file, String path)
     {
         hadError = false;
         hadRuntimeError = false;
@@ -116,21 +117,23 @@ public class KulaEngine
         }
 
         CompiledFile compiledFile = Compiler.Instance.Compile(stmts);
-        using (var stream = File.Open("a.klc", FileMode.Create)) {
+        using (var stream = File.Open(path, FileMode.Create)) {
             using (var bw = new BinaryWriter(stream)) {
                 compiledFile.Write(bw);
             }
         }
         Console.WriteLine("### Origin: ###");
         Console.WriteLine(compiledFile.ToString());
-        using (var stream = File.Open("a.klc", FileMode.Open)) {
+        using (var stream = File.Open(path, FileMode.Open)) {
             using (var br = new BinaryReader(stream)) {
-                CompiledFile cf = new();
-                cf.Read(br);
+                CompiledFile cf = new(br);
                 Console.WriteLine("### Read: ###");
                 Console.WriteLine(cf.ToString());
             }
         }
+
+        VM vm = new VM();
+        vm.Interpret(this, compiledFile);
 
         return true;
     }
@@ -185,10 +188,10 @@ public class KulaEngine
         interpreter.globals.Define(fnName, function);
     }
 
-    public bool Compile(FileInfo file)
+    public bool Compile(FileInfo file, string path)
     {
         if (file.Exists) {
-            return CompileFile(file);
+            return CompileFile(file, path);
         }
         return false;
     }

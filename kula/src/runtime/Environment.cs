@@ -1,5 +1,3 @@
-using Kula.Core.Ast;
-
 namespace Kula.Core.Runtime;
 
 class Environment
@@ -46,5 +44,9 @@ class Environment
     public void Define(string name, object? value)
     {
         values[name] = value;
+    }
+    
+    public Environment Unenclose() {
+        return this.enclosing;
     }
 }

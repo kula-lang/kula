@@ -1,3 +1,5 @@
+using Kula.Core.VM;
+
 namespace Kula.Core.Runtime;
 
 public static class StandardLibrary
@@ -197,7 +199,7 @@ public static class StandardLibrary
         else if (o == typeof(bool)) {
             return "Bool";
         }
-        else if (o == typeof(ICallable)) {
+        else if (o == typeof(ICallable) || o == typeof(FunctionObject)) {
             return "Function";
         }
         else if (o == typeof(Container.Array)) {

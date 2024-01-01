@@ -1,5 +1,5 @@
 using System.Text;
-using Kula.Core.Ast;
+using Kula.Core.Runtime;
 
 namespace Kula.Core.Compiler;
 
@@ -17,24 +17,21 @@ class CompiledFile
     private static readonly ushort MAGIC_NUMBER = 0x1AC5;
     private static readonly byte SEPARATOR = 0x8f;
     internal readonly Dictionary<string, int> variableDict;
+    internal readonly string[] variableArray;
     internal readonly List<object?> literalList;
     internal readonly List<Instruction> instructions;
-    internal readonly List<(List<int>, List<Instruction>)> functions = new();
+    internal readonly List<(List<int>, List<Instruction>)> functions;
 
     public CompiledFile(Dictionary<string, int> variableDict, List<object?> literalList, List<Instruction> instructions, List<(List<int>, List<Instruction>)> functions)
     {
         this.variableDict = variableDict;
+        this.variableArray = new string[variableDict.Count];
+        foreach (var kv in variableDict) {
+            variableArray[kv.Value] = kv.Key;
+        }
         this.literalList = literalList;
         this.instructions = instructions;
         this.functions = functions;
-    }
-
-    public CompiledFile()
-    {
-        this.variableDict = new();
-        this.literalList = new();
-        this.instructions = new();
-        this.functions = new();
     }
 
     public void Write(BinaryWriter bw)
@@ -102,12 +99,12 @@ class CompiledFile
         }
     }
 
-    public void Read(BinaryReader br)
+    public CompiledFile(BinaryReader br)
     {
-        this.variableDict.Clear();
-        this.literalList.Clear();
-        this.instructions.Clear();
-        this.functions.Clear();
+        this.variableDict = new();
+        this.literalList = new();
+        this.instructions = new();
+        this.functions = new();
         literalList.Add(false);
         literalList.Add(true);
 
@@ -123,6 +120,10 @@ class CompiledFile
             byte var_size = byte_buffer;
             char[] chars = br.ReadChars(var_size);
             variableDict[new string(chars)] = variableDict.Count;
+        }
+        this.variableArray = new string[variableDict.Count];
+        foreach (var kv in variableDict) {
+            variableArray[kv.Value] = kv.Key;
         }
 
         // Literal
@@ -186,31 +187,48 @@ class CompiledFile
         sb.AppendLine("==== Literal ====");
         index = 0;
         foreach (var literal in this.literalList) {
-            sb.AppendLine($"\t{index++}\t{literal}");
+            sb.AppendLine($"\t{index++}\t{StandardLibrary.Stringify(literal)}");
         }
 
         sb.AppendLine("==== Instructions ====");
         index = 0;
         foreach (var ins in this.instructions) {
-            sb.AppendLine($"\t{index++}\t{ins.Op}\t{ins.Constant}");
+            sb.AppendLine($"\t{index++}\t{InstructionToString(ins)}");
         }
 
         sb.AppendLine("==== Functions ====");
         int f_index = 0;
         foreach (var function in this.functions) {
-            sb.AppendLine($"== F {f_index} ==");
+            sb.AppendLine($"---- F {f_index} ----");
             index = 0;
             foreach (var vv in function.Item1) {
-                sb.AppendLine($"\t{index++}\t{vv}");
+                sb.AppendLine($"\t{index++}\t{vv}\t{this.variableArray[vv]}");
             }
-            sb.AppendLine($"== I {f_index} ==");
+            sb.AppendLine($"---- I {f_index} ----");
             index = 0;
             foreach (var ins in function.Item2) {
-                sb.AppendLine($"\t{index++}\t{ins.Op}\t{ins.Constant}");
+                sb.AppendLine($"\t{index++}\t{InstructionToString(ins)}");
             }
             ++f_index;
         }
 
         return sb.ToString();
+    }
+
+    internal string InstructionToString(Instruction instruction)
+    {
+        string s = $"{instruction.Op}\t{instruction.Constant}";
+        switch (instruction.Op) {
+            case OpCode.LOADC:
+                return s + $"\t// {StandardLibrary.Stringify(literalList[instruction.Constant])}";
+            case OpCode.ASGN:
+                return s + $"\t// {variableArray[instruction.Constant]}\t< =";
+            case OpCode.DECL:
+                return s + $"\t// {variableArray[instruction.Constant]}\t< :=";
+            case OpCode.LOAD:
+                return s + $"\t// {variableArray[instruction.Constant]}\t>";
+            default:
+                return s;
+        }
     }
 }

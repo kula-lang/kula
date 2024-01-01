@@ -42,6 +42,8 @@ class Interpreter : Expr.IVisitor<object?>, Stmt.IVisitor<int>
         }));
     }
 
+    public Interpreter() : this(200) { }
+
     public Interpreter(int maxDepth)
     {
         this.globals = new Runtime.Environment();

@@ -1,4 +1,3 @@
-using System.Dynamic;
 using Kula.Core.Ast;
 
 namespace Kula.Core.Compiler;
@@ -90,8 +89,9 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
                     break;
             }
         }
-        else if (left is Expr.Get) {
-            left.Accept(this);
+        else if (left is Expr.Get left_get) {
+            left_get.container.Accept(this);
+            left_get.key.Accept(this);
             right.Accept(this);
             New(OpCode.SET, 0);
         }
@@ -162,6 +162,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     int Stmt.IVisitor<int>.VisitFor(Stmt.For stmt)
     {
+        New(OpCode.BLKST, 0);
         stmt.initializer?.Accept(this);
         int for_condition = Pos;
         if (stmt.condition is null) {
@@ -173,7 +174,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         Instruction if_not_jump = New(OpCode.JMPF, 0);
         forStack.Push((new(), new()));
         stmt.body.Accept(this);
-        
+        stmt.increment?.Accept(this);
         New(OpCode.JMP, for_condition);
         int end_loop = Pos;
         if_not_jump.Constant = end_loop;
@@ -184,12 +185,13 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         foreach (Instruction ins in list_continue) {
             ins.Constant = for_condition;
         }
+        New(OpCode.BLKEND, 0);
         return 0;
     }
 
     int Expr.IVisitor<int>.VisitFunction(Expr.Function expr)
     {
-        New(OpCode.FUNC, 0);
+        var func_ins = New(OpCode.FUNC, -1);
         List<Instruction> instructions = new();
         List<int> parameters = new();
         foreach (var parameter in expr.parameters) {
@@ -199,6 +201,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         foreach (var stmt in expr.body) {
             stmt.Accept(this);
         }
+        func_ins.Constant = functions.Count;
         functions.Add((parameters, instructionsStack.Pop()));
         return 0;
     }
@@ -258,9 +261,6 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
             New(OpCode.LOADC, 1);
             instr2.Constant = Pos;
         }
-        else {
-            throw new CompileError();
-        }
         return 0;
     }
 
@@ -299,42 +299,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     int Expr.IVisitor<int>.VisitVariable(Expr.Variable expr)
     {
-        New(OpCode.LOAD, variableDict.GetValueOrDefault(expr.name.lexeme, -1));
+        New(OpCode.LOAD, SaveVariable(expr.name.lexeme));
         return 0;
-    }
-}
-
-enum OpCode : byte
-{
-    __START__ = 0x80,
-    // Load & Store
-    LOADC, LOAD, DECL, ASGN,
-    // Function
-    FUNC, RET,
-    // Env
-    BLKST, BLKEND,
-    // Container
-    GET, SET,
-    // Arithmetic
-    ADD, SUB, MUL, DIV, MOD, NEG,
-    // Logical
-    AND, OR, NOT,
-    // Comparison
-    EQ, NEQ, LT, LE, GT, GE,
-    // Control Flow
-    JMP, JMPT, JMPF, CALL,
-    // Output
-    PRINT
-}
-
-class Instruction
-{
-    internal OpCode Op { get; set; }
-    internal int Constant { get; set; }
-
-    public Instruction(OpCode op, int constant)
-    {
-        this.Op = op;
-        this.Constant = constant;
     }
 }
