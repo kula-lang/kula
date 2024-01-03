@@ -4,46 +4,71 @@ class Program
 {
     public static void Main(string[] args)
     {
-        switch (args.Length) {
-            case 3: {
-                    KulaEngine kula = new();
-                    FileInfo root = new(args[1]);
-                    String export = args[2];
-                    kula.Compile(root, export);
-                    return;
-                }
-            case 1: {
-                    KulaEngine kula = new();
-                    FileInfo root = new(args[0]);
-                    kula.Run(root);
-                    return;
-                }
-            default: {
+        KulaEngine kula = new();
+        if (args.Length == 0) {
+            Info();
+            Repl(kula);
+            return;
+        }
+        else {
+            switch (args[0]) {
+                case "r":
+                case "run": {
+                        FileInfo root = new(args[1]);
+                        kula.Run(root);
+                        return;
+                    }
+                case "c":
+                case "compile": {
+                        FileInfo root = new(args[1]);
+                        FileInfo aim = new(args[2]);
+                        kula.Compile(root, aim);
+                        return;
+                    }
+                case "t":
+                case "turbo": {
+                        FileInfo root = new(args[1]);
+                        kula.RunC(root);
+                        return;
+                    }
+                case "cr":
+                case "compile-run": {
+                        FileInfo root = new(args[1]);
+                        FileInfo aim = new(args[2]);
+                        kula.Compile(root, aim);
+                        kula.RunC(aim);
+                        return;
+                    }
+                default:
                     Info();
-                    Repl();
                     return;
-                }
+            }
         }
     }
 
     private static void Info()
     {
         Console.WriteLine($"Kula-CLI (tags/v0.7.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
-        Console.WriteLine("Usage: kula-cli <PATH> [options]");
+        Console.WriteLine("Usage:\tkula-cli r|run <kula-file> [args...]");
+        Console.WriteLine("      \tkula-cli c|compile <kula-file> <klc-file> [args...]");
+        Console.WriteLine("      \tkula-cli t|turbo <klc-file> [args...]");
     }
 
-    private static void Repl()
+    private static void Repl(KulaEngine kula)
     {
-        KulaEngine kula = new();
         kula.DeclareFunction("kula", new Kula.Core.Runtime.NativeFunction(0, (_this, args) => {
             Console.ForegroundColor = ConsoleColor.Cyan;
             return "Diamond Breath!";
+        }));
+        kula.DeclareFunction("exit", new Kula.Core.Runtime.NativeFunction(0, (_this, args) => {
+            Environment.Exit(0);
+            return null;
         }));
         string? source;
         for (; ; ) {
             Console.WriteLine();
             source = InputMultiline();
-            if (source is null || source.Trim() == "#exit") {
+            if (source is null) {
                 break;
             }
             else {

@@ -3,7 +3,7 @@ using Kula.Core.Runtime;
 
 namespace Kula.Core.Compiler;
 
-class CompiledFile
+internal class CompiledFile
 {
     static class TypeCode
     {
@@ -14,15 +14,15 @@ class CompiledFile
     }
 
 
-    private static readonly ushort MAGIC_NUMBER = 0x1AC5;
-    private static readonly byte SEPARATOR = 0x8f;
+    private static readonly ushort MAGIC_NUMBER = 0x0408;
+    private static readonly byte SEPARATOR = 0xff;
     internal readonly Dictionary<string, int> variableDict;
     internal readonly string[] variableArray;
     internal readonly List<object?> literalList;
     internal readonly List<Instruction> instructions;
     internal readonly List<(List<int>, List<Instruction>)> functions;
 
-    public CompiledFile(Dictionary<string, int> variableDict, List<object?> literalList, List<Instruction> instructions, List<(List<int>, List<Instruction>)> functions)
+    internal CompiledFile(Dictionary<string, int> variableDict, List<object?> literalList, List<Instruction> instructions, List<(List<int>, List<Instruction>)> functions)
     {
         this.variableDict = variableDict;
         this.variableArray = new string[variableDict.Count];
@@ -76,10 +76,9 @@ class CompiledFile
 
         // ByteCode
 
-        // Instructionss
+        // Instructions
         foreach (Instruction ins in this.instructions) {
-            bw.Write((byte)ins.Op);
-            bw.Write(ins.Constant);
+            Instruction.WriteInstruction(bw, ins);
         }
         bw.Write(SEPARATOR);
 
@@ -92,8 +91,7 @@ class CompiledFile
             }
 
             foreach (Instruction ins in instructions) {
-                bw.Write((byte)ins.Op);
-                bw.Write(ins.Constant);
+                Instruction.WriteInstruction(bw, ins);
             }
             bw.Write(SEPARATOR);
         }
@@ -151,7 +149,7 @@ class CompiledFile
         // ByteCode
         while ((byte_buffer = br.ReadByte()) != SEPARATOR) {
             byte opCode = byte_buffer;
-            int constant = br.ReadInt32();
+            int constant = Instruction.ReadConstant(br, (OpCode)opCode);
             instructions.Add(new Instruction((OpCode)opCode, constant));
         }
 
@@ -166,7 +164,7 @@ class CompiledFile
             }
             while ((byte_buffer = br.ReadByte()) != SEPARATOR) {
                 byte opCode = byte_buffer;
-                int constant = br.ReadInt32();
+                int constant = Instruction.ReadConstant(br, (OpCode)opCode);
                 instructions.Add(new Instruction((OpCode)opCode, constant));
             }
             functions.Add((parameters, instructions));

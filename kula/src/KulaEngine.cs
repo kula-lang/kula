@@ -14,6 +14,7 @@ public class KulaEngine
 
     private readonly AstPrinter astPrinter = new();
     private readonly Interpreter interpreter = new();
+    private readonly VM vm = new();
 
     private Dictionary<string, AstFile> ReadFile(FileInfo file)
     {
@@ -88,7 +89,24 @@ public class KulaEngine
         return true;
     }
 
-    private bool CompileFile(FileInfo file, String path)
+    private bool RunCompiledFile(FileInfo file)
+    {
+        hadError = false;
+        hadRuntimeError = false;
+        using (BinaryReader bw = new(file.OpenRead())) {
+            CompiledFile compiledFile = new(bw);
+            try {
+                vm.Interpret(this, compiledFile);
+            }
+            catch (Core.VM.RuntimeError e) {
+                RuntimeError(e);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private bool CompileFile(FileInfo file, FileInfo aim)
     {
         hadError = false;
         hadRuntimeError = false;
@@ -117,23 +135,20 @@ public class KulaEngine
         }
 
         CompiledFile compiledFile = Compiler.Instance.Compile(stmts);
-        using (var stream = File.Open(path, FileMode.Create)) {
+        using (var stream = aim.Open(FileMode.Truncate)) {
             using (var bw = new BinaryWriter(stream)) {
                 compiledFile.Write(bw);
             }
         }
         Console.WriteLine("### Origin: ###");
         Console.WriteLine(compiledFile.ToString());
-        using (var stream = File.Open(path, FileMode.Open)) {
-            using (var br = new BinaryReader(stream)) {
-                CompiledFile cf = new(br);
-                Console.WriteLine("### Read: ###");
-                Console.WriteLine(cf.ToString());
-            }
-        }
-
-        VM vm = new VM();
-        vm.Interpret(this, compiledFile);
+        // using (var stream = aim.OpenRead()) {
+        //     using (var br = new BinaryReader(stream)) {
+        //         CompiledFile cf = new(br);
+        //         Console.WriteLine("### Read: ###");
+        //         Console.WriteLine(cf.ToString());
+        //     }
+        // }
 
         return true;
     }
@@ -183,15 +198,23 @@ public class KulaEngine
         return false;
     }
 
+    public bool RunC(FileInfo file)
+    {
+        if (file.Exists) {
+            return RunCompiledFile(file);
+        }
+        return false;
+    }
+
     public void DeclareFunction(string fnName, NativeFunction function)
     {
         interpreter.globals.Define(fnName, function);
     }
 
-    public bool Compile(FileInfo file, string path)
+    public bool Compile(FileInfo file, FileInfo aim)
     {
         if (file.Exists) {
-            return CompileFile(file, path);
+            return CompileFile(file, aim);
         }
         return false;
     }
@@ -221,10 +244,15 @@ public class KulaEngine
         ReportError(token.position, token.lexeme, msg, false);
     }
 
-    internal void RuntimeError(RuntimeError runtimeError)
+    internal void RuntimeError(Core.Runtime.RuntimeError runtimeError)
     {
         Token token = runtimeError.token;
         ReportError(token.position, token.lexeme, runtimeError.Message, true);
+    }
+
+    internal void RuntimeError(Core.VM.RuntimeError runtimeError)
+    {
+        ReportError($"Error: [{runtimeError.instruction.Op}] {runtimeError.Message}");
     }
 
     private void ReportError((int, int, TokenFile) pos, string lexeme, string msg, bool isExactly)

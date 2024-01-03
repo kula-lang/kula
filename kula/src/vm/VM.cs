@@ -41,17 +41,19 @@ class VM
             Instruction ins;
             if (fp >= 0) {
                 ins = compiledFile.functions[fp].Item2[ip];
-                Console.WriteLine($"Do in f{fp}:\t{compiledFile.InstructionToString(ins)}");
+                Console.WriteLine($"\t[Do in f{fp}]:\t{compiledFile.InstructionToString(ins)}");
             }
             else {
                 ins = compiledFile.instructions[ip];
-                Console.WriteLine($"Do:\t{compiledFile.InstructionToString(ins)}");
+                Console.WriteLine($"\t[Do]:\t{compiledFile.InstructionToString(ins)}");
             }
             Run(ins);
             ip++;
 
             if (fp >= 0) {
                 if (ip >= compiledFile.functions[fp].Item2.Count) {
+                    vmStack.Pop().Clear();
+                    vmStack.Peek().Push(null);
                     (ip, fp, environment) = callStack.Pop();
                     ip++;
                 }
@@ -71,9 +73,16 @@ class VM
             case OpCode.LOADC:
                 vmStack.Peek().Push(compiledFile.literalList[i.Constant]);
                 break;
-            case OpCode.LOAD:
-                vmStack.Peek().Push(environment.Get(compiledFile.variableArray[i.Constant]));
-                break;
+            case OpCode.LOAD: {
+                    try {
+                        var v = environment.Get(compiledFile.variableArray[i.Constant]);
+                        vmStack.Peek().Push(v);
+                    }
+                    catch (RuntimeInnerError rie) {
+                        throw new RuntimeError(i, rie.Message);
+                    }
+                    break;
+                }
             case OpCode.DECL:
                 top = vmStack.Peek().Peek();
                 environment.Define(compiledFile.variableArray[i.Constant], top);
@@ -83,17 +92,26 @@ class VM
                 environment.Assign(compiledFile.variableArray[i.Constant], top);
                 break;
             case OpCode.POP:
-                top = vmStack.Peek().Pop();
+                vmStack.Peek().Pop();
+                break;
+            case OpCode.DUP:
+                vmStack.Peek().Push(vmStack.Peek().Peek());
                 break;
             case OpCode.FUNC:
                 vmStack.Peek().Push(new FunctionObject(i.Constant, environment));
                 break;
-            case OpCode.RET:
-                top = vmStack.Peek().Pop();
-                vmStack.Pop().Clear();
-                vmStack.Peek().Push(top);
-                (ip, fp, environment) = callStack.Pop();
-                break;
+            case OpCode.RET: {
+                    if (i.Constant == 1) {
+                        top = vmStack.Peek().Pop();
+                    }
+                    else {
+                        top = null;
+                    }
+                    vmStack.Pop().Clear();
+                    vmStack.Peek().Push(top);
+                    (ip, fp, environment) = callStack.Pop();
+                    break;
+                }
             case OpCode.BLKST:
                 environment = new(environment);
                 break;
@@ -103,7 +121,7 @@ class VM
             case OpCode.GET: {
                     object? key = vmStack.Peek().Pop();
                     object? container = vmStack.Peek().Pop();
-                    object? value = EvalGet(container, key);
+                    object? value = EvalGet(container, key, i);
                     vmStack.Peek().Push(value);
                     if (value is FunctionObject fo) {
                         fo.Bind(container);
@@ -121,7 +139,7 @@ class VM
                         array.Set(key_int, value);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, $"Cannot set key '{key}' to container '{container}'.");
                     }
                     break;
                 }
@@ -135,7 +153,7 @@ class VM
                         vmStack.Peek().Push(v1_string + v2_string);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers or 2 strings.");
                     }
                     break;
                 }
@@ -146,7 +164,7 @@ class VM
                         vmStack.Peek().Push(v1_double - v2_double);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers.");
                     }
                     break;
                 }
@@ -157,7 +175,7 @@ class VM
                         vmStack.Peek().Push(v1_double * v2_double);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers.");
                     }
                     break;
                 }
@@ -168,7 +186,7 @@ class VM
                         vmStack.Peek().Push(v1_double / v2_double);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers.");
                     }
                     break;
                 }
@@ -179,7 +197,7 @@ class VM
                         vmStack.Peek().Push((double)((int)v1_double % (int)v2_double));
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers.");
                     }
                     break;
                 }
@@ -190,7 +208,7 @@ class VM
                         vmStack.Peek().Push(v1_double > v2_double);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers.");
                     }
                     break;
                 }
@@ -201,7 +219,7 @@ class VM
                         vmStack.Peek().Push(v1_double >= v2_double);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers.");
                     }
                     break;
                 }
@@ -212,7 +230,7 @@ class VM
                         vmStack.Peek().Push(v1_double < v2_double);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers.");
                     }
                     break;
                 }
@@ -223,7 +241,7 @@ class VM
                         vmStack.Peek().Push(v1_double <= v2_double);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must be 2 numbers.");
                     }
                     break;
                 }
@@ -245,7 +263,7 @@ class VM
                         vmStack.Peek().Push(-v_double);
                     }
                     else {
-                        throw new Exception();
+                        throw new RuntimeError(i, "Operands must number.");
                     }
                     break;
                 }
@@ -268,12 +286,18 @@ class VM
                     else if (function is FunctionObject fo) {
                         CalcFunctionObject(fo, argv);
                     }
+                    else if (function is Container.Object obj && obj.Get("__func__") is FunctionObject fo_obj) {
+                        CalcFunctionObject(fo_obj, argv);
+                    }
+                    else {
+                        throw new RuntimeError(i, "Can only call functions.");
+                    }
                     break;
                 }
             case OpCode.PRINT: {
-                    object?[] ls = new object[i.Constant];
+                    string[] ls = new string[i.Constant];
                     for (int t = i.Constant - 1; t >= 0; --t) {
-                        ls[t] = vmStack.Peek().Pop();
+                        ls[t] = StandardLibrary.Stringify(vmStack.Peek().Pop());
                     }
                     kulaEngine.Print(string.Join(' ', ls));
                     break;
@@ -319,13 +343,13 @@ class VM
         this.environment.Define("this", fo.CallSite);
     }
 
-    private object? EvalGet(object? container, object? key)
+    private object? EvalGet(object? container, object? key, Instruction ins)
     {
         if (container is Container.Object dict) {
             if (key is string key_string) {
                 return dict.Get(key_string);
             }
-            throw new Exception("Index of 'Dict' can only be 'String'.");
+            throw new RuntimeError(ins, "Index of 'Dict' can only be 'String'.");
         }
         else if (container is Container.Array array) {
             if (key is double key_double) {
@@ -334,23 +358,19 @@ class VM
             else if (key is string key_string) {
                 return StandardLibrary.array_proto.Get(key_string);
             }
-            throw new Exception("Index of 'Array' can only be 'Number'.");
+            throw new RuntimeError(ins, "Index of 'Array' can only be 'Number'.");
         }
-        else if (container is string string_proto) {
+        else if (container is string) {
             if (key is string key_string) {
                 return StandardLibrary.string_proto.Get(key_string);
             }
         }
-        else if (container is double number_proto) {
-            if (key is string key_string) {
-                return StandardLibrary.number_proto.Get(key_string);
-            }
+        else if (container is double && key is string key_string) {
+            return StandardLibrary.number_proto.Get(key_string);
         }
-        else if (container is ICallable function_proto) {
-            if (key is string key_string) {
-                return StandardLibrary.function_proto.Get(key_string);
-            }
+        else if (container is ICallable && key is string key_string2) {
+            return StandardLibrary.function_proto.Get(key_string2);
         }
-        throw new Exception("What do you want to get?");
+        throw new RuntimeError(ins, "What do you want to get?");
     }
 }

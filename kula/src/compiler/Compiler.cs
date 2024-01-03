@@ -8,6 +8,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     private readonly Dictionary<string, int> variableDict = new();
     private readonly List<object?> literalList = new();
+    private readonly (Dictionary<double, int>, Dictionary<string, int>) literalMap = new(new(), new());
     private readonly List<Instruction> instructions = new();
     private readonly List<(List<int>, List<Instruction>)> functions = new();
     private readonly Stack<List<Instruction>> instructionsStack = new();
@@ -23,10 +24,13 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         functions.Clear();
         instructionsStack.Clear();
         forStack.Clear();
+        literalMap.Item1.Clear();
+        literalMap.Item2.Clear();
 
         instructionsStack.Push(instructions);
         literalList.Add(false);
         literalList.Add(true);
+        literalList.Add(null);
     }
 
     public CompiledFile Compile(List<Stmt> stmts)
@@ -64,12 +68,35 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     private int SaveLiteral(object? literal)
     {
-        if (literal is bool literal_bool) {
-            return literal_bool ? 1 : 0;
+        if (literal is null) {
+            return 2;
         }
-        int id = literalList.Count;
-        literalList.Add(literal);
-        return id;
+        else if (literal is bool lbool) {
+            return lbool ? 1 : 0;
+        }
+        else if (literal is double ldouble) {
+            if (literalMap.Item1.ContainsKey(ldouble)) {
+                return literalMap.Item1[ldouble];
+            }
+            int id = literalList.Count;
+            literalMap.Item1[ldouble] = id;
+            literalList.Add(literal);
+            return id;
+        }
+        else if (literal is string lstring) {
+            if (literalMap.Item2.ContainsKey(lstring)) {
+                return literalMap.Item2[lstring];
+            }
+            int id = literalList.Count;
+            literalMap.Item2[lstring] = id;
+            literalList.Add(literal);
+            return id;
+        }
+        else {
+            int id = literalList.Count;
+            literalList.Add(literal);
+            return id;
+        }
     }
 
     int Expr.IVisitor<int>.VisitAssign(Expr.Assign expr)
@@ -245,20 +272,20 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
     {
         if (expr.@operator.type == TokenType.AND) {
             expr.left.Accept(this);
+            New(OpCode.DUP, 0);
             Instruction instr1 = New(OpCode.JMPF, 0);
             expr.right.Accept(this);
             Instruction instr2 = New(OpCode.JMP, 0);
             instr1.Constant = Pos;
-            New(OpCode.LOADC, 0);
             instr2.Constant = Pos;
         }
         else if (expr.@operator.type == TokenType.OR) {
             expr.left.Accept(this);
+            New(OpCode.DUP, 0);
             Instruction instr1 = New(OpCode.JMPT, 0);
             expr.right.Accept(this);
             Instruction instr2 = New(OpCode.JMP, 0);
             instr1.Constant = Pos;
-            New(OpCode.LOADC, 1);
             instr2.Constant = Pos;
         }
         return 0;

@@ -2,21 +2,23 @@ namespace Kula.Core.Compiler;
 
 enum OpCode : byte
 {
-    __START__ = 0x80,
+    __MEM__ = 64,
     // Load & Store
-    LOADC, LOAD, DECL, ASGN, POP,
+    LOADC, LOAD, DECL, ASGN, POP, DUP,
+    // Control Flow
+    JMP, JMPT, JMPF, CALL,
     // Function
     FUNC, RET,
     // Env
     BLKST, BLKEND,
     // Container
     GET, SET,
+
+    __CALC__ = 96,
     // Arithmetic
     ADD, SUB, MUL, DIV, MOD, NEG, NOT,
     // Comparison
     EQ, NEQ, LT, LE, GT, GE,
-    // Control Flow
-    JMP, JMPT, JMPF, CALL,
     // Output
     PRINT
 }
@@ -46,6 +48,24 @@ class Instruction
         }
     }
 
+    public static void WriteInstruction(BinaryWriter bw, Instruction ins)
+    {
+        bw.Write((byte)ins.Op);
+        switch (CodeSize(ins.Op)) {
+            case sizeof(uint):
+                bw.Write((uint)ins.Constant);
+                break;
+            case sizeof(ushort):
+                bw.Write((ushort)ins.Constant);
+                break;
+            case sizeof(byte):
+                bw.Write((byte)ins.Constant);
+                break;
+            default:
+                break;
+        }
+    }
+
     private static int CodeSize(OpCode op)
     {
         switch (op) {
@@ -53,12 +73,14 @@ class Instruction
             case OpCode.LOAD:
             case OpCode.DECL:
             case OpCode.ASGN:
+                return sizeof(ushort);
             case OpCode.JMP:
             case OpCode.JMPF:
             case OpCode.JMPT:
-                return sizeof(int);
+                return sizeof(ushort);
             case OpCode.FUNC:
             case OpCode.RET:
+            case OpCode.PRINT:
                 return sizeof(byte);
             default:
                 return 0;
