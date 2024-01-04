@@ -37,8 +37,8 @@ Kula 语言诞生于 2021 年 5 月 下旬，并且正在高速的发展之中�
 
 ## 伴生项目
 
-* [Kula - Diana : Kula 语言的 VS Code 插件](https://github.com/kula-lang/Kula-Diana)
-* [Kula - Guide : Kula 语言的 完全帮助文档](https://github.com/kula-lang/kula-lang.github.io)
+* [Kula - Diana：Kula 语言的 VS Code 插件](https://github.com/kula-lang/Kula-Diana)
+* [Kula - Guide：Kula 语言的 完全帮助文档](https://github.com/kula-lang/kula-lang.github.io)
 
 ------
 
@@ -75,4 +75,4 @@ Kula 暂时只是一个玩具语言，不具有 **很强的工程性 或 学习�
 #### **A2**
 
 因为 立项的时候 Hana 在打拳皇。\
-和 "为什么 Java 叫 Java" 同理 （🍀
+和“为什么 Java 叫 Java”同理 （🍀
