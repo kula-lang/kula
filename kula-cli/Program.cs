@@ -1,4 +1,5 @@
 ﻿using Kula;
+using Kula.ASTInterpreter.Runtime;
 
 class Program
 {
@@ -56,11 +57,11 @@ class Program
 
     private static void Repl(KulaEngine kula)
     {
-        kula.DeclareFunction("kula", new Kula.Core.Runtime.NativeFunction(0, (_this, args) => {
+        kula.DeclareFunction("kula", new NativeFunction(0, (_this, args) => {
             Console.ForegroundColor = ConsoleColor.Cyan;
             return "Diamond Breath!";
         }));
-        kula.DeclareFunction("exit", new Kula.Core.Runtime.NativeFunction(0, (_this, args) => {
+        kula.DeclareFunction("exit", new NativeFunction(0, (_this, args) => {
             Environment.Exit(0);
             return null;
         }));

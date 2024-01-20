@@ -1,9 +1,13 @@
-﻿using Kula.Core;
-using Kula.Core.Ast;
-using Kula.Core.Compiler;
-using Kula.Core.Runtime;
-using Kula.Core.Utils;
-using Kula.Core.VM;
+﻿
+
+using Kula.ASTCompiler.Lexer;
+using Kula.ASTCompiler.Parser;
+using Kula.ASTCompiler.Resolver;
+using Kula.ASTInterpreter;
+using Kula.ASTInterpreter.Runtime;
+using Kula.BytecodeCompiler.Compiler;
+using Kula.BytecodeInterpreter;
+using Kula.Utilities;
 
 namespace Kula;
 
@@ -28,7 +32,7 @@ public class KulaEngine
         if (hadError) { return; }
 
         if (!file.Exists) {
-            throw new RuntimeInnerError($"File Not Exist. {file.FullName}");
+            throw new InterpreterInnerException($"File Not Exist. {file.FullName}");
         }
         if (readFiles.ContainsKey(file.FullName)) {
             return;
@@ -65,7 +69,7 @@ public class KulaEngine
         try {
             readFiles = ReadFile(file);
         }
-        catch (RuntimeInnerError e) {
+        catch (InterpreterInnerException e) {
             ReportError(e.Message);
             return false;
         }
@@ -98,7 +102,7 @@ public class KulaEngine
             try {
                 vm.Interpret(this, compiledFile);
             }
-            catch (Core.VM.RuntimeError e) {
+            catch (InterpreterException e) {
                 RuntimeError(e);
                 return false;
             }
@@ -115,7 +119,7 @@ public class KulaEngine
         try {
             readFiles = ReadFile(file);
         }
-        catch (RuntimeInnerError e) {
+        catch (InterpreterInnerException e) {
             ReportError(e.Message);
             return false;
         }
@@ -136,43 +140,36 @@ public class KulaEngine
 
         CompiledFile compiledFile = Compiler.Instance.Compile(stmts);
         using (var stream = aim.Open(FileMode.Truncate)) {
-            using (var bw = new BinaryWriter(stream)) {
-                compiledFile.Write(bw);
-            }
+            using var bw = new BinaryWriter(stream);
+            compiledFile.Write(bw);
         }
-        Console.WriteLine("### Origin: ###");
+#if DEBUG
         Console.WriteLine(compiledFile.ToString());
-        // using (var stream = aim.OpenRead()) {
-        //     using (var br = new BinaryReader(stream)) {
-        //         CompiledFile cf = new(br);
-        //         Console.WriteLine("### Read: ###");
-        //         Console.WriteLine(cf.ToString());
-        //     }
-        // }
+#endif
 
         return true;
     }
 
-    internal bool RunSource(string source, string filename, bool isDebug)
+    internal bool RunSource(string source, string filename)
     {
         hadError = false;
         hadRuntimeError = false;
 
         TokenFile tfile = Lexer.Instance.Lex(this, source, filename);
-        if (isDebug) {
-            foreach (Token token in tfile.tokens) {
-                Console.WriteLine(token);
-            }
+#if DEBUG
+        foreach (Token token in tfile.tokens) {
+            Console.WriteLine(token);
         }
+#endif
         if (hadError) {
             return false;
         }
         List<Stmt> asts = Parser.Instance.Parse(this, tfile.tokens);
-        if (isDebug) {
-            foreach (Stmt stmt in asts) {
-                Console.WriteLine(astPrinter.Print(stmt));
-            }
+#if DEBUG
+        foreach (Stmt stmt in asts) {
+            Console.WriteLine(astPrinter.Print(stmt));
         }
+#endif
         if (hadError) {
             return false;
         }
@@ -187,7 +184,7 @@ public class KulaEngine
 
     public bool Run(string source)
     {
-        return RunSource(source, "<stdin>", false);
+        return RunSource(source, "<stdin>");
     }
 
     public bool Run(FileInfo file)
@@ -244,13 +241,13 @@ public class KulaEngine
         ReportError(token.position, token.lexeme, msg, false);
     }
 
-    internal void RuntimeError(Core.Runtime.RuntimeError runtimeError)
+    internal void RuntimeError(InterpreterException runtimeError)
     {
         Token token = runtimeError.token;
         ReportError(token.position, token.lexeme, runtimeError.Message, true);
     }
 
-    internal void RuntimeError(Core.VM.RuntimeError runtimeError)
+    internal void RuntimeError(BytecodeInterpreter.Runtime.VMException runtimeError)
     {
         ReportError($"Error: [{runtimeError.instruction.Op}] {runtimeError.Message}");
     }
