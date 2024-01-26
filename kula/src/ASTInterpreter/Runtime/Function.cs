@@ -1,5 +1,4 @@
 using Kula.ASTCompiler.Parser;
-using Kula.ASTInterpreter;
 
 namespace Kula.ASTInterpreter.Runtime;
 
@@ -21,7 +20,7 @@ class Function : ICallable
 
     public object? Call(List<object?> arguments)
     {
-        Context environment = new Context(parent);
+        Context environment = new(parent);
 
         environment.Define("self", this);
         if (callSite is not null) {

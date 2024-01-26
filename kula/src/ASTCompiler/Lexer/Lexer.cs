@@ -13,8 +13,8 @@ class Lexer
 
     private Lexer() { }
 
-    public static Lexer Instance = new Lexer();
-    private static Dictionary<string, TokenType> keywordDict = new Dictionary<string, TokenType>() {
+    public static Lexer Instance = new();
+    private static Dictionary<string, TokenType> keywordDict = new() {
         {"and", TokenType.AND},
         {"break", TokenType.BREAK},
         {"class", TokenType.CLASS},

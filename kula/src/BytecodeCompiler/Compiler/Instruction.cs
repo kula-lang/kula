@@ -2,7 +2,7 @@ namespace Kula.BytecodeCompiler.Compiler;
 
 enum OpCode : byte
 {
-    __MEM__ = 64,
+    __MEM__ = 0x00,
     // Load & Store
     LOADC, LOAD, DECL, ASGN, POP, DUP,
     // Control Flow
@@ -14,7 +14,7 @@ enum OpCode : byte
     // Container
     GET, SET, GETWT,
 
-    __CALC__ = 96,
+    __CALC__ = 0x40,
     // Arithmetic
     ADD, SUB, MUL, DIV, MOD, NEG, NOT,
     // Comparison
@@ -23,7 +23,7 @@ enum OpCode : byte
     PRINT
 }
 
-class Instruction
+struct Instruction
 {
     internal OpCode Op { get; set; }
     internal int Constant { get; set; }
@@ -87,5 +87,10 @@ class Instruction
             default:
                 return 0;
         }
+    }
+
+    public override string ToString()
+    {
+        return $"{{{Op},{Constant}}}";
     }
 }

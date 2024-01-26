@@ -3,7 +3,7 @@ namespace Kula.ASTInterpreter.Runtime;
 class Context
 {
     private readonly Context enclosing;
-    private readonly Dictionary<string, object?> values = new Dictionary<string, object?>();
+    private readonly Dictionary<string, object?> values = new();
 
     public Context()
     {

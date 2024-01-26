@@ -1,3 +1,4 @@
+using System.Reflection.Metadata.Ecma335;
 using Kula.ASTInterpreter.Runtime;
 using Kula.Utilities;
 
@@ -36,6 +37,12 @@ public class KulaArray
         else {
             throw new InterpreterInnerException("Array index out of range.");
         }
+    }
+
+    public object? this[double index]
+    {
+        get => Get(index);
+        set => Set(index, value);
     }
 
     public void Insert(double index, object? value)

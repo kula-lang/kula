@@ -29,9 +29,15 @@ public class KulaObject
         data[key] = value;
     }
 
+    public object? this[string key]
+    {
+        get => Get(key);
+        set => Set(key, value);
+    }
+
     public override string ToString()
     {
-        List<string> items = new List<string>();
+        List<string> items = new();
         foreach (KeyValuePair<string, object?> item in data) {
             if (item.Key != __proto__) {
                 string value = StandardLibrary.Stringify(item.Value);

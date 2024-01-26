@@ -7,20 +7,20 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 {
     public static readonly Compiler Instance = new();
 
-    private readonly Dictionary<string, int> variableDict = new();
-    private readonly List<object?> literalList = new();
+    private readonly Dictionary<string, int> symbols = new();
+    private readonly List<object?> literals = new();
     private readonly (Dictionary<double, int>, Dictionary<string, int>) literalMap = new(new(), new());
     private readonly List<Instruction> instructions = new();
     private readonly List<(List<int>, List<Instruction>)> functions = new();
     private readonly Stack<List<Instruction>> instructionsStack = new();
-    private readonly Stack<(List<Instruction>, List<Instruction>)> forStack = new();
+    private readonly Stack<(List<int>, List<int>)> forStack = new();
 
     private Compiler() { }
 
     private void Clear()
     {
-        variableDict.Clear();
-        literalList.Clear();
+        symbols.Clear();
+        literals.Clear();
         instructions.Clear();
         functions.Clear();
         instructionsStack.Clear();
@@ -29,9 +29,9 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         literalMap.Item2.Clear();
 
         instructionsStack.Push(instructions);
-        literalList.Add(false);
-        literalList.Add(true);
-        literalList.Add(null);
+        literals.Add(false);
+        literals.Add(true);
+        literals.Add(null);
     }
 
     public CompiledFile Compile(List<Stmt> stmts)
@@ -41,15 +41,14 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
             stmt.Accept(this);
         }
 
-        return new CompiledFile(new(variableDict), new(literalList), new(instructions), new(functions));
+        return new CompiledFile(new(symbols), new(literals), new(instructions), new(functions));
     }
 
     // Utils
-    private Instruction New(OpCode opCode, int constant)
+    private int New(OpCode opCode, int constant)
     {
-        Instruction instr = new(opCode, constant);
-        instructionsStack.Peek().Add(instr);
-        return instr;
+        instructionsStack.Peek().Add(new(opCode, constant));
+        return instructionsStack.Peek().Count - 1;
     }
 
     private int Pos
@@ -57,14 +56,14 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         get => instructionsStack.Peek().Count;
     }
 
-    private int SaveVariable(string lexeme)
+    private int SaveSymbol(string lexeme)
     {
-        if (!variableDict.ContainsKey(lexeme)) {
-            int id = variableDict.Count;
-            variableDict.Add(lexeme, id);
+        if (!symbols.ContainsKey(lexeme)) {
+            int id = symbols.Count;
+            symbols.Add(lexeme, id);
             return id;
         }
-        return variableDict[lexeme];
+        return symbols[lexeme];
     }
 
     private int SaveLiteral(object? literal)
@@ -79,23 +78,23 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
             if (literalMap.Item1.ContainsKey(ldouble)) {
                 return literalMap.Item1[ldouble];
             }
-            int id = literalList.Count;
+            int id = literals.Count;
             literalMap.Item1[ldouble] = id;
-            literalList.Add(literal);
+            literals.Add(literal);
             return id;
         }
         else if (literal is string lstring) {
             if (literalMap.Item2.ContainsKey(lstring)) {
                 return literalMap.Item2[lstring];
             }
-            int id = literalList.Count;
+            int id = literals.Count;
             literalMap.Item2[lstring] = id;
-            literalList.Add(literal);
+            literals.Add(literal);
             return id;
         }
         else {
-            int id = literalList.Count;
-            literalList.Add(literal);
+            int id = literals.Count;
+            literals.Add(literal);
             return id;
         }
     }
@@ -105,7 +104,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         Expr left = expr.left;
         Expr right = expr.right;
         if (left is Expr.Variable variable) {
-            int variable_id = SaveVariable(variable.name.lexeme);
+            int variable_id = SaveSymbol(variable.name.lexeme);
             switch (expr.@operator.type) {
                 case TokenType.COLON_EQUAL:
                     expr.right.Accept(this);
@@ -160,7 +159,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     int Stmt.IVisitor<int>.VisitBreak(Stmt.Break stmt)
     {
-        Instruction b = New(OpCode.JMP, 0);
+        int b = New(OpCode.JMP, 0);
         forStack.Peek().Item1.Add(b);
         return 0;
     }
@@ -190,7 +189,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     int Stmt.IVisitor<int>.VisitContinue(Stmt.Continue stmt)
     {
-        Instruction c = New(OpCode.JMP, 0);
+        int c = New(OpCode.JMP, 0);
         forStack.Peek().Item2.Add(c);
         return 0;
     }
@@ -198,6 +197,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
     int Stmt.IVisitor<int>.VisitExpression(Stmt.Expression stmt)
     {
         stmt.expression.Accept(this);
+        New(OpCode.POP, 0);
         return 0;
     }
 
@@ -212,19 +212,24 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         else {
             stmt.condition?.Accept(this);
         }
-        Instruction if_not_jump = New(OpCode.JMPF, 0);
+        int if_not_jump = New(OpCode.JMPF, 0);
         forStack.Push((new(), new()));
         stmt.body.Accept(this);
-        stmt.increment?.Accept(this);
+        if (stmt.increment is not null) {
+            stmt.increment.Accept(this);
+            New(OpCode.POP, 0);
+        }
         New(OpCode.JMP, for_condition);
         int end_loop = Pos;
-        if_not_jump.Constant = end_loop;
-        (List<Instruction> list_break, List<Instruction> list_continue) = forStack.Pop();
-        foreach (Instruction ins in list_break) {
-            ins.Constant = end_loop;
+        instructionsStack.Peek()[if_not_jump] = new(OpCode.JMPF, end_loop);
+        (List<int> list_break, List<int> list_continue) = forStack.Pop();
+        foreach (int pos in list_break) {
+            // ins.Constant = end_loop;
+            instructionsStack.Peek()[pos] = new(OpCode.JMP, end_loop);
         }
-        foreach (Instruction ins in list_continue) {
-            ins.Constant = for_condition;
+        foreach (int pos in list_continue) {
+            // ins.Constant = for_condition;
+            instructionsStack.Peek()[pos] = new(OpCode.JMP, for_condition);
         }
         New(OpCode.ENVED, 0);
         return 0;
@@ -232,18 +237,19 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     int Expr.IVisitor<int>.VisitFunction(Expr.Function expr)
     {
-        var func_ins = New(OpCode.FUNC, -1);
+        int func_ins = New(OpCode.FUNC, -1);
         List<Instruction> instructions = new();
         List<int> parameters = new();
         foreach (var parameter in expr.parameters) {
-            parameters.Add(SaveVariable(parameter.lexeme));
+            parameters.Add(SaveSymbol(parameter.lexeme));
         }
         instructionsStack.Push(instructions);
         foreach (var stmt in expr.body) {
             stmt.Accept(this);
         }
-        func_ins.Constant = functions.Count;
+        // func_ins.Constant = functions.Count;
         functions.Add((parameters, instructionsStack.Pop()));
+        instructionsStack.Peek()[func_ins] = new(OpCode.FUNC, functions.Count - 1);
         return 0;
     }
 
@@ -258,15 +264,17 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
     int Stmt.IVisitor<int>.VisitIf(Stmt.If stmt)
     {
         stmt.condition.Accept(this);
-        Instruction if_not_jump = New(OpCode.JMPF, 0);
+        int if_not_jump = New(OpCode.JMPF, 0);
         int if_branch = Pos;
         stmt.thenBranch.Accept(this);
-        Instruction if_branch_end = New(OpCode.JMP, 0);
+        int if_branch_end = New(OpCode.JMP, 0);
         int else_branch = Pos;
         stmt.elseBranch?.Accept(this);
         int end = Pos;
-        if_not_jump.Constant = else_branch;
-        if_branch_end.Constant = end;
+        // if_not_jump.Constant = else_branch;
+        instructionsStack.Peek()[if_not_jump] = new(OpCode.JMPF, else_branch);
+        // if_branch_end.Constant = end;
+        instructionsStack.Peek()[if_branch_end] = new(OpCode.JMP, end);
         return 0;
     }
 
@@ -287,20 +295,24 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         if (expr.@operator.type == TokenType.AND) {
             expr.left.Accept(this);
             New(OpCode.DUP, 0);
-            Instruction instr1 = New(OpCode.JMPF, 0);
+            int instr1 = New(OpCode.JMPF, 0);
             expr.right.Accept(this);
-            Instruction instr2 = New(OpCode.JMP, 0);
-            instr1.Constant = Pos;
-            instr2.Constant = Pos;
+            int instr2 = New(OpCode.JMP, 0);
+            // instr1.Constant = Pos;
+            // instr2.Constant = Pos;
+            instructionsStack.Peek()[instr1] = new(OpCode.JMPF, Pos);
+            instructionsStack.Peek()[instr2] = new(OpCode.JMP, Pos);
         }
         else if (expr.@operator.type == TokenType.OR) {
             expr.left.Accept(this);
             New(OpCode.DUP, 0);
-            Instruction instr1 = New(OpCode.JMPT, 0);
+            int instr1 = New(OpCode.JMPT, 0);
             expr.right.Accept(this);
-            Instruction instr2 = New(OpCode.JMP, 0);
-            instr1.Constant = Pos;
-            instr2.Constant = Pos;
+            int instr2 = New(OpCode.JMP, 0);
+            // instr1.Constant = Pos;
+            // instr2.Constant = Pos;
+            instructionsStack.Peek()[instr1] = new(OpCode.JMPT, Pos);
+            instructionsStack.Peek()[instr2] = new(OpCode.JMP, Pos);
         }
         return 0;
     }
@@ -340,7 +352,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     int Expr.IVisitor<int>.VisitVariable(Expr.Variable expr)
     {
-        New(OpCode.LOAD, SaveVariable(expr.name.lexeme));
+        New(OpCode.LOAD, SaveSymbol(expr.name.lexeme));
         return 0;
     }
 }

@@ -28,7 +28,7 @@ class Parser
     private Stmt Import()
     {
         Token lbrace = Consume(TokenType.LEFT_BRACE, "Expect '{' before 'import' block.");
-        List<Token> list = new List<Token>();
+        List<Token> list = new();
         if (!Check(TokenType.RIGHT_BRACE)) {
             do {
                 Token file_path = Consume(TokenType.STRING, "Expect module name.");
@@ -140,7 +140,7 @@ class Parser
 
     private Stmt PrintStatement()
     {
-        List<Expr> items = new List<Expr>();
+        List<Expr> items = new();
         do {
             items.Add(Expression());
         }
@@ -183,7 +183,7 @@ class Parser
 
         Token lbrace = Consume(TokenType.LEFT_BRACE, "Expect '{' before class declaration block.");
 
-        List<Stmt> methods = new List<Stmt>();
+        List<Stmt> methods = new();
 
         string string_constructor = "constructor";
         string string_proto = "__proto__";
@@ -220,7 +220,7 @@ class Parser
             if (method_name.lexeme == string_constructor) {
                 Consume(TokenType.LEFT_PAREN, "Expect '(' before constructor parameters.");
 
-                List<Token> constructor_parameters = new List<Token>();
+                List<Token> constructor_parameters = new();
                 if (!Check(TokenType.RIGHT_PAREN)) {
                     do {
                         Token param_name = Consume(TokenType.IDENTIFIER, "Expect parameter names.");
@@ -478,7 +478,7 @@ class Parser
 
     private Expr FinishCall(Expr callee)
     {
-        List<Expr> arguments = new List<Expr>();
+        List<Expr> arguments = new();
 
         if (!Check(TokenType.RIGHT_PAREN)) {
             do {
@@ -576,7 +576,7 @@ class Parser
     {
         Consume(TokenType.LEFT_PAREN, "Expect '(' before function parameters.");
 
-        List<Token> parameters = new List<Token>();
+        List<Token> parameters = new();
         if (!Check(TokenType.RIGHT_PAREN)) {
             do {
                 Token param_name = Consume(TokenType.IDENTIFIER, "Expect parameter names.");
@@ -594,7 +594,7 @@ class Parser
 
     private List<Stmt> Block()
     {
-        List<Stmt> statements = new List<Stmt>();
+        List<Stmt> statements = new();
 
         while (!Check(TokenType.RIGHT_BRACE) && !IsEnd()) {
             statements.Add(Declaration());
@@ -611,7 +611,7 @@ class Parser
             this.tokens = tokens;
             this.current = 0;
 
-            List<Stmt> statements = new List<Stmt>();
+            List<Stmt> statements = new();
             while (!IsEnd()) {
                 try {
                     Stmt stmt = Declaration();
@@ -716,6 +716,6 @@ class Parser
 
     public class ParseError : Exception
     {
-        public static readonly ParseError Instance = new ParseError();
+        public static readonly ParseError Instance = new();
     }
 }

@@ -6,7 +6,7 @@ namespace Kula.Utilities;
 public static class StandardLibrary
 {
     private static readonly DateTime start = DateTime.UtcNow;
-    public static readonly Dictionary<string, NativeFunction> global_functions = new Dictionary<string, NativeFunction>{
+    public static readonly Dictionary<string, NativeFunction> global_functions = new() {
         {"clock", new NativeFunction(0, (_, args) => (DateTime.UtcNow - start).TotalMilliseconds / 1000.0)},
         {"String", new NativeFunction(1, (_, args) => Stringify(args[0]))},
         {"Bool", new NativeFunction(1, (_, args) => Booleanify(args[0]))},
@@ -17,7 +17,7 @@ public static class StandardLibrary
             if (args.Count % 2 != 0) {
                 throw new InterpreterInnerException("Need odd argument(s) but even is given.");
             }
-            Runtime.KulaObject my_obj = new Runtime.KulaObject();
+            Runtime.KulaObject my_obj = new();
             for (int i = 0; i + 1 < args.Count; i += 2) {
                 string key = Assert<string>(args[i]);
                 object? value = args[i + 1];
@@ -106,7 +106,7 @@ public static class StandardLibrary
         array_proto.Set("map", new NativeFunction(1, (_this, args) => {
             ICallable lambda = Assert<ICallable>(args[0]);
             Runtime.KulaArray arr = Assert<Runtime.KulaArray>(_this);
-            List<object?> new_arr = new List<object?>();
+            List<object?> new_arr = new();
             for (int i = 0; i < arr.data.Count; ++i) {
                 object? item = lambda.Call(new List<object?>() { arr.data[i], (double)i });
                 new_arr.Add(item);
@@ -117,7 +117,7 @@ public static class StandardLibrary
             ICallable lambda = Assert<ICallable>(args[0]);
             Runtime.KulaArray arr = Assert<Runtime.KulaArray>(_this);
             object? total = args[1];
-            List<object?> new_arr = new List<object?>();
+            List<object?> new_arr = new();
             for (int i = 0; i < arr.data.Count; ++i) {
                 object? item = lambda.Call(new List<object?>() { total, arr.data[i], (double)i });
                 total = item;
@@ -127,7 +127,7 @@ public static class StandardLibrary
         array_proto.Set("filter", new NativeFunction(1, (_this, args) => {
             ICallable lambda = Assert<ICallable>(args[0]);
             Runtime.KulaArray arr = Assert<Runtime.KulaArray>(_this);
-            List<object?> new_arr = new List<object?>();
+            List<object?> new_arr = new();
             for (int i = 0; i < arr.data.Count; ++i) {
                 object? flag = lambda.Call(new List<object?>() { arr.data[i], (double)i });
                 if (Assert<bool>(flag)) {
@@ -140,7 +140,7 @@ public static class StandardLibrary
         object_proto = new Runtime.KulaObject();
         object_proto.Set("copy", new NativeFunction(0, (_this, _) => {
             Runtime.KulaObject origin_object = Assert<Runtime.KulaObject>(_this);
-            Runtime.KulaObject new_object = new Runtime.KulaObject();
+            Runtime.KulaObject new_object = new();
             foreach (KeyValuePair<string, object?> item in origin_object.data) {
                 new_object.Set(item.Key, item.Value);
             }

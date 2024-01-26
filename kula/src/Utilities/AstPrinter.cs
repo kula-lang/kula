@@ -37,7 +37,7 @@ class AstPrinter : Stmt.IVisitor<string>, Expr.IVisitor<string>
 
     string Stmt.IVisitor<string>.VisitBlock(Stmt.Block stmt)
     {
-        List<string> items = new List<string>();
+        List<string> items = new();
         foreach (Stmt istmt in stmt.statements) {
             items.Add(PStmt(istmt));
         }
@@ -46,7 +46,7 @@ class AstPrinter : Stmt.IVisitor<string>, Expr.IVisitor<string>
 
     string Expr.IVisitor<string>.VisitCall(Expr.Call expr)
     {
-        List<string> items = new List<string>();
+        List<string> items = new();
         foreach (Expr iexpr in expr.arguments) {
             items.Add(iexpr.Accept(this));
         }
@@ -60,12 +60,12 @@ class AstPrinter : Stmt.IVisitor<string>, Expr.IVisitor<string>
 
     string Expr.IVisitor<string>.VisitFunction(Expr.Function expr)
     {
-        List<string> parameters = new List<string>();
+        List<string> parameters = new();
         foreach (Token token in expr.parameters) {
             parameters.Add(token.lexeme);
         }
 
-        List<string> block = new List<string>();
+        List<string> block = new();
         foreach (Stmt statement in expr.body) {
             block.Add(PStmt(statement));
         }
@@ -125,7 +125,7 @@ class AstPrinter : Stmt.IVisitor<string>, Expr.IVisitor<string>
 
     string Stmt.IVisitor<string>.VisitPrint(Stmt.Print stmt)
     {
-        List<string> items = new List<string>();
+        List<string> items = new();
         foreach (Expr iexpr in stmt.items) {
             items.Add(PExpr(iexpr));
         }
@@ -144,7 +144,7 @@ class AstPrinter : Stmt.IVisitor<string>, Expr.IVisitor<string>
 
     string Stmt.IVisitor<string>.VisitImport(Stmt.Import stmt)
     {
-        List<string> items = new List<string>();
+        List<string> items = new();
         foreach (Token tk in stmt.modules) {
             items.Add(tk.lexeme);
         }

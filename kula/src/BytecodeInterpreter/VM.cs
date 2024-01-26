@@ -38,13 +38,13 @@ class VM
 
     private void CoreFunctions()
     {
-        globals.Define("input", new NativeFunction(0, (_, args) => kulaEngine.Input()));
+        globals.Define("input", new NativeFunction(0, (_, args) => Console.ReadLine()));
         globals.Define("println", new NativeFunction(-1, (_, args) => {
-            List<string> items = new List<string>();
+            List<string> items = new();
             foreach (object? item in args) {
                 items.Add(StandardLibrary.Stringify(item));
             }
-            kulaEngine.Print(string.Join(' ', items));
+            Console.WriteLine(string.Join(' ', items));
             return null;
         }));
     }
@@ -100,11 +100,11 @@ class VM
         object? top;
         switch (i.Op) {
             case OpCode.LOADC:
-                vmStack.Peek().Push(compiledFile.literalList[i.Constant]);
+                vmStack.Peek().Push(compiledFile.literals[i.Constant]);
                 break;
             case OpCode.LOAD: {
                     try {
-                        var v = environment.Get(compiledFile.variableArray[i.Constant]);
+                        var v = environment.Get(compiledFile.symbolArray[i.Constant]);
                         vmStack.Peek().Push(v);
                     }
                     catch (InterpreterInnerException rie) {
@@ -114,11 +114,11 @@ class VM
                 }
             case OpCode.DECL:
                 top = vmStack.Peek().Peek();
-                environment.Define(compiledFile.variableArray[i.Constant], top);
+                environment.Define(compiledFile.symbolArray[i.Constant], top);
                 break;
             case OpCode.ASGN:
                 top = vmStack.Peek().Peek();
-                environment.Assign(compiledFile.variableArray[i.Constant], top);
+                environment.Assign(compiledFile.symbolArray[i.Constant], top);
                 break;
             case OpCode.POP:
                 vmStack.Peek().Pop();
@@ -359,7 +359,7 @@ class VM
                     for (int t = i.Constant - 1; t >= 0; --t) {
                         ls[t] = StandardLibrary.Stringify(vmStack.Peek().Pop());
                     }
-                    kulaEngine.Print(string.Join(' ', ls));
+                    Console.WriteLine(string.Join(' ', ls));
                     break;
                 }
             case OpCode.JMP:
@@ -398,7 +398,7 @@ class VM
         vmStack.Push(new());
         for (int i = 0; i < argv.Length; ++i) {
             int v_index = function.Item1[i];
-            string v_name = this.compiledFile.variableArray[v_index];
+            string v_name = this.compiledFile.symbolArray[v_index];
             this.environment.Define(v_name, argv[i]);
         }
         this.environment.Define("self", fo);

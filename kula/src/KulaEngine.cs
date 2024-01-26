@@ -1,6 +1,4 @@
-﻿
-
-using Kula.ASTCompiler.Lexer;
+﻿using Kula.ASTCompiler.Lexer;
 using Kula.ASTCompiler.Parser;
 using Kula.ASTCompiler.Resolver;
 using Kula.ASTInterpreter;
@@ -139,7 +137,7 @@ public class KulaEngine
         }
 
         CompiledFile compiledFile = Compiler.Instance.Compile(stmts);
-        using (var stream = aim.Open(FileMode.Truncate)) {
+        using (var stream = aim.Open(FileMode.Create)) {
             using var bw = new BinaryWriter(stream);
             compiledFile.Write(bw);
         }
@@ -215,17 +213,7 @@ public class KulaEngine
         }
         return false;
     }
-
-    internal string? Input()
-    {
-        return Console.ReadLine();
-    }
-
-    internal void Print(string msg)
-    {
-        Console.WriteLine(msg);
-    }
-
+    
     internal void LexError((int, int, TokenFile) position, string lexeme, string msg)
     {
         ReportError(position, $"'{lexeme}'", msg, false);

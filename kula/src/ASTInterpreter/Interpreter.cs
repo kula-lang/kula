@@ -17,13 +17,13 @@ class Interpreter : Expr.IVisitor<object?>, Stmt.IVisitor<int>
 
     private void CoreFunctions()
     {
-        globals.Define("input", new NativeFunction(0, (_, args) => kulaEngine.Input()));
+        globals.Define("input", new NativeFunction(0, (_, args) => Console.ReadLine()));
         globals.Define("println", new NativeFunction(-1, (_, args) => {
-            List<string> items = new List<string>();
+            List<string> items = new();
             foreach (object? item in args) {
                 items.Add(StandardLibrary.Stringify(item));
             }
-            kulaEngine.Print(string.Join(' ', items));
+            Console.WriteLine(string.Join(' ', items));
             return null;
         }));
         globals.Define("eval", new NativeFunction(1, (_, args) => {
@@ -254,7 +254,7 @@ class Interpreter : Expr.IVisitor<object?>, Stmt.IVisitor<int>
                 );
             }
 
-            List<object?> arguments = new List<object?>();
+            List<object?> arguments = new();
             foreach (Expr argument in expr.arguments) {
                 arguments.Add(Evaluate(argument));
             }
@@ -370,13 +370,13 @@ class Interpreter : Expr.IVisitor<object?>, Stmt.IVisitor<int>
 
     int Stmt.IVisitor<int>.VisitPrint(Stmt.Print stmt)
     {
-        List<string> items = new List<string>();
+        List<string> items = new();
 
         foreach (Expr iexpr in stmt.items) {
             items.Add(StandardLibrary.Stringify(Evaluate(iexpr)));
         }
 
-        kulaEngine.Print(string.Join(' ', items));
+        Console.WriteLine(string.Join(' ', items));
         return 0;
     }
 

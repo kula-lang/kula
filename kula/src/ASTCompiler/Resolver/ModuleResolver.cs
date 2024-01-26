@@ -5,15 +5,15 @@ namespace Kula.ASTCompiler.Resolver;
 
 class ModuleResolver
 {
-    HashSet<string> scannedFiles = new HashSet<string>();
+    readonly HashSet<string> scannedFiles = new();
 
     private ModuleResolver() { }
-    public static ModuleResolver Instance = new ModuleResolver();
+    public static ModuleResolver Instance = new();
 
     public List<AstFile> Resolve(Dictionary<string, AstFile> fileDict, FileInfo root)
     {
-        List<FileInfo> files = new List<FileInfo>();
-        List<List<FileInfo>> nexts = new List<List<FileInfo>>();
+        List<FileInfo> files = new();
+        List<List<FileInfo>> nexts = new();
 
         foreach (var kv in fileDict) {
             files.Add(kv.Value.fileInfo);
@@ -21,7 +21,7 @@ class ModuleResolver
         }
 
         List<string> sorted_file_names = TopoSortFiles(files, nexts);
-        List<AstFile> sorted_files = new List<AstFile>();
+        List<AstFile> sorted_files = new();
         foreach (string fname in sorted_file_names) {
             sorted_files.Add(fileDict[fname]);
         }
@@ -40,7 +40,7 @@ class ModuleResolver
         }
 
         List<int> sorted = TopoSort(neighbors);
-        List<string> ans = new List<string>();
+        List<string> ans = new();
         foreach (int i in sorted) {
             ans.Add(files[i].FullName);
         }
@@ -54,7 +54,7 @@ class ModuleResolver
         HashSet<int>[] nexts = new HashSet<int>[len];
         int[] indegree = new int[len];
 
-        Queue<int> que = new Queue<int>();
+        Queue<int> que = new();
         for (int i = 0; i < len; ++i) {
             nexts[i] = new HashSet<int>();
         }
@@ -69,7 +69,7 @@ class ModuleResolver
         }
 
 
-        List<int> ans = new List<int>();
+        List<int> ans = new();
         while (que.Count != 0) {
             int last = que.Dequeue();
             foreach (int next in nexts[last]) {
@@ -86,7 +86,7 @@ class ModuleResolver
 
     public List<FileInfo> AnalyzeAST(DirectoryInfo directory, List<Stmt> asts)
     {
-        List<FileInfo> nexts = new List<FileInfo>();
+        List<FileInfo> nexts = new();
         foreach (var ast in asts) {
             if (ast is Stmt.Import import) {
                 foreach (Token import_item in import.modules) {

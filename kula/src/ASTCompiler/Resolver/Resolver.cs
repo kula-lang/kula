@@ -13,14 +13,14 @@ class Resolver : Stmt.IVisitor<int>, Expr.IVisitor<int>
 
     public class ResolveError : Exception
     {
-        public static readonly ResolveError Instance = new ResolveError();
+        public static readonly ResolveError Instance = new();
     }
 
     private KulaEngine? kula;
-    public static readonly Resolver Instance = new Resolver();
+    public static readonly Resolver Instance = new();
 
     private int inFor;
-    private Stack<int> inFunction = new Stack<int>();
+    private Stack<int> inFunction = new();
 
     public void Resolve(KulaEngine kula, List<Stmt> stmts)
     {

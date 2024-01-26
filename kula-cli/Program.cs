@@ -13,31 +13,51 @@ class Program
         }
         else {
             switch (args[0]) {
-                case "r":
-                case "run": {
-                        FileInfo root = new(args[1]);
-                        kula.Run(root);
+                case "i":
+                case "interpret": {
+                        if (args.Length < 2) {
+                            Info();
+                        }
+                        else {
+                            FileInfo root = new(args[1]);
+                            kula.Run(root);
+                        }
                         return;
                     }
                 case "c":
                 case "compile": {
-                        FileInfo root = new(args[1]);
-                        FileInfo aim = new(args[2]);
-                        kula.Compile(root, aim);
+                        if (args.Length < 3) {
+                            Info();
+                        }
+                        else {
+                            FileInfo root = new(args[1]);
+                            FileInfo aim = new(args[2]);
+                            kula.Compile(root, aim);
+                        }
                         return;
                     }
-                case "t":
-                case "turbo": {
-                        FileInfo root = new(args[1]);
-                        kula.RunC(root);
+                case "r":
+                case "run": {
+                        if (args.Length < 2) {
+                            Info();
+                        }
+                        else {
+                            FileInfo root = new(args[1]);
+                            kula.RunC(root);
+                        }
                         return;
                     }
                 case "cr":
                 case "compile-run": {
-                        FileInfo root = new(args[1]);
-                        FileInfo aim = new(args[2]);
-                        kula.Compile(root, aim);
-                        kula.RunC(aim);
+                        if (args.Length < 3) {
+                            Info();
+                        }
+                        else {
+                            FileInfo root = new(args[1]);
+                            FileInfo aim = new(args[2]);
+                            kula.Compile(root, aim);
+                            kula.RunC(aim);
+                        }
                         return;
                     }
                 default:
@@ -50,9 +70,10 @@ class Program
     private static void Info()
     {
         Console.WriteLine($"Kula-CLI (tags/v0.7.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
-        Console.WriteLine("Usage:\tkula-cli r|run <kula-file> [args...]");
-        Console.WriteLine("      \tkula-cli c|compile <kula-file> <klc-file> [args...]");
-        Console.WriteLine("      \tkula-cli t|turbo <klc-file> [args...]");
+        Console.WriteLine("Usage:\tkula-cli i|interpret <*.kula> [args...]");
+        Console.WriteLine("      \tkula-cli c|compile <*.kula> <*.klc> [args...]");
+        Console.WriteLine("      \tkula-cli r|run <*.klc> [args...]");
+        Console.WriteLine("      \tkula-cli cr|compile-run <*.kula> <*.klc> [args...]");
     }
 
     private static void Repl(KulaEngine kula)

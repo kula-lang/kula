@@ -14,22 +14,22 @@ internal class CompiledFile
     }
 
 
-    private static readonly ushort MAGIC_NUMBER = 0x0408;
+    private static readonly ushort MAGIC_NUMBER = 0x1701;
     private static readonly byte SEPARATOR = 0xff;
-    internal readonly Dictionary<string, int> variableDict;
-    internal readonly string[] variableArray;
-    internal readonly List<object?> literalList;
+    internal readonly Dictionary<string, int> symbols;
+    internal readonly string[] symbolArray;
+    internal readonly List<object?> literals;
     internal readonly List<Instruction> instructions;
     internal readonly List<(List<int>, List<Instruction>)> functions;
 
-    internal CompiledFile(Dictionary<string, int> variableDict, List<object?> literalList, List<Instruction> instructions, List<(List<int>, List<Instruction>)> functions)
+    internal CompiledFile(Dictionary<string, int> symbols, List<object?> literals, List<Instruction> instructions, List<(List<int>, List<Instruction>)> functions)
     {
-        this.variableDict = variableDict;
-        this.variableArray = new string[variableDict.Count];
-        foreach (var kv in variableDict) {
-            variableArray[kv.Value] = kv.Key;
+        this.symbols = symbols;
+        this.symbolArray = new string[symbols.Count];
+        foreach (var kv in symbols) {
+            symbolArray[kv.Value] = kv.Key;
         }
-        this.literalList = literalList;
+        this.literals = literals;
         this.instructions = instructions;
         this.functions = functions;
     }
@@ -37,8 +37,8 @@ internal class CompiledFile
     public void Write(BinaryWriter bw)
     {
         // Prepare
-        string[] variables = new string[variableDict.Count];
-        foreach (var kv in variableDict) {
+        string[] variables = new string[symbols.Count];
+        foreach (var kv in symbols) {
             variables[kv.Value] = kv.Key;
         }
 
@@ -53,7 +53,7 @@ internal class CompiledFile
         bw.Write(SEPARATOR);
 
         // Literal
-        foreach (object? literal in literalList) {
+        foreach (object? literal in literals) {
             if (literal is string literal_string) {
                 bw.Write(TypeCode.STRING);
                 bw.Write(literal_string.Length);
@@ -99,12 +99,12 @@ internal class CompiledFile
 
     public CompiledFile(BinaryReader br)
     {
-        this.variableDict = new();
-        this.literalList = new();
+        this.symbols = new();
+        this.literals = new();
         this.instructions = new();
         this.functions = new();
-        literalList.Add(false);
-        literalList.Add(true);
+        literals.Add(false);
+        literals.Add(true);
 
         // Magic Number
         ushort magic_number = br.ReadUInt16();
@@ -117,11 +117,11 @@ internal class CompiledFile
         while ((byte_buffer = br.ReadByte()) != SEPARATOR) {
             byte var_size = byte_buffer;
             char[] chars = br.ReadChars(var_size);
-            variableDict[new string(chars)] = variableDict.Count;
+            symbols[new string(chars)] = symbols.Count;
         }
-        this.variableArray = new string[variableDict.Count];
-        foreach (var kv in variableDict) {
-            variableArray[kv.Value] = kv.Key;
+        this.symbolArray = new string[symbols.Count];
+        foreach (var kv in symbols) {
+            symbolArray[kv.Value] = kv.Key;
         }
 
         // Literal
@@ -130,16 +130,16 @@ internal class CompiledFile
             if (literal_type == TypeCode.STRING) {
                 int size = br.ReadInt32();
                 char[] chars = br.ReadChars(size);
-                literalList.Add(new string(chars));
+                literals.Add(new string(chars));
             }
             else if (literal_type == TypeCode.DOUBLE) {
                 double val = br.ReadDouble();
-                literalList.Add(val);
+                literals.Add(val);
             }
             else if (literal_type == TypeCode.BOOL) {
             }
             else if (literal_type == TypeCode.NONE) {
-                literalList.Add(null);
+                literals.Add(null);
             }
             else {
                 throw new CompileError();
@@ -175,16 +175,16 @@ internal class CompiledFile
     {
         StringBuilder sb = new();
 
-        sb.AppendLine("==== Variable ====");
+        sb.AppendLine("==== Symbols ====");
         int index;
         index = 0;
-        foreach (var kv in this.variableDict) {
+        foreach (var kv in this.symbols) {
             sb.AppendLine($"\t{index++}\t{kv.Key}");
         }
 
         sb.AppendLine("==== Literal ====");
         index = 0;
-        foreach (var literal in this.literalList) {
+        foreach (var literal in this.literals) {
             sb.AppendLine($"\t{index++}\t{StandardLibrary.Stringify(literal)}");
         }
 
@@ -200,7 +200,7 @@ internal class CompiledFile
             sb.AppendLine($"---- F {f_index} ----");
             index = 0;
             foreach (var vv in function.Item1) {
-                sb.AppendLine($"\t{index++}\t{vv}\t{this.variableArray[vv]}");
+                sb.AppendLine($"\t{index++}\t{vv}\t{this.symbolArray[vv]}");
             }
             sb.AppendLine($"---- I {f_index} ----");
             index = 0;
@@ -218,13 +218,13 @@ internal class CompiledFile
         string s = $"{instruction.Op}\t{instruction.Constant}";
         switch (instruction.Op) {
             case OpCode.LOADC:
-                return s + $"\t// {StandardLibrary.Stringify(literalList[instruction.Constant])}";
+                return s + $"\t// {StandardLibrary.Stringify(literals[instruction.Constant])}";
             case OpCode.ASGN:
-                return s + $"\t// {variableArray[instruction.Constant]}\t< =";
+                return s + $"\t// {symbolArray[instruction.Constant]}\t< =";
             case OpCode.DECL:
-                return s + $"\t// {variableArray[instruction.Constant]}\t< :=";
+                return s + $"\t// {symbolArray[instruction.Constant]}\t< :=";
             case OpCode.LOAD:
-                return s + $"\t// {variableArray[instruction.Constant]}\t>";
+                return s + $"\t// {symbolArray[instruction.Constant]}\t>";
             default:
                 return s;
         }
