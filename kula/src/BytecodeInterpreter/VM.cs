@@ -100,11 +100,11 @@ class VM
         object? top;
         switch (i.Op) {
             case OpCode.LOADC:
-                vmStack.Peek().Push(compiledFile.literals[i.Constant]);
+                vmStack.Peek().Push(compiledFile.literals[i.Value]);
                 break;
             case OpCode.LOAD: {
                     try {
-                        var v = environment.Get(compiledFile.symbolArray[i.Constant]);
+                        var v = environment.Get(compiledFile.symbolArray[i.Value]);
                         vmStack.Peek().Push(v);
                     }
                     catch (InterpreterInnerException rie) {
@@ -114,11 +114,11 @@ class VM
                 }
             case OpCode.DECL:
                 top = vmStack.Peek().Peek();
-                environment.Define(compiledFile.symbolArray[i.Constant], top);
+                environment.Define(compiledFile.symbolArray[i.Value], top);
                 break;
             case OpCode.ASGN:
                 top = vmStack.Peek().Peek();
-                environment.Assign(compiledFile.symbolArray[i.Constant], top);
+                environment.Assign(compiledFile.symbolArray[i.Value], top);
                 break;
             case OpCode.POP:
                 vmStack.Peek().Pop();
@@ -127,10 +127,10 @@ class VM
                 vmStack.Peek().Push(vmStack.Peek().Peek());
                 break;
             case OpCode.FUNC:
-                vmStack.Peek().Push(new VMFunction(i.Constant, environment));
+                vmStack.Peek().Push(new VMFunction(i.Value, environment));
                 break;
             case OpCode.RET: {
-                    if (i.Constant == 1) {
+                    if (i.Value == 1) {
                         top = vmStack.Peek().Pop();
                     }
                     else {
@@ -175,6 +175,7 @@ class VM
                     else {
                         throw new VMException(i, $"Cannot set key '{key}' to container '{container}'.");
                     }
+                    vmStack.Peek().Push(value);
                     break;
                 }
             case OpCode.ADD: {
@@ -307,7 +308,7 @@ class VM
                     break;
                 }
             case OpCode.CALL: {
-                    int argc = i.Constant;
+                    int argc = i.Value;
                     object?[] argv = new object?[argc];
                     for (int c = argc - 1; c >= 0; --c) {
                         argv[c] = vmStack.Peek().Pop();
@@ -329,7 +330,7 @@ class VM
                     break;
                 }
             case OpCode.CALWT: {
-                    int argc = i.Constant;
+                    int argc = i.Value;
                     object?[] argv = new object?[argc];
                     for (int c = argc - 1; c >= 0; --c) {
                         argv[c] = vmStack.Peek().Pop();
@@ -355,24 +356,24 @@ class VM
                     break;
                 }
             case OpCode.PRINT: {
-                    string[] ls = new string[i.Constant];
-                    for (int t = i.Constant - 1; t >= 0; --t) {
+                    string[] ls = new string[i.Value];
+                    for (int t = i.Value - 1; t >= 0; --t) {
                         ls[t] = StandardLibrary.Stringify(vmStack.Peek().Pop());
                     }
                     Console.WriteLine(string.Join(' ', ls));
                     break;
                 }
             case OpCode.JMP:
-                ip = i.Constant - 1;
+                ip = i.Value - 1;
                 break;
             case OpCode.JMPT:
                 if (StandardLibrary.Booleanify(vmStack.Peek().Pop())) {
-                    ip = i.Constant - 1;
+                    ip = i.Value - 1;
                 }
                 break;
             case OpCode.JMPF:
                 if (!StandardLibrary.Booleanify(vmStack.Peek().Pop())) {
-                    ip = i.Constant - 1;
+                    ip = i.Value - 1;
                 }
                 break;
             default:

@@ -26,12 +26,12 @@ enum OpCode : byte
 struct Instruction
 {
     internal OpCode Op { get; set; }
-    internal int Constant { get; set; }
+    internal int Value { get; set; }
 
-    public Instruction(OpCode op, int constant)
+    public Instruction(OpCode op, int value)
     {
         this.Op = op;
-        this.Constant = constant;
+        this.Value = value;
     }
 
     public static int ReadConstant(BinaryReader br, OpCode op)
@@ -53,13 +53,13 @@ struct Instruction
         bw.Write((byte)ins.Op);
         switch (CodeSize(ins.Op)) {
             case sizeof(uint):
-                bw.Write((uint)ins.Constant);
+                bw.Write((uint)ins.Value);
                 break;
             case sizeof(ushort):
-                bw.Write((ushort)ins.Constant);
+                bw.Write((ushort)ins.Value);
                 break;
             case sizeof(byte):
-                bw.Write((byte)ins.Constant);
+                bw.Write((byte)ins.Value);
                 break;
             default:
                 break;
@@ -91,6 +91,6 @@ struct Instruction
 
     public override string ToString()
     {
-        return $"{{{Op},{Constant}}}";
+        return $"{{{Op},{Value}}}";
     }
 }

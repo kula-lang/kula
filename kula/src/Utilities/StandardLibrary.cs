@@ -27,6 +27,14 @@ public static class StandardLibrary
         })},
         {"typeof", new NativeFunction(1, (_, args) => TypeStringify(args[0]?.GetType()))},
         {"throw", new NativeFunction(1, (_, args) => throw new InterpreterInnerException(Assert<string>(args[0])))},
+        {"printInline", new NativeFunction(-1, (_, args) => {
+            List<string> items = new();
+            foreach (object? item in args) {
+                items.Add(Stringify(item));
+            }
+            Console.Write(string.Join("", items));
+            return null;
+        })},
     };
 
     public static readonly Dictionary<string, Runtime.KulaObject> global_protos;

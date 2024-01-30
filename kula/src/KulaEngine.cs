@@ -64,13 +64,7 @@ public class KulaEngine
         hadRuntimeError = false;
 
         Dictionary<string, AstFile> readFiles;
-        try {
-            readFiles = ReadFile(file);
-        }
-        catch (InterpreterInnerException e) {
-            ReportError(e.Message);
-            return false;
-        }
+        readFiles = ReadFile(file);
         if (hadError) {
             return false;
         }
@@ -114,13 +108,7 @@ public class KulaEngine
         hadRuntimeError = false;
 
         Dictionary<string, AstFile> readFiles;
-        try {
-            readFiles = ReadFile(file);
-        }
-        catch (InterpreterInnerException e) {
-            ReportError(e.Message);
-            return false;
-        }
+        readFiles = ReadFile(file);
         if (hadError) {
             return false;
         }
@@ -213,7 +201,7 @@ public class KulaEngine
         }
         return false;
     }
-    
+
     internal void LexError((int, int, TokenFile) position, string lexeme, string msg)
     {
         ReportError(position, $"'{lexeme}'", msg, false);

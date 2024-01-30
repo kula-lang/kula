@@ -83,7 +83,6 @@ internal class CompiledFile
         bw.Write(SEPARATOR);
 
         // Functions
-        bw.Write(functions.Count);
         foreach ((List<int> parameters, List<Instruction> instructions) in functions) {
             bw.Write((byte)parameters.Count);
             foreach (int parameter in parameters) {
@@ -154,8 +153,7 @@ internal class CompiledFile
         }
 
         // Functions
-        int functions_count = br.ReadInt32();
-        for (int i = 0; i < functions_count; ++i) {
+        while (br.BaseStream.Position != br.BaseStream.Length) {
             byte size = br.ReadByte();
             List<int> parameters = new();
             List<Instruction> instructions = new();
@@ -215,16 +213,16 @@ internal class CompiledFile
 
     internal string InstructionToString(Instruction instruction)
     {
-        string s = $"{instruction.Op}\t{instruction.Constant}";
+        string s = $"{instruction.Op}\t{instruction.Value}";
         switch (instruction.Op) {
             case OpCode.LOADC:
-                return s + $"\t// {StandardLibrary.Stringify(literals[instruction.Constant])}";
+                return s + $"\t// {StandardLibrary.Stringify(literals[instruction.Value])}";
             case OpCode.ASGN:
-                return s + $"\t// {symbolArray[instruction.Constant]}\t< =";
+                return s + $"\t// {symbolArray[instruction.Value]}\t< =";
             case OpCode.DECL:
-                return s + $"\t// {symbolArray[instruction.Constant]}\t< :=";
+                return s + $"\t// {symbolArray[instruction.Value]}\t< :=";
             case OpCode.LOAD:
-                return s + $"\t// {symbolArray[instruction.Constant]}\t>";
+                return s + $"\t// {symbolArray[instruction.Value]}\t>";
             default:
                 return s;
         }

@@ -81,7 +81,7 @@ class Lexer
                 AddToken(Match('=') ? TokenType.STAR_EQUAL : TokenType.STAR);
                 break;
             case '/':
-                AddToken(Match('=') ? TokenType.SLASH_EQUAL : TokenType.STAR);
+                AddToken(Match('=') ? TokenType.SLASH_EQUAL : TokenType.SLASH);
                 break;
             case '%':
                 AddToken(Match('=') ? TokenType.MODULUS_EQUAL : TokenType.MODULUS);
