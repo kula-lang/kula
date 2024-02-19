@@ -8,7 +8,7 @@ enum OpCode : byte
     // Control Flow
     JMP, JMPT, JMPF, CALL, CALWT,
     // Function
-    FUNC, RET,
+    FUNC, RET, RETV,
     // Env
     ENVST, ENVED,
     // Container
@@ -79,7 +79,6 @@ struct Instruction
             case OpCode.JMPT:
                 return sizeof(ushort);
             case OpCode.FUNC:
-            case OpCode.RET:
             case OpCode.PRINT:
             case OpCode.CALL:
             case OpCode.CALWT:

@@ -20,9 +20,9 @@ internal class CompiledFile
     internal readonly string[] symbolArray;
     internal readonly List<object?> literals;
     internal readonly List<Instruction> instructions;
-    internal readonly List<(List<int>, List<Instruction>)> functions;
+    internal readonly List<(List<ushort>, List<Instruction>)> functions;
 
-    internal CompiledFile(Dictionary<string, int> symbols, List<object?> literals, List<Instruction> instructions, List<(List<int>, List<Instruction>)> functions)
+    internal CompiledFile(Dictionary<string, int> symbols, List<object?> literals, List<Instruction> instructions, List<(List<ushort>, List<Instruction>)> functions)
     {
         this.symbols = symbols;
         this.symbolArray = new string[symbols.Count];
@@ -37,18 +37,19 @@ internal class CompiledFile
     public void Write(BinaryWriter bw)
     {
         // Prepare
-        string[] variables = new string[symbols.Count];
-        foreach (var kv in symbols) {
-            variables[kv.Value] = kv.Key;
+        string[] symbols = new string[this.symbols.Count];
+        foreach (var kv in this.symbols) {
+            symbols[kv.Value] = kv.Key;
         }
 
         // Magic Number
         bw.Write(MAGIC_NUMBER);
 
-        // Variables
-        foreach (string variable in variables) {
-            bw.Write((byte)variable.Length);
-            bw.Write(variable.ToCharArray());
+        // Symbols
+        foreach (string symbol in symbols) {
+            byte[] bytes = Encoding.UTF8.GetBytes(symbol);
+            bw.Write((byte)bytes.Length);
+            bw.Write(bytes);
         }
         bw.Write(SEPARATOR);
 
@@ -56,17 +57,15 @@ internal class CompiledFile
         foreach (object? literal in literals) {
             if (literal is string literal_string) {
                 bw.Write(TypeCode.STRING);
-                bw.Write(literal_string.Length);
-                bw.Write(literal_string.ToCharArray());
+                byte[] bytes = Encoding.UTF8.GetBytes(literal_string);
+                bw.Write(bytes.Length);
+                bw.Write(bytes);
             }
             else if (literal is double literal_double) {
                 bw.Write(TypeCode.DOUBLE);
                 bw.Write(literal_double);
             }
-            else if (literal is bool) {
-            }
-            else if (literal is null) {
-                bw.Write(TypeCode.NONE);
+            else if (literal is bool || literal is null) {
             }
             else {
                 throw new CompileError($"{literal?.GetType()}");
@@ -83,9 +82,9 @@ internal class CompiledFile
         bw.Write(SEPARATOR);
 
         // Functions
-        foreach ((List<int> parameters, List<Instruction> instructions) in functions) {
+        foreach ((List<ushort> parameters, List<Instruction> instructions) in functions) {
             bw.Write((byte)parameters.Count);
-            foreach (int parameter in parameters) {
+            foreach (ushort parameter in parameters) {
                 bw.Write(parameter);
             }
 
@@ -104,6 +103,7 @@ internal class CompiledFile
         this.functions = new();
         literals.Add(false);
         literals.Add(true);
+        literals.Add(null);
 
         // Magic Number
         ushort magic_number = br.ReadUInt16();
@@ -112,11 +112,11 @@ internal class CompiledFile
         }
 
         byte byte_buffer;
-        // Variables
+        // Symbols
         while ((byte_buffer = br.ReadByte()) != SEPARATOR) {
             byte var_size = byte_buffer;
-            char[] chars = br.ReadChars(var_size);
-            symbols[new string(chars)] = symbols.Count;
+            byte[] bytes = br.ReadBytes(var_size);
+            symbols[Encoding.UTF8.GetString(bytes)] = symbols.Count;
         }
         this.symbolArray = new string[symbols.Count];
         foreach (var kv in symbols) {
@@ -128,8 +128,8 @@ internal class CompiledFile
             byte literal_type = byte_buffer;
             if (literal_type == TypeCode.STRING) {
                 int size = br.ReadInt32();
-                char[] chars = br.ReadChars(size);
-                literals.Add(new string(chars));
+                byte[] bytes = br.ReadBytes(size);
+                literals.Add(Encoding.UTF8.GetString(bytes));
             }
             else if (literal_type == TypeCode.DOUBLE) {
                 double val = br.ReadDouble();
@@ -155,10 +155,10 @@ internal class CompiledFile
         // Functions
         while (br.BaseStream.Position != br.BaseStream.Length) {
             byte size = br.ReadByte();
-            List<int> parameters = new();
+            List<ushort> parameters = new();
             List<Instruction> instructions = new();
             for (int j = 0; j < size; ++j) {
-                parameters.Add(br.ReadInt32());
+                parameters.Add(br.ReadUInt16());
             }
             while ((byte_buffer = br.ReadByte()) != SEPARATOR) {
                 byte opCode = byte_buffer;

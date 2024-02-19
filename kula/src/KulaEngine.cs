@@ -5,6 +5,7 @@ using Kula.ASTInterpreter;
 using Kula.ASTInterpreter.Runtime;
 using Kula.BytecodeCompiler.Compiler;
 using Kula.BytecodeInterpreter;
+using Kula.BytecodeInterpreter.Runtime;
 using Kula.Utilities;
 
 namespace Kula;
@@ -94,7 +95,7 @@ public class KulaEngine
             try {
                 vm.Interpret(this, compiledFile);
             }
-            catch (InterpreterException e) {
+            catch (VMException e) {
                 RuntimeError(e);
                 return false;
             }
@@ -129,7 +130,7 @@ public class KulaEngine
             using var bw = new BinaryWriter(stream);
             compiledFile.Write(bw);
         }
-#if DEBUG
+#if DEBUG_MODE
         Console.WriteLine(compiledFile.ToString());
 #endif
 
@@ -142,7 +143,7 @@ public class KulaEngine
         hadRuntimeError = false;
 
         TokenFile tfile = Lexer.Instance.Lex(this, source, filename);
-#if DEBUG
+#if DEBUG_MODE
         foreach (Token token in tfile.tokens) {
             Console.WriteLine(token);
         }
@@ -151,7 +152,7 @@ public class KulaEngine
             return false;
         }
         List<Stmt> asts = Parser.Instance.Parse(this, tfile.tokens);
-#if DEBUG
+#if DEBUG_MODE
         foreach (Stmt stmt in asts) {
             Console.WriteLine(astPrinter.Print(stmt));
         }

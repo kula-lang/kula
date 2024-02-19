@@ -71,9 +71,9 @@ class Program
     {
         Console.WriteLine($"Kula-CLI (tags/v0.7.0) [.NET {Environment.Version} / {Environment.OSVersion}]");
         Console.WriteLine("Usage:\tkula-cli i|interpret <*.kula> [args...]");
-        Console.WriteLine("      \tkula-cli c|compile <*.kula> <*.klc> [args...]");
-        Console.WriteLine("      \tkula-cli r|run <*.klc> [args...]");
-        Console.WriteLine("      \tkula-cli cr|compile-run <*.kula> <*.klc> [args...]");
+        Console.WriteLine("      \tkula-cli c|compile <*.kula> <*.kulac> [args...]");
+        Console.WriteLine("      \tkula-cli r|run <*.kulac> [args...]");
+        Console.WriteLine("      \tkula-cli cr|compile-run <*.kula> <*.kulac> [args...]");
     }
 
     private static void Repl(KulaEngine kula)

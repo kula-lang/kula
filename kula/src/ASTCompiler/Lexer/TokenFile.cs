@@ -17,7 +17,7 @@ class TokenFile
     {
         string str = source.Split(Environment.NewLine)[line - 1];
         if (str.Length > 30) {
-            int cut_pos = Math.Min(column - 15, str.Length - 30);
+            int cut_pos = Math.Min(Math.Max(0, column - 15), str.Length - 30);
             return (str[cut_pos..], column - cut_pos);
         }
         return (str, column);

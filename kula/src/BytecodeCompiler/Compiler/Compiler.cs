@@ -11,7 +11,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
     private readonly List<object?> literals = new();
     private readonly (Dictionary<double, int>, Dictionary<string, int>) literalMap = new(new(), new());
     private readonly List<Instruction> instructions = new();
-    private readonly List<(List<int>, List<Instruction>)> functions = new();
+    private readonly List<(List<ushort>, List<Instruction>)> functions = new();
     private readonly Stack<List<Instruction>> instructionsStack = new();
     private readonly Stack<(List<int>, List<int>)> forStack = new();
 
@@ -56,14 +56,14 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         get => instructionsStack.Peek().Count;
     }
 
-    private int SaveSymbol(string lexeme)
+    private ushort SaveSymbol(string lexeme)
     {
         if (!symbols.ContainsKey(lexeme)) {
             int id = symbols.Count;
             symbols.Add(lexeme, id);
-            return id;
+            return (ushort)id;
         }
-        return symbols[lexeme];
+        return (ushort)symbols[lexeme];
     }
 
     private int SaveLiteral(object? literal)
@@ -239,7 +239,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
     {
         int func_ins = New(OpCode.FUNC, -1);
         List<Instruction> instructions = new();
-        List<int> parameters = new();
+        List<ushort> parameters = new();
         foreach (var parameter in expr.parameters) {
             parameters.Add(SaveSymbol(parameter.lexeme));
         }
@@ -333,7 +333,7 @@ class Compiler : Stmt.IVisitor<int>, Expr.IVisitor<int>
         }
         else {
             stmt.value.Accept(this);
-            New(OpCode.RET, 1);
+            New(OpCode.RETV, 0);
         }
         return 0;
     }

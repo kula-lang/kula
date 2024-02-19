@@ -9,9 +9,8 @@ namespace Kula.BytecodeInterpreter;
 class VM
 {
     private CompiledFile compiledFile = null!;
-    private KulaEngine kulaEngine = null!;
     private readonly Context globals;
-    private Context environment;
+    private Context context;
     private readonly Stack<Stack<object?>> vmStack;
     private readonly Stack<(int, int, Context)> callStack;
     private int ip, fp;
@@ -21,11 +20,11 @@ class VM
     public VM(int maxDepth)
     {
         this.globals = new();
-        this.environment = globals;
+        this.context = globals;
         this.vmStack = new();
         this.callStack = new();
 
-        foreach (KeyValuePair<string, NativeFunction> kv in StandardLibrary.global_functions) {
+        foreach (var kv in StandardLibrary.global_functions) {
             globals.Define(kv.Key, kv.Value);
         }
 
@@ -52,7 +51,6 @@ class VM
     public void Interpret(KulaEngine kulaEngine, CompiledFile compiledFile)
     {
         this.compiledFile = compiledFile;
-        this.kulaEngine = kulaEngine;
         this.vmStack.Clear();
         this.vmStack.Push(new());
         this.callStack.Clear();
@@ -63,18 +61,18 @@ class VM
             Instruction ins;
             if (fp >= 0) {
                 ins = compiledFile.functions[fp].Item2[ip];
-#if DEBUG
+#if DEBUG_MODE
                 Console.WriteLine($"\t[Do in f{fp}]:\t{compiledFile.InstructionToString(ins)}");
 #endif
             }
             else {
                 ins = compiledFile.instructions[ip];
-#if DEBUG
+#if DEBUG_MODE
                 Console.WriteLine($"\t[Do]:\t{compiledFile.InstructionToString(ins)}");
 #endif
             }
             Run(ins);
-#if DEBUG
+#if DEBUG_MODE
             PrintStack();
 #endif
             ip++;
@@ -83,7 +81,7 @@ class VM
                 if (ip >= compiledFile.functions[fp].Item2.Count) {
                     vmStack.Pop().Clear();
                     vmStack.Peek().Push(null);
-                    (ip, fp, environment) = callStack.Pop();
+                    (ip, fp, context) = callStack.Pop();
                     ip++;
                 }
             }
@@ -104,7 +102,7 @@ class VM
                 break;
             case OpCode.LOAD: {
                     try {
-                        var v = environment.Get(compiledFile.symbolArray[i.Value]);
+                        var v = context.Get(compiledFile.symbolArray[i.Value]);
                         vmStack.Peek().Push(v);
                     }
                     catch (InterpreterInnerException rie) {
@@ -114,11 +112,11 @@ class VM
                 }
             case OpCode.DECL:
                 top = vmStack.Peek().Peek();
-                environment.Define(compiledFile.symbolArray[i.Value], top);
+                context.Define(compiledFile.symbolArray[i.Value], top);
                 break;
             case OpCode.ASGN:
                 top = vmStack.Peek().Peek();
-                environment.Assign(compiledFile.symbolArray[i.Value], top);
+                context.Assign(compiledFile.symbolArray[i.Value], top);
                 break;
             case OpCode.POP:
                 vmStack.Peek().Pop();
@@ -127,25 +125,27 @@ class VM
                 vmStack.Peek().Push(vmStack.Peek().Peek());
                 break;
             case OpCode.FUNC:
-                vmStack.Peek().Push(new VMFunction(i.Value, environment));
+                vmStack.Peek().Push(new VMFunction(i.Value, context, compiledFile.functions[i.Value].Item1.Count));
                 break;
             case OpCode.RET: {
-                    if (i.Value == 1) {
-                        top = vmStack.Peek().Pop();
-                    }
-                    else {
-                        top = null;
-                    }
+                    top = null;
                     vmStack.Pop().Clear();
                     vmStack.Peek().Push(top);
-                    (ip, fp, environment) = callStack.Pop();
+                    (ip, fp, context) = callStack.Pop();
+                    break;
+                }
+            case OpCode.RETV: {
+                    top = vmStack.Peek().Pop();
+                    vmStack.Pop().Clear();
+                    vmStack.Peek().Push(top);
+                    (ip, fp, context) = callStack.Pop();
                     break;
                 }
             case OpCode.ENVST:
-                environment = new(environment);
+                context = new(context);
                 break;
             case OpCode.ENVED:
-                environment = environment.Unenclose();
+                context = context.Unenclose();
                 break;
             case OpCode.GET: {
                     object? key = vmStack.Peek().Pop();
@@ -377,7 +377,7 @@ class VM
                 }
                 break;
             default:
-#if DEBUG
+#if DEBUG_MODE
                 Console.WriteLine($"Unsupported Instruction '{i.Op}'.");
 #endif
                 break;
@@ -385,36 +385,37 @@ class VM
         }
     }
 
-    private void CalcFunctionObject(VMFunction fo, object?[] argv)
+    private void CalcFunctionObject(VMFunction vmf, object?[] argv)
     {
-        callStack.Push((ip, fp, environment));
+        callStack.Push((ip, fp, context));
         ip = -1;
-        fp = fo.Fp;
-        var function = this.compiledFile.functions[fo.Fp];
+        fp = vmf.Fp;
+        var function = this.compiledFile.functions[vmf.Fp];
         if (argv.Length != function.Item1.Count) {
             throw new Exception();
         }
 
-        this.environment = new(fo.Parent);
+        this.context = new(vmf.Parent);
         vmStack.Push(new());
         for (int i = 0; i < argv.Length; ++i) {
             int v_index = function.Item1[i];
             string v_name = this.compiledFile.symbolArray[v_index];
-            this.environment.Define(v_name, argv[i]);
+            this.context.Define(v_name, argv[i]);
         }
-        this.environment.Define("self", fo);
-        if (fo.CallSite != null) {
-            this.environment.Define("this", fo.CallSite);
+        this.context.Define("self", vmf);
+        if (vmf.CallSite != null) {
+            this.context.Define("this", vmf.CallSite);
+            vmf.Bind(null);
         }
     }
 
-    private object? EvalGet(object? container, object? key, Instruction ins)
+    private static object? EvalGet(object? container, object? key, Instruction ins)
     {
         if (container is KulaObject dict) {
             if (key is string key_string) {
                 return dict.Get(key_string);
             }
-            throw new VMException(ins, "Index of 'Dict' can only be 'String'.");
+            throw new VMException(ins, "Index of 'Object' can only be 'String'.");
         }
         else if (container is KulaArray array) {
             if (key is double key_double) {

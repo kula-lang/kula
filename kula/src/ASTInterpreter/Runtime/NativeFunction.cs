@@ -4,8 +4,8 @@ public class NativeFunction : ICallable
 {
     public delegate object? Callee(object? _this, List<object?> arguments);
 
-    private int arity;
-    private Callee callee;
+    private readonly int arity;
+    private readonly Callee callee;
     private object? callSite;
 
     public int Arity => arity;

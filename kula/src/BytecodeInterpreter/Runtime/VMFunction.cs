@@ -12,13 +12,18 @@ class VMFunction : ICallable
     public object? CallSite => callSite;
     public Context Parent => parent;
 
-    public VMFunction(int index, Context parent)
+    public VMFunction(int index, Context parent, int arity)
     {
         this.index = index;
         this.parent = parent;
+        this.Arity = arity;
     }
 
-    public int Arity => throw new NotImplementedException();
+    public int Arity
+    {
+        private set;
+        get;
+    }
 
     public void Bind(object? callSite)
     {
